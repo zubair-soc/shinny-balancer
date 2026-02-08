@@ -43,6 +43,33 @@
             background-clip: text;
         }
 
+        .header p {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .header-button {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            border: none;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+        }
+
+        .header-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(96, 165, 250, 0.4);
+        }
+
         .setup-section {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
@@ -250,11 +277,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <div>
-                <h1>🏒 Shinny Team Balancer</h1>
-                <p>Balance teams, manage friend groups, export to WhatsApp • v1.1 • Updated Feb 6, 2026</p>
-            </div>
-            <a href="database.html" style="background: linear-gradient(135deg, #60a5fa, #3b82f6); border: none; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; transition: transform 0.2s; display: inline-block;">🗂️ Manage Database</a>
+            <h1>🏒 Shinny Team Balancer</h1>
+            <p>Balance teams, manage friend groups, export to WhatsApp • v1.1 • Updated Feb 6, 2026</p>
+            <a href="database.html" class="header-button">
+                <span>🗂️</span>
+                <span>Manage Database</span>
+            </a>
         </div>
 
         <!-- Google Sheet Setup -->
@@ -306,7 +334,10 @@
                     <input type="text" id="email" placeholder="payments@shinnyofchampions.com" value="payments@shinnyofchampions.com">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
-                    <label>Location</label>
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Location</span>
+                        <button id="editLocationsBtn" style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); color: #60a5fa; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">Edit Locations</button>
+                    </label>
                     <div id="locationContainer">
                         <select id="locationSelect" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px 12px; color: #e8eaed; font-size: 14px; font-family: inherit; width: 100%;" onchange="handleLocationChange()">
                             <option value="Terwillegar Recreation Centre">Terwillegar Recreation Centre</option>
@@ -320,6 +351,11 @@
                             <input type="text" id="customLocationText" placeholder="Enter location name" style="background: rgba(0, 0, 0, 0.3); border: 1px solid #60a5fa; border-radius: 8px; padding: 10px 12px; color: #e8eaed; font-size: 14px; font-family: inherit; width: calc(100% - 120px); margin-right: 8px;">
                             <button class="button" onclick="saveNewLocation()" style="padding: 10px 16px; display: inline-block;">Save</button>
                             <button class="button button-secondary" onclick="cancelNewLocation()" style="padding: 10px 16px; display: inline-block; margin-left: 4px;">Cancel</button>
+                        </div>
+                        <!-- Location Manager Panel -->
+                        <div id="locationManager" style="display: none; margin-top: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px;">
+                            <div style="margin-bottom: 8px; font-size: 13px; color: #9ca3af; font-weight: 500;">Manage Locations:</div>
+                            <div id="locationList"></div>
                         </div>
                     </div>
                     <input type="text" id="location" placeholder="Terwillegar Recreation Centre" value="Terwillegar Recreation Centre" style="display: none;">
@@ -376,6 +412,15 @@
             }
             
             loadCustomLocations();
+            
+            // Add event listener for edit locations button
+            const editBtn = document.getElementById('editLocationsBtn');
+            if (editBtn) {
+                editBtn.addEventListener('click', toggleLocationManager);
+                console.log('Edit locations button listener added');
+            } else {
+                console.error('Edit locations button not found!');
+            }
         });
 
         // Global state
@@ -1158,6 +1203,171 @@
                     select.selectedIndex = 0;
                     document.getElementById('location').value = select.value;
                 }
+            }
+        }
+
+        function toggleLocationManager() {
+            console.log('toggleLocationManager called');
+            const manager = document.getElementById('locationManager');
+            console.log('manager element:', manager);
+            const isVisible = manager.style.display !== 'none';
+            
+            if (isVisible) {
+                manager.style.display = 'none';
+            } else {
+                renderLocationList();
+                manager.style.display = 'block';
+            }
+        }
+
+        function renderLocationList() {
+            console.log('renderLocationList called');
+            const select = document.getElementById('locationSelect');
+            const listContainer = document.getElementById('locationList');
+            console.log('listContainer:', listContainer);
+            
+            const allLocations = [];
+            for (let i = 0; i < select.options.length - 1; i++) {
+                allLocations.push({ value: select.options[i].value, index: i });
+            }
+            console.log('allLocations:', allLocations);
+            
+            if (allLocations.length === 0) {
+                listContainer.innerHTML = '<div style="color: #9ca3af; font-size: 13px; padding: 8px;">No locations available. Click "+ Add Custom Location" to add one.</div>';
+                return;
+            }
+            
+            listContainer.innerHTML = allLocations.map((loc, idx) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; margin-bottom: 6px;">
+                    <span style="color: #e8eaed; font-size: 14px;">${loc.value}</span>
+                    <button class="delete-location-btn" data-location="${loc.value}" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Delete</button>
+                </div>
+            `).join('');
+            
+            // Add event listeners to all delete buttons
+            const deleteButtons = listContainer.querySelectorAll('.delete-location-btn');
+            deleteButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const locationName = this.getAttribute('data-location');
+                    deleteLocationByName(locationName);
+                });
+            });
+        }
+
+        function deleteLocationByName(locationName) {
+            console.log('=== deleteLocationByName called ===');
+            console.log('locationName:', locationName);
+            const select = document.getElementById('locationSelect');
+            console.log('select element:', select);
+            console.log('select.options.length:', select.options.length);
+            
+            // Log all current options
+            for (let i = 0; i < select.options.length; i++) {
+                console.log(`Option ${i}: "${select.options[i].value}"`);
+            }
+            
+            if (!confirm(`Delete "${locationName}"?`)) {
+                console.log('User cancelled');
+                return;
+            }
+            
+            console.log('User confirmed, finding location...');
+            // Find and remove the option by value
+            let found = false;
+            for (let i = 0; i < select.options.length; i++) {
+                console.log(`Checking option ${i}: "${select.options[i].value}" === "${locationName}"?`, select.options[i].value === locationName);
+                if (select.options[i].value === locationName) {
+                    console.log(`FOUND at index ${i}, removing...`);
+                    select.remove(i);
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (!found) {
+                console.error('Location not found!');
+                alert('Error: Location not found');
+                return;
+            }
+            
+            console.log('Calling saveCustomLocations...');
+            // Save updated list
+            saveCustomLocations();
+            
+            console.log('Resetting selection...');
+            // Reset selection to first option
+            select.selectedIndex = 0;
+            document.getElementById('location').value = select.value;
+            
+            console.log('Refreshing list...');
+            // Refresh the list
+            renderLocationList();
+            console.log('=== deleteLocationByName complete ===');
+        }
+
+        function deleteLocation(index) {
+            const select = document.getElementById('locationSelect');
+            const locationName = select.options[index].value;
+            deleteLocationByName(locationName);
+        }
+
+        function manageLocations() {
+            const select = document.getElementById('locationSelect');
+            const locations = [];
+            const defaultLocations = ['Terwillegar Recreation Centre', 'Donnan', 'NAIT', 'ZerOne W.E.M.', 'Meadows Recreation Centre'];
+            
+            // Get all locations except "+ Add Custom Location"
+            for (let i = 0; i < select.options.length - 1; i++) {
+                const locValue = select.options[i].value;
+                const isDefault = defaultLocations.includes(locValue);
+                locations.push({
+                    value: locValue,
+                    isDefault: isDefault,
+                    index: i
+                });
+            }
+
+            if (locations.length === 0) {
+                alert('No locations to manage');
+                return;
+            }
+
+            let message = 'Current Locations:\n\n';
+            locations.forEach((loc, i) => {
+                const label = loc.isDefault ? ' (default)' : '';
+                message += `${i + 1}. ${loc.value}${label}\n`;
+            });
+            message += '\nEnter the number of a CUSTOM location to DELETE\n(default locations cannot be deleted)\n\nPress Cancel to close:';
+
+            const toDelete = prompt(message);
+            
+            if (toDelete === null) return;
+
+            const userIndex = parseInt(toDelete) - 1;
+            if (isNaN(userIndex) || userIndex < 0 || userIndex >= locations.length) {
+                alert('Invalid selection');
+                return;
+            }
+
+            const selectedLocation = locations[userIndex];
+            
+            if (selectedLocation.isDefault) {
+                alert('Cannot delete default locations. Only custom locations can be removed.');
+                return;
+            }
+
+            if (confirm(`Delete "${selectedLocation.value}"?`)) {
+                // Remove from dropdown
+                select.remove(selectedLocation.index);
+                
+                // Save updated list
+                saveCustomLocations();
+                
+                // Reset selection
+                select.selectedIndex = 0;
+                document.getElementById('location').value = select.value;
+                
+                alert(`✓ Deleted "${selectedLocation.value}"`);
             }
         }
 
