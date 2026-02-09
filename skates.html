@@ -362,13 +362,13 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <a href="index.html" class="back-button">← Back to Balancer</a>
-                <button class="add-button" onclick="showImportModal()" style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa;">📄 Import CSV</button>
+                <button class="add-button" onclick="showImportModal()" style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa;">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>
 
-        <!-- Hidden file input for CSV -->
-        <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+        <!-- Hidden file input for CSV/ICS -->
+        <input type="file" id="csvFileInput" accept=".csv,.ics" style="display: none;" onchange="handleFileUpload(event)">
 
         <div id="skatesContainer" class="skates-grid">
             <div class="loading">Loading skates...</div>
@@ -450,9 +450,16 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>End Time</label>
-                    <select id="skateEndTime" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px; width: 100%;">
-                        <option value="">Select time</option>
+                    <label>Duration</label>
+                    <select id="skateDuration" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px; width: 100%;">
+                        <option value="">Select duration</option>
+                        <option value="60">1:00</option>
+                        <option value="75">1:15</option>
+                        <option value="90" selected>1:30</option>
+                        <option value="105">1:45</option>
+                        <option value="120">2:00</option>
+                        <option value="135">2:15</option>
+                        <option value="150">2:30</option>
                     </select>
                 </div>
             </div>
@@ -566,6 +573,22 @@
         let allSkates = [];
         let currentSkateId = null;
 
+        // Format time to 12hr with AM/PM (e.g., "19:45" -> "7:45PM")
+        function formatTime(time24) {
+            if (!time24) return '';
+            const [hours, minutes] = time24.split(':');
+            let h = parseInt(hours);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${minutes}${ampm}`;
+        }
+
+        // Format date (e.g., "2026-02-09" -> "Mon Feb 9")
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
             if (typeof window.supabase !== 'undefined') {
@@ -628,8 +651,8 @@
                 return `
                     <div class="skate-card" onclick="openSkate(${skate.id})">
                         <div class="skate-title">${skate.title}</div>
-                        <div class="skate-detail">📅 ${new Date(skate.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                        <div class="skate-detail">🕐 ${skate.time_start} - ${skate.time_end}</div>
+                        <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
+                        <div class="skate-detail">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
                         <div class="skate-detail">💰 ${skate.cost}</div>
                         <div class="skate-detail">📍 ${skate.location}</div>
                         ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
@@ -684,14 +707,10 @@
             }
 
             const startSelect = document.getElementById('skateStartTime');
-            const endSelect = document.getElementById('skateEndTime');
-            
             startSelect.innerHTML = '<option value="">Select time</option>';
-            endSelect.innerHTML = '<option value="">Select time</option>';
             
             times.forEach(time => {
                 startSelect.innerHTML += `<option value="${time.value}">${time.display}</option>`;
-                endSelect.innerHTML += `<option value="${time.value}">${time.display}</option>`;
             });
         }
 
@@ -801,7 +820,7 @@
             // Reset other date/time selections
             document.getElementById('skateDay').selectedIndex = 0;
             document.getElementById('skateStartTime').selectedIndex = 0;
-            document.getElementById('skateEndTime').selectedIndex = 0;
+            document.getElementById('skateDuration').value = '90'; // Default 1:30
             
             loadCustomTiers();
             document.getElementById('skateModal').classList.add('active');
@@ -812,22 +831,32 @@
         }
 
         async function saveSkate() {
-            const title = document.getElementById('skateTitle').value.trim();
+            const skateNumber = document.getElementById('skateNumber').value.trim();
             const month = document.getElementById('skateMonth').value;
             const day = document.getElementById('skateDay').value;
             const year = document.getElementById('skateYear').value;
             const tierSelect = document.getElementById('skateTier');
             const tier = tierSelect.value === 'custom' ? '' : tierSelect.value;
             const timeStart = document.getElementById('skateStartTime').value;
-            const timeEnd = document.getElementById('skateEndTime').value;
+            const duration = document.getElementById('skateDuration').value;
             const cost = document.getElementById('skateCost').value.trim();
             const capacity = parseInt(document.getElementById('skateCapacity').value);
             const location = document.getElementById('skateLocation').value;
 
-            if (!title || !month || !day || !year || !timeStart || !timeEnd || !cost) {
-                alert('Please fill in all required fields');
+            // Only require date, time, cost - title/tier are optional
+            if (!month || !day || !year || !timeStart || !duration || !cost) {
+                alert('Please fill in date, start time, duration, and cost');
                 return;
             }
+
+            // Calculate end time from start time + duration
+            const [hours, minutes] = timeStart.split(':').map(Number);
+            const durationMins = parseInt(duration);
+            const endDate = new Date(2000, 0, 1, hours, minutes + durationMins);
+            const timeEnd = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+
+            // Build title (auto-generated or blank)
+            const title = document.getElementById('skateTitle').value.trim();
 
             // Build date string (YYYY-MM-DD)
             const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -867,8 +896,8 @@
             document.getElementById('rosterSkateTitle').textContent = skate.title;
             document.getElementById('rosterSkateDetails').innerHTML = `
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 14px;">
-                    <div><strong>Date:</strong> ${new Date(skate.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                    <div><strong>Time:</strong> ${skate.time_start} - ${skate.time_end}</div>
+                    <div><strong>Date:</strong> ${formatDate(skate.date)}</div>
+                    <div><strong>Time:</strong> ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
                     <div><strong>Cost:</strong> ${skate.cost}</div>
                     <div><strong>Location:</strong> ${skate.location}</div>
                     ${skate.tier ? `<div><strong>Tier:</strong> ${skate.tier}</div>` : ''}
@@ -1138,17 +1167,126 @@
             currentSkateId = null;
         }
 
-        // CSV Import Functions
+        // CSV/ICS Import Functions
         let parsedCSVData = [];
 
         function showImportModal() {
             document.getElementById('csvFileInput').click();
         }
 
-        function handleCSVUpload(event) {
+        function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
+            const fileName = file.name.toLowerCase();
+            
+            if (fileName.endsWith('.csv')) {
+                handleCSVUpload(file);
+            } else if (fileName.endsWith('.ics')) {
+                handleICSUpload(file);
+            } else {
+                alert('Please upload a .csv or .ics file');
+            }
+
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function handleICSUpload(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const icsContent = e.target.result;
+                parsedCSVData = [];
+
+                // Simple ICS parser
+                const events = icsContent.split('BEGIN:VEVENT');
+                
+                events.forEach(event => {
+                    if (!event.includes('DTSTART')) return;
+
+                    // Extract SUMMARY (title)
+                    const summaryMatch = event.match(/SUMMARY:(.+)/);
+                    if (!summaryMatch) return;
+                    
+                    const summary = summaryMatch[1].trim();
+                    
+                    // Parse "Scrimmage: Skate 195: Tier 3 Beginner" format
+                    let skateNumber = '';
+                    let tier = '';
+                    
+                    const skateMatch = summary.match(/Skate\s+(\d+):\s*(.+)/i);
+                    if (skateMatch) {
+                        skateNumber = skateMatch[1];
+                        tier = skateMatch[2].trim();
+                    } else {
+                        // No skate number, just use summary after "Scrimmage:"
+                        const parts = summary.split(':');
+                        tier = parts.length > 1 ? parts.slice(1).join(':').trim() : summary;
+                    }
+
+                    // Extract DTSTART
+                    const dtstartMatch = event.match(/DTSTART[^:]*:(\d{8})T(\d{6})/);
+                    if (!dtstartMatch) return;
+
+                    const dateStr = dtstartMatch[1]; // YYYYMMDD
+                    const timeStr = dtstartMatch[2]; // HHMMSS
+
+                    const year = dateStr.slice(0, 4);
+                    const month = dateStr.slice(4, 6);
+                    const day = dateStr.slice(6, 8);
+                    const date = `${year}-${month}-${day}`;
+
+                    const hours = timeStr.slice(0, 2);
+                    const minutes = timeStr.slice(2, 4);
+                    const startTime = `${hours}:${minutes}`;
+
+                    // Extract DTEND
+                    const dtendMatch = event.match(/DTEND[^:]*:(\d{8})T(\d{6})/);
+                    let endTime = startTime;
+                    if (dtendMatch) {
+                        const endTimeStr = dtendMatch[2];
+                        const endHours = endTimeStr.slice(0, 2);
+                        const endMinutes = endTimeStr.slice(2, 4);
+                        endTime = `${endHours}:${endMinutes}`;
+                    }
+
+                    // Extract LOCATION (first line only, before newline or address)
+                    const locationMatch = event.match(/LOCATION:([^\n\\]+)/);
+                    let location = '';
+                    if (locationMatch) {
+                        location = locationMatch[1].trim().split('\\n')[0].trim();
+                    }
+
+                    // Build title
+                    const title = skateNumber && tier 
+                        ? `Skate ${skateNumber} ${tier}` 
+                        : tier || 'Untitled';
+
+                    parsedCSVData.push({
+                        title: title,
+                        tier: tier,
+                        date: date,
+                        timeStart: startTime,
+                        timeEnd: endTime,
+                        location: location || '',
+                        cost: '$25',
+                        capacity: 24
+                    });
+                });
+
+                if (parsedCSVData.length === 0) {
+                    alert('No valid skates found in ICS file');
+                    return;
+                }
+
+                showCSVPreview();
+            };
+
+            reader.readAsText(file);
+        }
+
+        function handleCSVUpload(file) {
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
@@ -1221,9 +1359,6 @@
                     alert('Failed to parse CSV file');
                 }
             });
-
-            // Reset file input
-            event.target.value = '';
         }
 
         function showCSVPreview() {
