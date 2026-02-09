@@ -1020,12 +1020,23 @@
                 const roster = data.filter(p => !p.is_waitlist);
                 const waitlist = data.filter(p => p.is_waitlist);
 
+                // Sort roster: goalies first, then skaters
+                const sortedRoster = roster.sort((a, b) => {
+                    if (a.is_goalie && !b.is_goalie) return -1;
+                    if (!a.is_goalie && b.is_goalie) return 1;
+                    return a.position - b.position;
+                });
+
+                // Count goalies and skaters
+                const goalieCount = sortedRoster.filter(p => p.is_goalie).length;
+                const skaterCount = sortedRoster.filter(p => !p.is_goalie).length;
+
                 // Render roster
                 const rosterList = document.getElementById('rosterList');
-                if (roster.length === 0) {
+                if (sortedRoster.length === 0) {
                     rosterList.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No players yet</div>';
                 } else {
-                    rosterList.innerHTML = roster.map(player => {
+                    rosterList.innerHTML = sortedRoster.map(player => {
                         let classes = 'roster-item';
                         if (player.is_goalie) classes += ' goalie';
                         if (!player.is_paid) classes += ' unpaid';
@@ -1060,15 +1071,15 @@
                     `).join('');
                 }
 
-                // Update counts
-                document.getElementById('rosterCount').textContent = `(${roster.length}/${capacity})`;
+                // Update counts with Goalies and Skaters breakdown
+                document.getElementById('rosterCount').textContent = `Goalies (${goalieCount}/2) · Skaters (${skaterCount}/${capacity - 2})`;
                 document.getElementById('waitlistCount').textContent = `(${waitlist.length})`;
 
                 // Update capacity bar
-                const fillPercent = (roster.length / capacity) * 100;
+                const fillPercent = (sortedRoster.length / capacity) * 100;
                 const fill = document.getElementById('capacityFill');
                 fill.style.width = fillPercent + '%';
-                if (roster.length >= capacity) {
+                if (sortedRoster.length >= capacity) {
                     fill.classList.add('capacity-full');
                 } else {
                     fill.classList.remove('capacity-full');
@@ -1536,8 +1547,15 @@
                 return;
             }
 
-            // Build player list string
-            const playerList = data.map(p => {
+            // Sort: goalies first, then skaters
+            const sortedData = data.sort((a, b) => {
+                if (a.is_goalie && !b.is_goalie) return -1;
+                if (!a.is_goalie && b.is_goalie) return 1;
+                return a.position - b.position;
+            });
+
+            // Build player list string with goalies at top
+            const playerList = sortedData.map(p => {
                 let line = p.player_name;
                 if (p.is_goalie) line += ' g';
                 return line;
