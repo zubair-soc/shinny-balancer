@@ -1150,8 +1150,11 @@
                 }));
             }
 
+            // Set flag for auto-load
+            localStorage.setItem('autoLoadRoster', 'true');
+
             // Redirect to balancer
-            window.location.href = 'index.html?autoload=true';
+            window.location.href = 'index.html';
         }
     </script>
 </body>

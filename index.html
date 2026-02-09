@@ -440,9 +440,10 @@
                 console.error('Edit locations button not found!');
             }
 
-            // Auto-load from skates page if coming from there
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('autoload') === 'true') {
+            // Auto-load from skates page if flag is set
+            const shouldAutoLoad = localStorage.getItem('autoLoadRoster');
+            if (shouldAutoLoad === 'true') {
+                localStorage.removeItem('autoLoadRoster'); // Clear flag
                 autoLoadFromSkates();
             }
         });
