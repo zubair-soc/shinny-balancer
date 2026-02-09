@@ -278,15 +278,33 @@
     <div class="container">
         <div class="header">
             <h1>🏒 Shinny Team Balancer</h1>
-            <p>Balance teams, manage friend groups, export to WhatsApp • v1.1 • Updated Feb 6, 2026</p>
-            <a href="database.html" class="header-button">
-                <span>🗂️</span>
-                <span>Manage Database</span>
-            </a>
+            <p>Balance teams, manage friend groups, export to WhatsApp • v1.2 • Updated Feb 11, 2026</p>
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <a href="skates.html" class="header-button">
+                    <span>📅</span>
+                    <span>Manage Skates</span>
+                </a>
+                <a href="database.html" class="header-button">
+                    <span>🗂️</span>
+                    <span>Manage Database</span>
+                </a>
+            </div>
         </div>
 
         <!-- Google Sheet Setup -->
         <div class="setup-section">
+            <h2>Quick Import</h2>
+            <div style="margin-bottom: 32px; background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 12px; padding: 20px;">
+                <h3 style="color: #60a5fa; font-size: 16px; margin-bottom: 12px;">📋 Import Existing Skate</h3>
+                <p style="color: #9ca3af; font-size: 13px; margin-bottom: 12px;">Paste your WhatsApp message to load teams and make adjustments</p>
+                <div class="form-group">
+                    <textarea id="importSkateData" placeholder="Paste your full WhatsApp message here..." style="min-height: 120px; font-family: 'Courier New', monospace;"></textarea>
+                </div>
+                <button class="button" onclick="importSkate()" style="margin-top: 12px;">
+                    Import Skate
+                </button>
+            </div>
+
             <h2>1. Load Player Database</h2>
             <p style="color: #9ca3af; font-size: 13px; margin-bottom: 16px;">Choose one method:</p>
             
@@ -421,6 +439,12 @@
             } else {
                 console.error('Edit locations button not found!');
             }
+
+            // Auto-load from skates page if coming from there
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('autoload') === 'true') {
+                autoLoadFromSkates();
+            }
         });
 
         // Global state
@@ -507,6 +531,231 @@
         }
 
         // Load players on page load
+
+        // Import existing skate from WhatsApp format
+        function importSkate() {
+            const importData = document.getElementById('importSkateData').value;
+            
+            if (!importData.trim()) {
+                alert('Please paste your WhatsApp message first');
+                return;
+            }
+
+            try {
+                const lines = importData.split('\n').map(l => l.trim()).filter(l => l);
+                
+                // Extract skate details
+                let skateTitle = '';
+                let dateTime = '';
+                let cost = '';
+                let email = '';
+                let location = '';
+                
+                const darkTeam = [];
+                const lightTeam = [];
+                let currentTeam = null;
+                
+                for (let line of lines) {
+                    // Skip emoji-only lines
+                    if (line.match(/^[🏒🎯⚫⚪🥅]+$/)) continue;
+                    
+                    // Extract skate title
+                    if (line.includes('Skate') && !skateTitle) {
+                        skateTitle = line.replace(/🏒|:ice_hockey_stick_and_puck:/g, '').trim();
+                        continue;
+                    }
+                    
+                    // Extract date/time
+                    if (line.startsWith('Date & Time:')) {
+                        dateTime = line.replace('Date & Time:', '').replace(/·/g, '').trim();
+                        continue;
+                    }
+                    
+                    // Extract cost and email
+                    if (line.startsWith('Cost:')) {
+                        const parts = line.split('—');
+                        cost = parts[0].replace('Cost:', '').trim();
+                        if (parts[1]) email = parts[1].trim();
+                        continue;
+                    }
+                    
+                    // Extract location
+                    if (line.startsWith('Location:')) {
+                        location = line.replace('Location:', '').trim();
+                        continue;
+                    }
+                    
+                    // Detect team headers
+                    if (line.match(/Dark|:black_circle:/i)) {
+                        currentTeam = 'dark';
+                        continue;
+                    }
+                    if (line.match(/Light|:white_circle:/i)) {
+                        currentTeam = 'light';
+                        continue;
+                    }
+                    
+                    // Parse player lines (format: "1. Player Name" or "1. Player Name :goal_net:")
+                    const playerMatch = line.match(/^\d+\.\s*(.+?)(?:\s*:goal_net:|🥅)?$/);
+                    if (playerMatch && currentTeam) {
+                        const name = playerMatch[1].trim();
+                        const isGoalie = line.includes(':goal_net:') || line.includes('🥅');
+                        
+                        if (currentTeam === 'dark') {
+                            darkTeam.push({ name, isGoalie });
+                        } else {
+                            lightTeam.push({ name, isGoalie });
+                        }
+                    }
+                }
+                
+                console.log('Parsed skate:', { skateTitle, dateTime, cost, email, location, darkTeam, lightTeam });
+                
+                // Populate form fields
+                if (skateTitle) document.getElementById('skateTitle').value = skateTitle;
+                if (dateTime) document.getElementById('dateTime').value = dateTime;
+                if (cost) document.getElementById('cost').value = cost;
+                if (email) document.getElementById('email').value = email;
+                if (location) {
+                    document.getElementById('location').value = location;
+                    // Try to select in dropdown
+                    const select = document.getElementById('locationSelect');
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === location) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                // Match players from database and load to teams
+                const allPlayerNames = [...darkTeam, ...lightTeam].map(p => p.name);
+                const matchedPlayers = [];
+                
+                allPlayerNames.forEach(name => {
+                    const dbPlayer = playerDatabase.find(p => 
+                        p.name.toLowerCase() === name.toLowerCase()
+                    );
+                    
+                    if (dbPlayer) {
+                        matchedPlayers.push({
+                            name: dbPlayer.name,
+                            rating: dbPlayer.rating,
+                            isGoalie: darkTeam.find(p => p.name === name)?.isGoalie || 
+                                     lightTeam.find(p => p.name === name)?.isGoalie || false
+                        });
+                    } else {
+                        // Player not in database, add with null rating
+                        matchedPlayers.push({
+                            name: name,
+                            rating: null,
+                            isGoalie: darkTeam.find(p => p.name === name)?.isGoalie || 
+                                     lightTeam.find(p => p.name === name)?.isGoalie || false
+                        });
+                    }
+                });
+                
+                // Assign to dark/light teams
+                window.darkTeam = [];
+                window.lightTeam = [];
+                
+                darkTeam.forEach(p => {
+                    const player = matchedPlayers.find(mp => mp.name.toLowerCase() === p.name.toLowerCase());
+                    if (player) {
+                        window.darkTeam.push(player);
+                    }
+                });
+                
+                lightTeam.forEach(p => {
+                    const player = matchedPlayers.find(mp => mp.name.toLowerCase() === p.name.toLowerCase());
+                    if (player) {
+                        window.lightTeam.push(player);
+                    }
+                });
+                
+                console.log('Loaded teams:', window.darkTeam, window.lightTeam);
+                
+                renderTeams();
+                
+                // Scroll to teams section
+                document.getElementById('teamsSection').scrollIntoView({ behavior: 'smooth' });
+                
+                alert(`✓ Imported skate!\n\nDark: ${window.darkTeam.length} players\nLight: ${window.lightTeam.length} players\n\nYou can now swap players and export.`);
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Failed to parse WhatsApp message. Please check the format.');
+            }
+        }
+
+        // Auto-load roster from skates page
+        function autoLoadFromSkates() {
+            const rosterData = localStorage.getItem('importedRoster');
+            const skateDetails = localStorage.getItem('importedSkateDetails');
+
+            if (!rosterData) return;
+
+            // Load skate details if available
+            if (skateDetails) {
+                try {
+                    const details = JSON.parse(skateDetails);
+                    document.getElementById('skateTitle').value = details.title || '';
+                    document.getElementById('dateTime').value = `${details.date} · ${details.time}` || '';
+                    document.getElementById('cost').value = details.cost || '';
+                    document.getElementById('location').value = details.location || '';
+                    
+                    // Try to select in dropdown
+                    const select = document.getElementById('locationSelect');
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === details.location) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing skate details:', e);
+                }
+            }
+
+            // Parse roster
+            const lines = rosterData.split('\n').filter(l => l.trim());
+            matchedPlayers = [];
+
+            lines.forEach(line => {
+                const name = line.replace(/\s+g$/i, '').trim();
+                const isGoalie = line.toLowerCase().includes(' g');
+
+                const dbPlayer = playerDatabase.find(p => 
+                    p.name.toLowerCase() === name.toLowerCase()
+                );
+
+                if (dbPlayer) {
+                    matchedPlayers.push({
+                        name: dbPlayer.name,
+                        rating: dbPlayer.rating,
+                        isGoalie: isGoalie
+                    });
+                } else {
+                    matchedPlayers.push({
+                        name: name,
+                        rating: null,
+                        isGoalie: isGoalie
+                    });
+                }
+            });
+
+            // Balance teams
+            balanceTeams();
+
+            // Clean up localStorage
+            localStorage.removeItem('importedRoster');
+            localStorage.removeItem('importedSkateDetails');
+
+            // Scroll to teams
+            document.getElementById('teamsSection').scrollIntoView({ behavior: 'smooth' });
+
+            alert(`✓ Loaded ${matchedPlayers.length} players from skate!\n\nTeams have been balanced. You can now swap players and export.`);
+        }
 
         // Load from pasted data
         function loadFromPaste() {
