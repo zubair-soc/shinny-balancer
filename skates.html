@@ -362,9 +362,13 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <a href="index.html" class="back-button">← Back to Balancer</a>
+                <button class="add-button" onclick="showImportModal()" style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa;">📄 Import CSV</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>
+
+        <!-- Hidden file input for CSV -->
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
 
         <div id="skatesContainer" class="skates-grid">
             <div class="loading">Loading skates...</div>
@@ -532,7 +536,27 @@
         </div>
     </div>
 
+    <!-- CSV Import Preview Modal -->
+    <div id="csvPreviewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Import Skates from CSV</span>
+                <button class="close-modal" onclick="closeCSVPreviewModal()">×</button>
+            </div>
+
+            <div id="csvPreviewContent" style="margin-bottom: 20px;">
+                <p style="color: #9ca3af; font-size: 14px;">Upload a BenchApp CSV file to import multiple skates at once.</p>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeCSVPreviewModal()">Cancel</button>
+                <button id="importCSVButton" class="button" onclick="importCSVSkates()" style="display: none;">Import All Skates</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script>
         // Supabase configuration
         const SUPABASE_URL = 'https://fqbtfgkwhnfyodinjvcn.supabase.co';
@@ -1112,6 +1136,144 @@
         function closeRosterModal() {
             document.getElementById('rosterModal').classList.remove('active');
             currentSkateId = null;
+        }
+
+        // CSV Import Functions
+        let parsedCSVData = [];
+
+        function showImportModal() {
+            document.getElementById('csvFileInput').click();
+        }
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    console.log('CSV parsed:', results);
+                    parsedCSVData = [];
+
+                    results.data.forEach((row, index) => {
+                        // Skip rows with no date
+                        if (!row.Date || !row.Time) return;
+
+                        // Parse date (DD/MM/YYYY format)
+                        const dateParts = row.Date.split('/');
+                        if (dateParts.length !== 3) return;
+
+                        const day = dateParts[0];
+                        const month = dateParts[1];
+                        const year = dateParts[2];
+                        const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+                        // Parse time (e.g., "7:45 PM")
+                        const timeMatch = row.Time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                        if (!timeMatch) return;
+
+                        let hours = parseInt(timeMatch[1]);
+                        const minutes = timeMatch[2];
+                        const ampm = timeMatch[3].toUpperCase();
+
+                        // Convert to 24hr
+                        if (ampm === 'PM' && hours !== 12) hours += 12;
+                        if (ampm === 'AM' && hours === 12) hours = 0;
+
+                        const startTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
+
+                        // Calculate end time from duration (e.g., "1:30")
+                        let endTime = startTime;
+                        if (row.Duration) {
+                            const durationParts = row.Duration.split(':');
+                            const durationHours = parseInt(durationParts[0]) || 0;
+                            const durationMins = parseInt(durationParts[1]) || 0;
+                            
+                            const startDate = new Date(`2000-01-01T${startTime}`);
+                            startDate.setHours(startDate.getHours() + durationHours);
+                            startDate.setMinutes(startDate.getMinutes() + durationMins);
+                            
+                            endTime = startDate.toTimeString().slice(0, 5);
+                        }
+
+                        parsedCSVData.push({
+                            title: row['Title (Optional)'] || '',
+                            tier: row['Title (Optional)'] || '',
+                            date: date,
+                            timeStart: startTime,
+                            timeEnd: endTime,
+                            location: row['Location (Optional)'] || '',
+                            cost: '$25',
+                            capacity: 24
+                        });
+                    });
+
+                    if (parsedCSVData.length === 0) {
+                        alert('No valid skates found in CSV');
+                        return;
+                    }
+
+                    showCSVPreview();
+                },
+                error: function(error) {
+                    console.error('CSV parse error:', error);
+                    alert('Failed to parse CSV file');
+                }
+            });
+
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function showCSVPreview() {
+            const content = document.getElementById('csvPreviewContent');
+            
+            content.innerHTML = `
+                <p style="color: #60a5fa; font-weight: 600; margin-bottom: 12px;">
+                    Found ${parsedCSVData.length} skate(s) to import:
+                </p>
+                <div style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px;">
+                    ${parsedCSVData.map((skate, i) => `
+                        <div style="padding: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                            <div style="font-weight: 600; color: #e8eaed;">${i + 1}. ${skate.tier || 'Untitled'}</div>
+                            <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">
+                                📅 ${new Date(skate.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                • 🕐 ${skate.timeStart} - ${skate.timeEnd}
+                                • 📍 ${skate.location || 'No location'}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('importCSVButton').style.display = 'block';
+            document.getElementById('csvPreviewModal').classList.add('active');
+        }
+
+        async function importCSVSkates() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('skates')
+                    .insert(parsedCSVData)
+                    .select();
+
+                if (error) throw error;
+
+                closeCSVPreviewModal();
+                await loadSkates();
+                alert(`✓ Imported ${parsedCSVData.length} skate(s)!`);
+                parsedCSVData = [];
+            } catch (error) {
+                console.error('Error importing skates:', error);
+                alert('Failed to import skates');
+            }
+        }
+
+        function closeCSVPreviewModal() {
+            document.getElementById('csvPreviewModal').classList.remove('active');
+            document.getElementById('importCSVButton').style.display = 'none';
+            parsedCSVData = [];
         }
 
         async function balanceSkate() {
