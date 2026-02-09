@@ -635,20 +635,33 @@
 
             // Get registration counts for each skate
             const skateCounts = {};
+            const goalieSkaterCounts = {};
             for (const skate of allSkates) {
                 const { data } = await supabaseClient
                     .from('skate_registrations')
-                    .select('*', { count: 'exact', head: false })
+                    .select('is_goalie')
                     .eq('skate_id', skate.id)
                     .eq('is_waitlist', false);
                 
-                skateCounts[skate.id] = data ? data.length : 0;
+                if (data) {
+                    skateCounts[skate.id] = data.length;
+                    goalieSkaterCounts[skate.id] = {
+                        goalies: data.filter(p => p.is_goalie).length,
+                        skaters: data.filter(p => !p.is_goalie).length
+                    };
+                } else {
+                    skateCounts[skate.id] = 0;
+                    goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
+                }
             }
 
             container.innerHTML = allSkates.map(skate => {
                 const count = skateCounts[skate.id] || 0;
                 const isFull = count >= skate.capacity;
                 const countClass = isFull ? 'count-full' : 'count-ok';
+                
+                const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
+                const maxSkaters = skate.capacity - 2; // Assume 2 goalie spots
                 
                 return `
                     <div class="skate-card" onclick="openSkate(${skate.id})">
@@ -658,7 +671,7 @@
                         <div class="skate-detail">💰 ${skate.cost}</div>
                         <div class="skate-detail">📍 ${skate.location}</div>
                         ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
-                        <div class="skate-count ${countClass}">${count}/${skate.capacity} players</div>
+                        <div class="skate-count ${countClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
                     </div>
                 `;
             }).join('');
