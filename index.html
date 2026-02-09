@@ -726,20 +726,20 @@
                 }
             }
 
-            // Paste roster data into textarea
-            const pasteBox = document.getElementById('pasteData');
-            console.log('pasteBox element:', pasteBox);
-            pasteBox.value = rosterData;
-            console.log('Set pasteBox value to:', pasteBox.value);
+            // Paste roster data into section 3 textarea
+            const playerInputBox = document.getElementById('playerInput');
+            console.log('playerInputBox element:', playerInputBox);
+            playerInputBox.value = rosterData;
+            console.log('Set playerInputBox value to:', playerInputBox.value);
 
             // Clean up localStorage
             localStorage.removeItem('importedRoster');
             localStorage.removeItem('importedSkateDetails');
 
-            // Scroll to paste section
-            pasteBox.scrollIntoView({ behavior: 'smooth' });
+            // Scroll to section 3
+            playerInputBox.scrollIntoView({ behavior: 'smooth' });
 
-            alert(`✓ Loaded ${rosterData.split('\n').length} players into paste box!\n\nNow click "Load from Paste" to match players, then balance teams.`);
+            alert(`✓ Loaded ${rosterData.split('\n').length} players into paste box!\n\nNow click "Match Players" then "Balance Teams".`);
         }
 
         // Load from pasted data
