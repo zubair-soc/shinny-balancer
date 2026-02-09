@@ -537,6 +537,7 @@
             </div>
 
             <div class="modal-buttons">
+                <button class="button" onclick="showEditSkateModal()" style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); color: #60a5fa;">✏️ Edit Skate</button>
                 <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
             </div>
@@ -572,6 +573,7 @@
         let supabaseClient;
         let allSkates = [];
         let currentSkateId = null;
+        let isEditMode = false; // Track if we're editing or creating
 
         // Format time to 12hr with AM/PM (e.g., "19:45" -> "7:45PM")
         function formatTime(time24) {
@@ -799,6 +801,7 @@
         }
 
         function showCreateModal() {
+            isEditMode = false;
             document.getElementById('modalTitle').textContent = 'Create New Skate';
             document.getElementById('skateNumber').value = '';
             document.getElementById('skateTitle').value = '';
@@ -823,6 +826,83 @@
             document.getElementById('skateDuration').value = '90'; // Default 1:30
             
             loadCustomTiers();
+            document.getElementById('skateModal').classList.add('active');
+        }
+
+        function showEditSkateModal() {
+            if (!currentSkateId) return;
+            
+            isEditMode = true;
+            const skate = allSkates.find(s => s.id === currentSkateId);
+            if (!skate) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Skate';
+            
+            // Populate dropdowns first
+            populateDateDropdowns();
+            populateTimeDropdowns();
+            loadCustomTiers();
+
+            // Parse skate number and tier from title
+            let skateNumber = '';
+            let tier = skate.tier || '';
+            
+            if (skate.title) {
+                const match = skate.title.match(/^Skate\s+(\d+)\s+(.+)$/);
+                if (match) {
+                    skateNumber = match[1];
+                    tier = match[2];
+                }
+            }
+
+            document.getElementById('skateNumber').value = skateNumber;
+            document.getElementById('skateTitle').value = skate.title || '';
+            
+            // Set tier dropdown
+            const tierSelect = document.getElementById('skateTier');
+            let foundTier = false;
+            for (let i = 0; i < tierSelect.options.length; i++) {
+                if (tierSelect.options[i].value === tier) {
+                    tierSelect.selectedIndex = i;
+                    foundTier = true;
+                    break;
+                }
+            }
+            if (!foundTier && tier) {
+                tierSelect.selectedIndex = 0;
+            }
+
+            // Parse date
+            const dateParts = skate.date.split('-');
+            document.getElementById('skateYear').value = dateParts[0];
+            document.getElementById('skateMonth').value = parseInt(dateParts[1]);
+            document.getElementById('skateDay').value = parseInt(dateParts[2]);
+
+            // Set time
+            document.getElementById('skateStartTime').value = skate.time_start;
+            
+            // Calculate duration from start and end time
+            const [startH, startM] = skate.time_start.split(':').map(Number);
+            const [endH, endM] = skate.time_end.split(':').map(Number);
+            const durationMins = (endH * 60 + endM) - (startH * 60 + startM);
+            document.getElementById('skateDuration').value = durationMins.toString();
+
+            document.getElementById('skateCost').value = skate.cost;
+            document.getElementById('skateCapacity').value = skate.capacity;
+            
+            // Set location
+            const locationSelect = document.getElementById('skateLocation');
+            for (let i = 0; i < locationSelect.options.length; i++) {
+                if (locationSelect.options[i].value === skate.location) {
+                    locationSelect.selectedIndex = i;
+                    break;
+                }
+            }
+
+            document.getElementById('customTierInput').style.display = 'none';
+            
+            // Close roster modal and open edit modal
+            closeRosterModal();
             document.getElementById('skateModal').classList.add('active');
         }
 
@@ -861,29 +941,47 @@
             // Build date string (YYYY-MM-DD)
             const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
+            const skateData = {
+                title,
+                date,
+                tier,
+                time_start: timeStart,
+                time_end: timeEnd,
+                cost,
+                capacity,
+                location
+            };
+
             try {
-                const { data, error } = await supabaseClient
-                    .from('skates')
-                    .insert([{
-                        title,
-                        date,
-                        tier,
-                        time_start: timeStart,
-                        time_end: timeEnd,
-                        cost,
-                        capacity,
-                        location
-                    }])
-                    .select();
+                if (isEditMode && currentSkateId) {
+                    // Update existing skate
+                    const { data, error } = await supabaseClient
+                        .from('skates')
+                        .update(skateData)
+                        .eq('id', currentSkateId)
+                        .select();
 
-                if (error) throw error;
+                    if (error) throw error;
 
-                closeSkateModal();
-                await loadSkates();
-                alert('✓ Skate created!');
+                    closeSkateModal();
+                    await loadSkates();
+                    alert('✓ Skate updated!');
+                } else {
+                    // Create new skate
+                    const { data, error } = await supabaseClient
+                        .from('skates')
+                        .insert([skateData])
+                        .select();
+
+                    if (error) throw error;
+
+                    closeSkateModal();
+                    await loadSkates();
+                    alert('✓ Skate created!');
+                }
             } catch (error) {
-                console.error('Error creating skate:', error);
-                alert('Failed to create skate');
+                console.error('Error saving skate:', error);
+                alert('Failed to save skate');
             }
         }
 
