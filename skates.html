@@ -3,85 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Skate Manager - Shinny Team Balancer</title>
+    <link rel="stylesheet" href="ui.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a1128 0%, #1a2744 100%);
-            color: #e8eaed;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .back-button, .add-button {
-            background: rgba(96, 165, 250, 0.1);
-            border: 1px solid rgba(96, 165, 250, 0.3);
-            color: #60a5fa;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .add-button {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-            color: white;
-            border: none;
-        }
-
-        .back-button:hover {
-            background: rgba(96, 165, 250, 0.2);
-            border-color: rgba(96, 165, 250, 0.5);
-        }
-
-        .add-button:hover {
-            transform: translateY(-2px);
-        }
-
+        /* Skates page-specific styles */
         .skates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
-            margin-bottom: 40px;
         }
 
         .skate-card {
@@ -101,13 +31,13 @@
 
         .skate-title {
             font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 12px;
+            font-weight: 700;
             color: #e8eaed;
+            margin-bottom: 12px;
         }
 
         .skate-detail {
-            font-size: 13px;
+            font-size: 14px;
             color: #9ca3af;
             margin-bottom: 6px;
         }
@@ -117,210 +47,68 @@
             padding-top: 12px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             font-weight: 600;
+            font-size: 13px;
         }
 
-        .count-full {
-            color: #ef4444;
-        }
-
-        .count-ok {
-            color: #60a5fa;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            overflow-y: auto;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: #1a2744;
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 900px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-header {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: #e8eaed;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            color: #9ca3af;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-        }
-
-        .close-modal:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #e8eaed;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #9ca3af;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 12px 16px;
-            color: #e8eaed;
-            font-size: 14px;
-        }
-
-        .button {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-            border: none;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-
-        .button:hover {
-            transform: translateY(-2px);
-        }
-
-        .button-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .button-danger {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #ef4444;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
-        }
+        .count-ok { color: #60a5fa; }
+        .count-full { color: #ef4444; }
 
         .roster-section {
-            margin-top: 24px;
+            margin-bottom: 24px;
         }
 
-        .roster-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+        .roster-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8eaed;
+            margin-bottom: 12px;
         }
 
         .roster-list {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .roster-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 6px;
-            background: white;
-            color: #1a2744;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
         }
 
         .roster-item.goalie {
-            background: #fef08a;
+            background: rgba(251, 191, 36, 0.1);
+            border-color: rgba(251, 191, 36, 0.3);
         }
 
         .roster-item.unpaid {
-            opacity: 0.6;
             border: 2px dashed #ef4444;
         }
 
         .roster-item.waitlist {
-            background: rgba(255, 255, 255, 0.3);
-            color: #9ca3af;
+            opacity: 0.6;
         }
 
         .roster-item-name {
             font-weight: 500;
+            color: #e8eaed;
         }
 
         .roster-item-actions {
             display: flex;
-            gap: 8px;
-        }
-
-        .icon-btn {
-            background: rgba(0, 0, 0, 0.1);
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .icon-btn:hover {
-            background: rgba(0, 0, 0, 0.2);
+            gap: 6px;
         }
 
         .capacity-bar {
-            height: 4px;
+            height: 8px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            margin-top: 12px;
+            border-radius: 4px;
             overflow: hidden;
+            margin-top: 8px;
         }
 
         .capacity-fill {
@@ -329,30 +117,8 @@
             transition: width 0.3s;
         }
 
-        .capacity-full {
+        .capacity-fill.capacity-full {
             background: linear-gradient(90deg, #ef4444, #dc2626);
-        }
-
-        .add-player-form {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .add-player-form input {
-            flex: 1;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #9ca3af;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #9ca3af;
         }
     </style>
 </head>
