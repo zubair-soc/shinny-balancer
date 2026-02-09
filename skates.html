@@ -1440,8 +1440,8 @@
             if (skate) {
                 localStorage.setItem('importedSkateDetails', JSON.stringify({
                     title: skate.title,
-                    date: new Date(skate.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-                    time: `${skate.time_start}–${skate.time_end}`,
+                    date: formatDate(skate.date),
+                    time: `${formatTime(skate.time_start)}–${formatTime(skate.time_end)}`,
                     cost: skate.cost,
                     location: skate.location
                 }));
