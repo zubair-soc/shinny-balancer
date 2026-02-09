@@ -1267,8 +1267,8 @@
                         title: title,
                         tier: tier,
                         date: date,
-                        timeStart: startTime,
-                        timeEnd: endTime,
+                        time_start: startTime,
+                        time_end: endTime,
                         location: location || '',
                         cost: '$25',
                         capacity: 24
@@ -1339,8 +1339,8 @@
                             title: row['Title (Optional)'] || '',
                             tier: row['Title (Optional)'] || '',
                             date: date,
-                            timeStart: startTime,
-                            timeEnd: endTime,
+                            time_start: startTime,
+                            time_end: endTime,
                             location: row['Location (Optional)'] || '',
                             cost: '$25',
                             capacity: 24
@@ -1370,13 +1370,16 @@
                 </p>
                 <div style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px;">
                     ${parsedCSVData.map((skate, i) => `
-                        <div style="padding: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                            <div style="font-weight: 600; color: #e8eaed;">${i + 1}. ${skate.tier || 'Untitled'}</div>
-                            <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">
-                                📅 ${new Date(skate.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                • 🕐 ${skate.timeStart} - ${skate.timeEnd}
-                                • 📍 ${skate.location || 'No location'}
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #e8eaed;">${i + 1}. ${skate.tier || skate.title || 'Untitled'}</div>
+                                <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">
+                                    📅 ${new Date(skate.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    • 🕐 ${skate.time_start} - ${skate.time_end}
+                                    • 📍 ${skate.location || 'No location'}
+                                </div>
                             </div>
+                            <button onclick="removeFromImport(${i})" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 12px;">Remove</button>
                         </div>
                     `).join('')}
                 </div>
@@ -1384,6 +1387,16 @@
 
             document.getElementById('importCSVButton').style.display = 'block';
             document.getElementById('csvPreviewModal').classList.add('active');
+        }
+
+        function removeFromImport(index) {
+            parsedCSVData.splice(index, 1);
+            if (parsedCSVData.length === 0) {
+                closeCSVPreviewModal();
+                alert('No skates left to import');
+            } else {
+                showCSVPreview(); // Refresh preview
+            }
         }
 
         async function importCSVSkates() {
