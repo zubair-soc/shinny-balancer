@@ -717,42 +717,18 @@
                 }
             }
 
-            // Parse roster
-            const lines = rosterData.split('\n').filter(l => l.trim());
-            matchedPlayers = [];
-
-            lines.forEach(line => {
-                const name = line.replace(/\s+g$/i, '').trim();
-                const isGoalie = line.toLowerCase().includes(' g');
-
-                const dbPlayer = playerDatabase.find(p => 
-                    p.name.toLowerCase() === name.toLowerCase()
-                );
-
-                if (dbPlayer) {
-                    matchedPlayers.push({
-                        name: dbPlayer.name,
-                        rating: dbPlayer.rating,
-                        isGoalie: isGoalie
-                    });
-                } else {
-                    matchedPlayers.push({
-                        name: name,
-                        rating: null,
-                        isGoalie: isGoalie
-                    });
-                }
-            });
-
-            // Balance teams
-            balanceTeams();
+            // Paste roster data into textarea
+            document.getElementById('pasteData').value = rosterData;
 
             // Clean up localStorage
             localStorage.removeItem('importedRoster');
             localStorage.removeItem('importedSkateDetails');
 
-            // Scroll to teams
-            document.getElementById('teamsSection').scrollIntoView({ behavior: 'smooth' });
+            // Scroll to paste section
+            document.getElementById('pasteData').scrollIntoView({ behavior: 'smooth' });
+
+            alert(`✓ Loaded roster!\n\nNow click "Load from Paste" to match players, then balance teams.`);
+        }
 
             alert(`✓ Loaded ${matchedPlayers.length} players from skate!\n\nTeams have been balanced. You can now swap players and export.`);
         }
