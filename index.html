@@ -690,15 +690,23 @@
 
         // Auto-load roster from skates page
         function autoLoadFromSkates() {
+            console.log('autoLoadFromSkates called');
             const rosterData = localStorage.getItem('importedRoster');
             const skateDetails = localStorage.getItem('importedSkateDetails');
+            
+            console.log('rosterData:', rosterData);
+            console.log('skateDetails:', skateDetails);
 
-            if (!rosterData) return;
+            if (!rosterData) {
+                console.log('No roster data found in localStorage');
+                return;
+            }
 
             // Load skate details if available
             if (skateDetails) {
                 try {
                     const details = JSON.parse(skateDetails);
+                    console.log('Parsed details:', details);
                     document.getElementById('skateTitle').value = details.title || '';
                     document.getElementById('dateTime').value = `${details.date} · ${details.time}` || '';
                     document.getElementById('cost').value = details.cost || '';
@@ -718,16 +726,20 @@
             }
 
             // Paste roster data into textarea
-            document.getElementById('pasteData').value = rosterData;
+            const pasteBox = document.getElementById('pasteData');
+            console.log('pasteBox element:', pasteBox);
+            pasteBox.value = rosterData;
+            console.log('Set pasteBox value to:', pasteBox.value);
 
             // Clean up localStorage
             localStorage.removeItem('importedRoster');
             localStorage.removeItem('importedSkateDetails');
 
             // Scroll to paste section
-            document.getElementById('pasteData').scrollIntoView({ behavior: 'smooth' });
+            pasteBox.scrollIntoView({ behavior: 'smooth' });
 
-            alert(`✓ Loaded roster!\n\nNow click "Load from Paste" to match players, then balance teams.`);
+            alert(`✓ Loaded ${rosterData.split('\n').length} players into paste box!\n\nNow click "Load from Paste" to match players, then balance teams.`);
+        }
         }
 
             alert(`✓ Loaded ${matchedPlayers.length} players from skate!\n\nTeams have been balanced. You can now swap players and export.`);
