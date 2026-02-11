@@ -358,6 +358,57 @@ tr:hover {
     color: #e8eaed;
 }
 
+/* Toolbar */
+.toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: #e8eaed;
+    font-size: 14px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: #60a5fa;
+}
+
+.stats {
+    display: flex;
+    gap: 16px;
+    color: #9ca3af;
+    font-size: 13px;
+    margin-left: auto;
+}
+
+/* Table Container */
+.table-container {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Table Cell Classes */
+.rating-cell {
+    font-weight: 600;
+    color: #60a5fa;
+}
+
+.actions {
+    text-align: right;
+}
+
 /* Icon Buttons */
 .icon-btn {
     background: rgba(0, 0, 0, 0.1);
@@ -371,4 +422,29 @@ tr:hover {
 
 .icon-btn:hover {
     background: rgba(0, 0, 0, 0.2);
+}
+
+.icon-button {
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    color: #60a5fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    border: none;
+}
+
+.icon-button:hover {
+    background: rgba(96, 165, 250, 0.2);
+}
+
+.icon-button.delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.icon-button.delete:hover {
+    background: rgba(239, 68, 68, 0.2);
 }
