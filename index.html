@@ -511,11 +511,32 @@
             </div>
         </div>
 
+        <!-- Archive Toggle -->
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 20px; font-weight: 700; color: var(--text);">
+                <span id="upcomingTitle">📅 Upcoming Skates</span>
+                <span id="upcomingCount" style="color: var(--text-muted); font-size: 16px; font-weight: 500; margin-left: 8px;"></span>
+            </h2>
+            <button id="archiveToggle" class="back-button" onclick="toggleArchive()" style="display: none;">
+                📦 Show Past Skates (<span id="archiveCount">0</span>)
+            </button>
+        </div>
+
         <!-- Hidden file input for CSV/ICS -->
         <input type="file" id="csvFileInput" accept=".csv,.ics" style="display: none;" onchange="handleFileUpload(event)">
 
+        <!-- Upcoming Skates Container -->
         <div id="skatesContainer" class="skates-grid">
             <div class="loading">Loading skates...</div>
+        </div>
+
+        <!-- Past Skates Section (Hidden by default) -->
+        <div id="pastSkatesSection" style="display: none; margin-top: 40px;">
+            <h2 style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 20px;">
+                📦 Past Skates
+                <span id="pastCount" style="color: var(--text-muted); font-size: 16px; font-weight: 500; margin-left: 8px;"></span>
+            </h2>
+            <div id="pastSkatesContainer" class="skates-grid"></div>
         </div>
     </div>
 
@@ -784,6 +805,28 @@
             }
         }
 
+        // ========== ARCHIVE TOGGLE ==========
+        let showingArchive = false;
+
+        function toggleArchive() {
+            showingArchive = !showingArchive;
+            const pastSection = document.getElementById('pastSkatesSection');
+            const toggleBtn = document.getElementById('archiveToggle');
+            const archiveCount = document.getElementById('archiveCount').textContent;
+            
+            if (showingArchive) {
+                pastSection.style.display = 'block';
+                toggleBtn.innerHTML = `📦 Hide Past Skates (${archiveCount})`;
+                // Scroll to past skates section
+                setTimeout(() => {
+                    pastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } else {
+                pastSection.style.display = 'none';
+                toggleBtn.innerHTML = `📦 Show Past Skates (${archiveCount})`;
+            }
+        }
+
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
             initTheme(); // Load saved theme preference
@@ -821,12 +864,28 @@
         }
 
         async function renderSkates() {
-            const container = document.getElementById('skatesContainer');
+            const upcomingContainer = document.getElementById('skatesContainer');
+            const pastContainer = document.getElementById('pastSkatesContainer');
             
             if (allSkates.length === 0) {
-                container.innerHTML = '<div class="empty-state"><h3>No skates yet</h3><p>Click "Create Skate" to get started</p></div>';
+                upcomingContainer.innerHTML = '<div class="empty-state"><h3>No skates yet</h3><p>Click "Create Skate" to get started</p></div>';
                 return;
             }
+
+            // Get today's date at midnight for comparison
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Separate future and past skates
+            const futureSkates = allSkates.filter(skate => {
+                const skateDate = new Date(skate.date + 'T00:00:00');
+                return skateDate >= today;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const pastSkates = allSkates.filter(skate => {
+                const skateDate = new Date(skate.date + 'T00:00:00');
+                return skateDate < today;
+            }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Reverse chronological
 
             // Get registration counts for each skate
             const skateCounts = {};
@@ -850,30 +909,58 @@
                 }
             }
 
-            container.innerHTML = allSkates.map(skate => {
-                const count = skateCounts[skate.id] || 0;
-                const isFull = count >= skate.capacity;
-                const countClass = isFull ? 'count-full' : 'count-ok';
-                
-                const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
-                const maxSkaters = skate.capacity - 2; // Assume 2 goalie spots
-                
-                // Determine if we have players or not
-                const hasPlayers = goalies > 0 || skaters > 0;
-                const countColorClass = hasPlayers ? 'has-players' : 'no-players';
-                
-                return `
-                    <div class="skate-card" onclick="openSkate(${skate.id})">
-                        <div class="skate-title">${skate.title}</div>
-                        <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
-                        <div class="skate-detail">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                        <div class="skate-detail">💰 ${skate.cost}</div>
-                        <div class="skate-detail">📍 ${skate.location}</div>
-                        ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
-                        <div class="skate-count ${countColorClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
-                    </div>
-                `;
-            }).join('');
+            // Helper function to render skate cards
+            const renderSkateCards = (skates) => {
+                return skates.map(skate => {
+                    const count = skateCounts[skate.id] || 0;
+                    const isFull = count >= skate.capacity;
+                    const countClass = isFull ? 'count-full' : 'count-ok';
+                    
+                    const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
+                    const maxSkaters = skate.capacity - 2; // Assume 2 goalie spots
+                    
+                    // Determine if we have players or not
+                    const hasPlayers = goalies > 0 || skaters > 0;
+                    const countColorClass = hasPlayers ? 'has-players' : 'no-players';
+                    
+                    return `
+                        <div class="skate-card" onclick="openSkate(${skate.id})">
+                            <div class="skate-title">${skate.title}</div>
+                            <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
+                            <div class="skate-detail">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
+                            <div class="skate-detail">💰 ${skate.cost}</div>
+                            <div class="skate-detail">📍 ${skate.location}</div>
+                            ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
+                            <div class="skate-count ${countColorClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            // Render upcoming skates
+            if (futureSkates.length === 0) {
+                upcomingContainer.innerHTML = '<div class="empty-state"><h3>No upcoming skates</h3><p>All skates are in the past</p></div>';
+            } else {
+                upcomingContainer.innerHTML = renderSkateCards(futureSkates);
+            }
+
+            // Update counts
+            document.getElementById('upcomingCount').textContent = `(${futureSkates.length})`;
+            document.getElementById('archiveCount').textContent = pastSkates.length;
+            document.getElementById('pastCount').textContent = `(${pastSkates.length})`;
+
+            // Show/hide archive button
+            const archiveToggle = document.getElementById('archiveToggle');
+            if (pastSkates.length > 0) {
+                archiveToggle.style.display = 'block';
+            } else {
+                archiveToggle.style.display = 'none';
+            }
+
+            // Render past skates (always render, visibility controlled by toggle)
+            if (pastSkates.length > 0) {
+                pastContainer.innerHTML = renderSkateCards(pastSkates);
+            }
         }
 
         function updateSkateTitle() {
