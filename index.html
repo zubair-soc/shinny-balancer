@@ -157,7 +157,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             z-index: 1000;
             align-items: center;
@@ -170,7 +170,7 @@
         }
 
         .modal-content {
-            background: #1a2744;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 30px;
             max-width: 900px;
@@ -178,6 +178,7 @@
             max-height: 90vh;
             overflow-y: auto;
             border: 1px solid var(--card-border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .modal-header {
@@ -206,7 +207,7 @@
         }
 
         .close-modal:hover {
-            background: var(--card-border);
+            background: var(--bg-start);
             color: var(--text);
         }
 
