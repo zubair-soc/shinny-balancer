@@ -815,14 +815,14 @@
             const archiveCount = document.getElementById('archiveCount').textContent;
             
             if (showingArchive) {
-                pastSection.style.display = 'block';
+                pastSection.style.setProperty('display', 'block', 'important');
                 toggleBtn.innerHTML = `📦 Hide Past Skates (${archiveCount})`;
                 // Scroll to past skates section
                 setTimeout(() => {
                     pastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
-                pastSection.style.display = 'none';
+                pastSection.style.setProperty('display', 'none', 'important');
                 toggleBtn.innerHTML = `📦 Show Past Skates (${archiveCount})`;
             }
         }
