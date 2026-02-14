@@ -354,6 +354,62 @@
             padding: 40px;
             color: #9ca3af;
         }
+        /* Quick Add Skate Cards */
+        .quick-add-skate-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quick-add-skate-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(96, 165, 250, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .quick-add-skate-card.selected {
+            background: rgba(96, 165, 250, 0.15);
+            border-color: #60a5fa;
+        }
+
+        .quick-add-skate-info {
+            flex: 1;
+        }
+
+        .quick-add-skate-title {
+            font-weight: 700;
+            color: #e8eaed;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .quick-add-skate-date {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .quick-add-checkmark {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .quick-add-skate-card.selected .quick-add-checkmark {
+            background: #60a5fa;
+            border-color: #60a5fa;
+        }
     </style>
 </head>
 <body>
@@ -361,7 +417,7 @@
         <div class="header">
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
-                <a href="balancer.html" class="back-button">← Back to Balancer</a>
+                <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa;">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
@@ -559,6 +615,33 @@
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeCSVPreviewModal()">Cancel</button>
                 <button id="importCSVButton" class="button" onclick="importCSVSkates()" style="display: none;">Import All Skates</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Player Modal -->
+    <div id="quickAddModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <span>⚡ Quick Add Player</span>
+                <button class="close-modal" onclick="closeQuickAdd()">×</button>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Player Name</label>
+                <input type="text" id="quickAddPlayerName" placeholder="Enter player name..." style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 15px; width: 100%;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #9ca3af;">Select Skate(s):</label>
+                <div id="quickAddSkatesList" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Skates will be loaded here -->
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeQuickAdd()">Cancel</button>
+                <button class="button" onclick="quickAddPlayer()">Add Player</button>
             </div>
         </div>
     </div>
@@ -1595,6 +1678,156 @@
             // Redirect to balancer
             window.location.href = 'balancer.html';
         }
+
+        // ========== QUICK ADD PLAYER FUNCTIONS ==========
+        
+        let selectedSkatesForQuickAdd = new Set();
+
+        function showQuickAdd() {
+            // Only show if there are future skates
+            if (!allSkates || allSkates.length === 0) {
+                alert('No skates available. Create a skate first!');
+                return;
+            }
+
+            // Filter to only future skates (including today)
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            
+            const futureSkates = allSkates.filter(skate => {
+                const skateDate = new Date(skate.date + 'T00:00:00');
+                return skateDate >= now;
+            });
+
+            if (futureSkates.length === 0) {
+                alert('No upcoming skates found. Quick Add only works for future skates!');
+                return;
+            }
+
+            // Render skate cards
+            const skatesList = document.getElementById('quickAddSkatesList');
+            skatesList.innerHTML = futureSkates.map(skate => {
+                const date = new Date(skate.date + 'T00:00:00');
+                const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                
+                return `
+                    <div class="quick-add-skate-card" data-skate-id="${skate.id}" onclick="toggleSkateSelection(${skate.id})">
+                        <div class="quick-add-skate-info">
+                            <div class="quick-add-skate-title">${skate.title || `Skate ${skate.id}`}</div>
+                            <div class="quick-add-skate-date">${dateStr}</div>
+                        </div>
+                        <div class="quick-add-checkmark">
+                            <span style="display: none; color: white; font-size: 14px;">✓</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Show modal
+            document.getElementById('quickAddModal').classList.add('active');
+            
+            // Focus on player name input
+            setTimeout(() => {
+                document.getElementById('quickAddPlayerName').focus();
+            }, 100);
+        }
+
+        function toggleSkateSelection(skateId) {
+            const card = document.querySelector(`.quick-add-skate-card[data-skate-id="${skateId}"]`);
+            const checkmark = card.querySelector('.quick-add-checkmark span');
+            
+            if (selectedSkatesForQuickAdd.has(skateId)) {
+                selectedSkatesForQuickAdd.delete(skateId);
+                card.classList.remove('selected');
+                checkmark.style.display = 'none';
+            } else {
+                selectedSkatesForQuickAdd.add(skateId);
+                card.classList.add('selected');
+                checkmark.style.display = 'block';
+            }
+        }
+
+        function closeQuickAdd() {
+            document.getElementById('quickAddModal').classList.remove('active');
+            selectedSkatesForQuickAdd.clear();
+            document.getElementById('quickAddPlayerName').value = '';
+            
+            // Clear all selections
+            document.querySelectorAll('.quick-add-skate-card').forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('.quick-add-checkmark span').style.display = 'none';
+            });
+        }
+
+        async function quickAddPlayer() {
+            const playerName = document.getElementById('quickAddPlayerName').value.trim();
+            
+            if (!playerName) {
+                alert('Please enter a player name');
+                return;
+            }
+
+            if (selectedSkatesForQuickAdd.size === 0) {
+                alert('Please select at least one skate');
+                return;
+            }
+
+            try {
+                const selectedSkateIds = Array.from(selectedSkatesForQuickAdd);
+                let successCount = 0;
+
+                for (const skateId of selectedSkateIds) {
+                    try {
+                        // Get current roster for position
+                        const { data: roster } = await supabaseClient
+                            .from('skate_registrations')
+                            .select('position')
+                            .eq('skate_id', skateId)
+                            .order('position', { ascending: false })
+                            .limit(1);
+
+                        const nextPosition = roster && roster.length > 0 ? roster[0].position + 1 : 1;
+
+                        // Add player
+                        const { error } = await supabaseClient
+                            .from('skate_registrations')
+                            .insert({
+                                skate_id: skateId,
+                                player_name: playerName,
+                                position: nextPosition,
+                                is_waitlist: false,
+                                is_goalie: false,
+                                is_paid: true
+                            });
+
+                        if (!error) successCount++;
+                    } catch (error) {
+                        console.error(`Error adding to skate ${skateId}:`, error);
+                    }
+                }
+
+                if (successCount > 0) {
+                    closeQuickAdd();
+                    await loadSkates();
+                    alert(`✓ Added "${playerName}" to ${successCount} skate(s)!`);
+                } else {
+                    alert('Failed to add player to any skates');
+                }
+
+            } catch (error) {
+                console.error('Error in quickAddPlayer:', error);
+                alert('Failed to add player');
+            }
+        }
+
+        // Auto-show Quick Add on page load (with delay to ensure skates are loaded)
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (allSkates && allSkates.length > 0) {
+                    showQuickAdd();
+                }
+            }, 1000); // Wait 1 second after page load
+        });
     </script>
 </body>
 </html>
