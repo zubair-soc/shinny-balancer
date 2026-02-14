@@ -11,10 +11,24 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-start: #f8fafc;
+            --bg-end: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --count-text: #047857;
+            --count-zero: #1e293b;
+            --primary-rgb: 16, 185, 129;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a1128 0%, #1a2744 100%);
-            color: #e8eaed;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text);
             min-height: 100vh;
             padding: 20px;
         }
@@ -30,18 +44,16 @@
             align-items: center;
             margin-bottom: 30px;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--card-bg);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .header h1 {
             font-size: 28px;
             font-weight: 700;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text);
         }
 
         .header-buttons {
@@ -50,9 +62,9 @@
         }
 
         .back-button, .add-button {
-            background: rgba(96, 165, 250, 0.1);
-            border: 1px solid rgba(96, 165, 250, 0.3);
-            color: #60a5fa;
+            background: rgba(var(--primary-rgb), 0.1);
+            border: 1px solid rgba(var(--primary-rgb), 0.3);
+            color: var(--primary);
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
@@ -63,17 +75,18 @@
         }
 
         .add-button {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            background: var(--primary);
             color: white;
             border: none;
+            font-weight: 600;
         }
 
         .back-button:hover {
-            background: rgba(96, 165, 250, 0.2);
-            border-color: rgba(96, 165, 250, 0.5);
+            background: rgba(var(--primary-rgb), 0.2);
         }
 
         .add-button:hover {
+            background: var(--primary-dark);
             transform: translateY(-2px);
         }
 
@@ -85,38 +98,48 @@
         }
 
         .skate-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 20px;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .skate-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(96, 165, 250, 0.5);
+            border-color: var(--primary);
             transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
 
         .skate-title {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 12px;
-            color: #e8eaed;
+            color: var(--text);
         }
 
         .skate-detail {
             font-size: 13px;
-            color: #9ca3af;
+            color: var(--text-muted);
             margin-bottom: 6px;
         }
 
         .skate-count {
             margin-top: 12px;
             padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid var(--card-border);
             font-weight: 600;
+            font-size: 14px;
+        }
+
+        .skate-count.has-players {
+            color: var(--count-text);
+        }
+
+        .skate-count.no-players {
+            color: var(--count-zero);
         }
 
         .count-full {
@@ -124,7 +147,7 @@
         }
 
         .count-ok {
-            color: #60a5fa;
+            color: var(--primary);
         }
 
         .modal {
@@ -154,14 +177,14 @@
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
         }
 
         .modal-header {
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 20px;
-            color: #e8eaed;
+            color: var(--text);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -170,7 +193,7 @@
         .close-modal {
             background: none;
             border: none;
-            color: #9ca3af;
+            color: var(--text-muted);
             font-size: 24px;
             cursor: pointer;
             padding: 0;
@@ -183,8 +206,8 @@
         }
 
         .close-modal:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #e8eaed;
+            background: var(--card-border);
+            color: var(--text);
         }
 
         .form-row {
@@ -201,23 +224,23 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #9ca3af;
+            color: var(--text-muted);
             font-size: 14px;
             font-weight: 500;
         }
 
         .form-group input, .form-group select {
             width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 12px 16px;
-            color: #e8eaed;
+            color: var(--text);
             font-size: 14px;
         }
 
         .button {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border: none;
             color: white;
             padding: 12px 24px;
@@ -233,8 +256,8 @@
         }
 
         .button-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--card-border);
+            border: 1px solid var(--card-border);
         }
 
         .button-danger {
@@ -262,7 +285,7 @@
         }
 
         .roster-list {
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--card-bg);
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 16px;
@@ -289,8 +312,8 @@
         }
 
         .roster-item.waitlist {
-            background: rgba(255, 255, 255, 0.3);
-            color: #9ca3af;
+            background: var(--card-border);
+            color: var(--text-muted);
         }
 
         .roster-item-name {
@@ -317,7 +340,7 @@
 
         .capacity-bar {
             height: 4px;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-border);
             border-radius: 2px;
             margin-top: 12px;
             overflow: hidden;
@@ -325,7 +348,7 @@
 
         .capacity-fill {
             height: 100%;
-            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
             transition: width 0.3s;
         }
 
@@ -346,18 +369,18 @@
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #9ca3af;
+            color: var(--text-muted);
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            color: #9ca3af;
+            color: var(--text-muted);
         }
         /* Quick Add Skate Cards */
         .quick-add-skate-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
             border-radius: 12px;
             padding: 14px 16px;
             margin-bottom: 10px;
@@ -369,14 +392,14 @@
         }
 
         .quick-add-skate-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(96, 165, 250, 0.5);
+            background: var(--card-bg);
+            border-color: rgba(var(--primary-rgb), 0.5);
             transform: translateY(-1px);
         }
 
         .quick-add-skate-card.selected {
-            background: rgba(96, 165, 250, 0.15);
-            border-color: #60a5fa;
+            background: rgba(var(--primary-rgb), 0.15);
+            border-color: var(--primary);
         }
 
         .quick-add-skate-info {
@@ -385,20 +408,20 @@
 
         .quick-add-skate-title {
             font-weight: 700;
-            color: #e8eaed;
+            color: var(--text);
             font-size: 15px;
             margin-bottom: 4px;
         }
 
         .quick-add-skate-date {
             font-size: 13px;
-            color: #9ca3af;
+            color: var(--text-muted);
         }
 
         .quick-add-checkmark {
             width: 24px;
             height: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid var(--card-border);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -407,8 +430,8 @@
         }
 
         .quick-add-skate-card.selected .quick-add-checkmark {
-            background: #60a5fa;
-            border-color: #60a5fa;
+            background: var(--primary);
+            border-color: var(--primary);
         }
     </style>
 </head>
@@ -418,7 +441,7 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
-                <button class="add-button" onclick="showImportModal()" style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa;">📄 Import CSV/ICS</button>
+                <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>
@@ -461,7 +484,7 @@
             </div>
 
             <div id="customTierInput" style="display: none; margin-bottom: 16px;">
-                <input type="text" id="customTierText" placeholder="Enter custom tier/format" style="width: calc(100% - 120px); margin-right: 8px; background: rgba(0, 0, 0, 0.3); border: 1px solid #60a5fa; border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px;">
+                <input type="text" id="customTierText" placeholder="Enter custom tier/format" style="width: calc(100% - 120px); margin-right: 8px; background: var(--card-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                 <button class="button" onclick="saveCustomTier()" style="padding: 12px 16px; display: inline-block;">Save</button>
                 <button class="button button-secondary" onclick="cancelCustomTier()" style="padding: 12px 16px; display: inline-block; margin-left: 4px;">Cancel</button>
             </div>
@@ -474,7 +497,7 @@
             <div class="form-group">
                 <label>Date</label>
                 <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
-                    <select id="skateMonth" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px;">
+                    <select id="skateMonth" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                         <option value="">Month</option>
                         <option value="1">January</option>
                         <option value="2">February</option>
@@ -489,10 +512,10 @@
                         <option value="11">November</option>
                         <option value="12">December</option>
                     </select>
-                    <select id="skateDay" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px;">
+                    <select id="skateDay" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                         <option value="">Day</option>
                     </select>
-                    <select id="skateYear" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px;">
+                    <select id="skateYear" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                         <option value="">Year</option>
                     </select>
                 </div>
@@ -501,13 +524,13 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Start Time</label>
-                    <select id="skateStartTime" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px; width: 100%;">
+                    <select id="skateStartTime" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
                         <option value="">Select time</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Duration</label>
-                    <select id="skateDuration" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 14px; width: 100%;">
+                    <select id="skateDuration" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
                         <option value="">Select duration</option>
                         <option value="60">1:00</option>
                         <option value="75">1:15</option>
@@ -593,7 +616,7 @@
             </div>
 
             <div class="modal-buttons">
-                <button class="button" onclick="showEditSkateModal()" style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); color: #60a5fa;">✏️ Edit Skate</button>
+                <button class="button" onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
                 <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
             </div>
@@ -609,7 +632,7 @@
             </div>
 
             <div id="csvPreviewContent" style="margin-bottom: 20px;">
-                <p style="color: #9ca3af; font-size: 14px;">Upload a BenchApp CSV file to import multiple skates at once.</p>
+                <p style="color: var(--text-muted); font-size: 14px;">Upload a BenchApp CSV file to import multiple skates at once.</p>
             </div>
 
             <div class="modal-buttons">
@@ -629,11 +652,11 @@
 
             <div class="form-group" style="margin-bottom: 20px;">
                 <label>Player Name</label>
-                <input type="text" id="quickAddPlayerName" placeholder="Enter player name..." style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px 16px; color: #e8eaed; font-size: 15px; width: 100%;">
+                <input type="text" id="quickAddPlayerName" placeholder="Enter player name..." style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 15px; width: 100%;">
             </div>
 
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #9ca3af;">Select Skate(s):</label>
+                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted);">Select Skate(s):</label>
                 <div id="quickAddSkatesList" style="max-height: 300px; overflow-y: auto;">
                     <!-- Skates will be loaded here -->
                 </div>
@@ -746,6 +769,10 @@
                 const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
                 const maxSkaters = skate.capacity - 2; // Assume 2 goalie spots
                 
+                // Determine if we have players or not
+                const hasPlayers = goalies > 0 || skaters > 0;
+                const countColorClass = hasPlayers ? 'has-players' : 'no-players';
+                
                 return `
                     <div class="skate-card" onclick="openSkate(${skate.id})">
                         <div class="skate-title">${skate.title}</div>
@@ -754,7 +781,7 @@
                         <div class="skate-detail">💰 ${skate.cost}</div>
                         <div class="skate-detail">📍 ${skate.location}</div>
                         ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
-                        <div class="skate-count ${countClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
+                        <div class="skate-count ${countColorClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
                     </div>
                 `;
             }).join('');
@@ -1130,7 +1157,7 @@
                 // Render roster
                 const rosterList = document.getElementById('rosterList');
                 if (sortedRoster.length === 0) {
-                    rosterList.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No players yet</div>';
+                    rosterList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No players yet</div>';
                 } else {
                     rosterList.innerHTML = sortedRoster.map(player => {
                         let classes = 'roster-item';
@@ -1154,7 +1181,7 @@
                 // Render waitlist
                 const waitlistList = document.getElementById('waitlistList');
                 if (waitlist.length === 0) {
-                    waitlistList.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No waitlist</div>';
+                    waitlistList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No waitlist</div>';
                 } else {
                     waitlistList.innerHTML = waitlist.map(player => `
                         <div class="roster-item waitlist">
@@ -1570,15 +1597,15 @@
             const content = document.getElementById('csvPreviewContent');
             
             content.innerHTML = `
-                <p style="color: #60a5fa; font-weight: 600; margin-bottom: 12px;">
+                <p style="color: var(--primary); font-weight: 600; margin-bottom: 12px;">
                     Found ${parsedCSVData.length} skate(s) to import:
                 </p>
                 <div style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px;">
                     ${parsedCSVData.map((skate, i) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
                             <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #e8eaed;">${i + 1}. ${skate.tier || skate.title || 'Untitled'}</div>
-                                <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">
+                                <div style="font-weight: 600; color: var(--text);">${i + 1}. ${skate.tier || skate.title || 'Untitled'}</div>
+                                <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
                                     📅 ${new Date(skate.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     • 🕐 ${skate.time_start} - ${skate.time_end}
                                     • 📍 ${skate.location || 'No location'}

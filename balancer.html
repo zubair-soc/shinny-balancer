@@ -11,10 +11,24 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-start: #f8fafc;
+            --bg-end: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --count-text: #047857;
+            --count-zero: #1e293b;
+            --primary-rgb: 16, 185, 129;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a1128 0%, #1a2744 100%);
-            color: #e8eaed;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text);
             min-height: 100vh;
             padding: 20px;
         }
@@ -28,29 +42,27 @@
             text-align: center;
             margin-bottom: 40px;
             padding: 30px 20px;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--card-bg);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .header h1 {
             font-size: 36px;
             font-weight: 800;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text);
         }
 
         .header p {
-            color: #9ca3af;
+            color: var(--text-muted);
             font-size: 14px;
             margin-bottom: 24px;
         }
 
         .header-button {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            background: var(--primary);
             border: none;
             color: white;
             padding: 14px 28px;
@@ -62,27 +74,27 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+            box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
         }
 
         .header-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(96, 165, 250, 0.4);
+            box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4);
         }
 
         .setup-section {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
         }
 
         .setup-section h2 {
             font-size: 18px;
             font-weight: 700;
             margin-bottom: 16px;
-            color: #60a5fa;
+            color: var(--primary);
         }
 
         .form-grid {
@@ -101,24 +113,24 @@
             font-size: 13px;
             font-weight: 600;
             margin-bottom: 6px;
-            color: #9ca3af;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         input, textarea {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 10px 12px;
-            color: #e8eaed;
+            color: var(--text);
             font-size: 14px;
             font-family: inherit;
         }
 
         input:focus, textarea:focus {
             outline: none;
-            border-color: #60a5fa;
+            border-color: var(--primary);
             background: rgba(0, 0, 0, 0.4);
         }
 
@@ -129,7 +141,7 @@
         }
 
         .button {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 8px;
@@ -155,10 +167,10 @@
         }
 
         .team {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--card-border);
         }
 
         .team-header {
@@ -167,7 +179,7 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 12px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid var(--card-border);
         }
 
         .team-title {
@@ -177,12 +189,12 @@
 
         .team-stats {
             font-size: 13px;
-            color: #9ca3af;
+            color: var(--text-muted);
         }
 
         .player-item {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 8px;
@@ -199,7 +211,7 @@
 
         .player-number {
             font-weight: 700;
-            color: #9ca3af;
+            color: var(--text-muted);
             min-width: 24px;
         }
 
@@ -216,23 +228,23 @@
 
         .player-rating {
             font-weight: 600;
-            color: #60a5fa;
+            color: var(--primary);
             margin-right: 8px;
         }
 
         .icon-button {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-border);
             border: none;
             border-radius: 6px;
             padding: 6px 10px;
-            color: #e8eaed;
+            color: var(--text);
             cursor: pointer;
             font-size: 12px;
             margin-left: 4px;
         }
 
         .icon-button:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--card-border);
         }
 
         .warning {
@@ -247,15 +259,15 @@
 
         .export-section {
             margin-top: 24px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
         }
 
         .export-preview {
             background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 16px;
@@ -294,9 +306,9 @@
         <!-- Google Sheet Setup -->
         <div class="setup-section">
             <h2>Quick Import</h2>
-            <div style="margin-bottom: 32px; background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 12px; padding: 20px;">
-                <h3 style="color: #60a5fa; font-size: 16px; margin-bottom: 12px;">📋 Import Existing Skate</h3>
-                <p style="color: #9ca3af; font-size: 13px; margin-bottom: 12px;">Paste your WhatsApp message to load teams and make adjustments</p>
+            <div style="margin-bottom: 32px; background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); border-radius: 12px; padding: 20px;">
+                <h3 style="color: var(--primary); font-size: 16px; margin-bottom: 12px;">📋 Import Existing Skate</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Paste your WhatsApp message to load teams and make adjustments</p>
                 <div class="form-group">
                     <textarea id="importSkateData" placeholder="Paste your full WhatsApp message here..." style="min-height: 120px; font-family: 'Courier New', monospace;"></textarea>
                 </div>
@@ -306,10 +318,10 @@
             </div>
 
             <h2>1. Load Player Database</h2>
-            <p style="color: #9ca3af; font-size: 13px; margin-bottom: 16px;">Choose one method:</p>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Choose one method:</p>
             
             <div style="margin-bottom: 24px;">
-                <h3 style="color: #60a5fa; font-size: 14px; margin-bottom: 8px;">Method A: Paste Data (Easiest)</h3>
+                <h3 style="color: var(--primary); font-size: 14px; margin-bottom: 8px;">Method A: Paste Data (Easiest)</h3>
                 <div class="form-group">
                     <label>Copy columns A & B from your sheet and paste here</label>
                     <textarea id="pasteData" placeholder="Name&#9;Rating&#10;Nick Plaza&#9;17&#10;Anthony Estrada&#9;15&#10;..." style="min-height: 80px; font-family: 'Courier New', monospace;"></textarea>
@@ -320,7 +332,7 @@
             </div>
             
             <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px;">
-                <h3 style="color: #60a5fa; font-size: 14px; margin-bottom: 8px;">Method B: Apps Script URL (Advanced)</h3>
+                <h3 style="color: var(--primary); font-size: 14px; margin-bottom: 8px;">Method B: Apps Script URL (Advanced)</h3>
                 <div class="form-group">
                     <label>Apps Script Web App URL</label>
                     <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
@@ -354,10 +366,10 @@
                 <div class="form-group" style="grid-column: span 2;">
                     <label style="display: flex; justify-content: space-between; align-items: center;">
                         <span>Location</span>
-                        <button id="editLocationsBtn" style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); color: #60a5fa; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">Edit Locations</button>
+                        <button id="editLocationsBtn" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">Edit Locations</button>
                     </label>
                     <div id="locationContainer">
-                        <select id="locationSelect" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px 12px; color: #e8eaed; font-size: 14px; font-family: inherit; width: 100%;" onchange="handleLocationChange()">
+                        <select id="locationSelect" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; font-family: inherit; width: 100%;" onchange="handleLocationChange()">
                             <option value="Terwillegar Recreation Centre">Terwillegar Recreation Centre</option>
                             <option value="Donnan">Donnan</option>
                             <option value="NAIT">NAIT</option>
@@ -366,13 +378,13 @@
                             <option value="custom">+ Add Custom Location</option>
                         </select>
                         <div id="customLocationInput" style="display: none; margin-top: 8px;">
-                            <input type="text" id="customLocationText" placeholder="Enter location name" style="background: rgba(0, 0, 0, 0.3); border: 1px solid #60a5fa; border-radius: 8px; padding: 10px 12px; color: #e8eaed; font-size: 14px; font-family: inherit; width: calc(100% - 120px); margin-right: 8px;">
+                            <input type="text" id="customLocationText" placeholder="Enter location name" style="background: var(--card-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; font-family: inherit; width: calc(100% - 120px); margin-right: 8px;">
                             <button class="button" onclick="saveNewLocation()" style="padding: 10px 16px; display: inline-block;">Save</button>
                             <button class="button button-secondary" onclick="cancelNewLocation()" style="padding: 10px 16px; display: inline-block; margin-left: 4px;">Cancel</button>
                         </div>
                         <!-- Location Manager Panel -->
-                        <div id="locationManager" style="display: none; margin-top: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 12px;">
-                            <div style="margin-bottom: 8px; font-size: 13px; color: #9ca3af; font-weight: 500;">Manage Locations:</div>
+                        <div id="locationManager" style="display: none; margin-top: 12px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px;">
+                            <div style="margin-bottom: 8px; font-size: 13px; color: var(--text-muted); font-weight: 500;">Manage Locations:</div>
                             <div id="locationList"></div>
                         </div>
                     </div>
@@ -456,7 +468,7 @@
         let selectedPlayer = null; // For swapping
 
         const FRIEND_GROUP_COLORS = {
-            'A': '#ef4444', 'B': '#3b82f6', 'C': '#10b981', 'D': '#f59e0b',
+            'A': '#ef4444', 'B': 'var(--primary-dark)', 'C': '#10b981', 'D': '#f59e0b',
             'E': '#8b5cf6', 'F': '#ec4899', 'G': '#14b8a6', 'H': '#f97316'
         };
 
@@ -1124,7 +1136,7 @@
             const isSelected = selectedPlayer && selectedPlayer.team === team && selectedPlayer.index === index;
             const isEditing = selectedPlayer && selectedPlayer.team === team && selectedPlayer.index === index && selectedPlayer.editing;
             
-            let html = `<div class="player-item${isSelected ? ' selected' : ''}" onclick="selectPlayer('${team}', ${index})" style="cursor: pointer; ${isSelected ? 'background: rgba(96, 165, 250, 0.3); border-color: #60a5fa;' : ''}">`;
+            let html = `<div class="player-item${isSelected ? ' selected' : ''}" onclick="selectPlayer('${team}', ${index})" style="cursor: pointer; ${isSelected ? 'background: rgba(var(--primary-rgb), 0.3); border-color: var(--primary);' : ''}">`;
             html += '<div class="player-info">';
             html += `<span class="player-number">${index + 1}.</span>`;
             html += `<span class="player-name">${player.name}</span>`;
@@ -1143,7 +1155,7 @@
                     html += `<input type="number" id="rating-input-${team}-${index}" class="rating-input" value="${player.rating || ''}" 
                              onkeypress="handleRatingKeypress(event, '${team}', ${index})" 
                              onblur="cancelRatingEdit()" 
-                             style="width: 50px; padding: 4px; background: rgba(0,0,0,0.4); border: 1px solid #60a5fa; border-radius: 4px; color: #e8eaed; font-size: 14px;"
+                             style="width: 50px; padding: 4px; background: rgba(0,0,0,0.4); border: 1px solid var(--primary); border-radius: 4px; color: var(--text); font-size: 14px;"
                              onclick="event.stopPropagation()">`;
                 } else {
                     if (player.rating !== null) {
@@ -1467,13 +1479,13 @@
             console.log('allLocations:', allLocations);
             
             if (allLocations.length === 0) {
-                listContainer.innerHTML = '<div style="color: #9ca3af; font-size: 13px; padding: 8px;">No locations available. Click "+ Add Custom Location" to add one.</div>';
+                listContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; padding: 8px;">No locations available. Click "+ Add Custom Location" to add one.</div>';
                 return;
             }
             
             listContainer.innerHTML = allLocations.map((loc, idx) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; margin-bottom: 6px;">
-                    <span style="color: #e8eaed; font-size: 14px;">${loc.value}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--card-bg); border-radius: 6px; margin-bottom: 6px;">
+                    <span style="color: var(--text); font-size: 14px;">${loc.value}</span>
                     <button class="delete-location-btn" data-location="${loc.value}" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Delete</button>
                 </div>
             `).join('');
