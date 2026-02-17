@@ -332,6 +332,78 @@
             margin-bottom: 8px;
             color: var(--text);
         }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            /* Toolbar stacks */
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .toolbar .button {
+                width: 100%;
+            }
+
+            .stats {
+                margin-left: 0;
+                justify-content: flex-start;
+            }
+
+            /* Table: hide Rating header label, keep data readable */
+            th, td {
+                padding: 12px 10px;
+                font-size: 13px;
+            }
+
+            /* Make action buttons smaller on mobile */
+            .icon-button {
+                padding: 6px 8px;
+                font-size: 14px;
+            }
+
+            /* Modal */
+            .modal-content {
+                width: 95%;
+                padding: 20px 16px;
+            }
+
+            .modal-buttons {
+                flex-wrap: wrap;
+            }
+
+            .modal-buttons .button {
+                flex: 1;
+            }
+
+            .theme-toggle {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                bottom: 16px;
+                left: 16px;
+            }
+        }
     </style>
 </head>
 <body>

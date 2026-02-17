@@ -492,6 +492,108 @@
             background: var(--primary);
             border-color: var(--primary);
         }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header-buttons {
+                flex-wrap: wrap;
+                width: 100%;
+            }
+
+            .header-buttons .back-button,
+            .header-buttons .add-button {
+                flex: 1;
+                text-align: center;
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+
+            /* Skate cards already responsive via auto-fill, just tighten min */
+            .skates-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            /* Modal fills screen on mobile */
+            .modal-content {
+                width: 95%;
+                padding: 20px 16px;
+                max-height: 95vh;
+                border-radius: 12px;
+            }
+
+            /* Form rows stack on mobile */
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            /* Date row (3 cols) stacks */
+            .form-group [style*="grid-template-columns: 2fr 1fr 1fr"] {
+                grid-template-columns: 1fr 1fr !important;
+            }
+
+            /* Roster details info bar — 3 col grid stacks */
+            #rosterSkateDetails [style*="repeat(3, 1fr)"] {
+                grid-template-columns: 1fr 1fr !important;
+            }
+
+            /* Roster header — title + balance button */
+            .roster-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .roster-header .button {
+                width: 100%;
+            }
+
+            /* Add player form */
+            .add-player-form {
+                flex-direction: column;
+            }
+
+            .add-player-form .button {
+                width: 100%;
+            }
+
+            /* Modal bottom buttons */
+            .modal-buttons {
+                flex-wrap: wrap;
+            }
+
+            .modal-buttons .button {
+                flex: 1;
+                min-width: 100px;
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+
+            /* Theme toggle smaller on mobile so it doesn't block content */
+            .theme-toggle {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                bottom: 16px;
+                left: 16px;
+            }
+        }
     </style>
 </head>
 <body>

@@ -324,8 +324,72 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .header {
+                padding: 20px 16px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            /* Nav buttons in header wrap and fill width */
+            .header > div[style*="flex"] {
+                flex-wrap: wrap !important;
+            }
+
+            .header-button {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            /* Setup sections */
+            .setup-section {
+                padding: 16px;
+            }
+
+            /* Form grid stacks */
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Teams side by side -> stacked */
             .teams-container {
                 grid-template-columns: 1fr;
+            }
+
+            .team {
+                padding: 16px;
+            }
+
+            /* Export section */
+            .export-section {
+                padding: 16px;
+            }
+
+            .export-preview {
+                font-size: 12px;
+                padding: 12px;
+            }
+
+            /* Buttons full width on mobile */
+            .export-section .button,
+            .setup-section > .button {
+                width: 100%;
+            }
+
+            .theme-toggle {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                bottom: 16px;
+                left: 16px;
             }
         }
     </style>
