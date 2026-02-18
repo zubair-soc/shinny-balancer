@@ -778,7 +778,7 @@
 
             <div class="form-group">
                 <label>Skate Title (auto-generated)</label>
-                <input type="text" id="skateTitle" readonly style="background: rgba(0, 0, 0, 0.5); cursor: not-allowed;">
+                <input type="text" id="skateTitle" placeholder="Auto-generated or type manually" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
             </div>
 
             <div class="form-group">
@@ -1345,6 +1345,7 @@
         function showCreateModal() {
             isEditMode = false;
             document.getElementById('modalTitle').textContent = 'Create New Skate';
+            document.querySelector('#skateModal .button[onclick="saveSkate()"]').textContent = 'Create Skate';
             document.getElementById('skateNumber').value = '';
             document.getElementById('skateTitle').value = '';
             document.getElementById('skateTier').selectedIndex = 0;
@@ -1378,12 +1379,14 @@
             const skate = allSkates.find(s => s.id === currentSkateId);
             if (!skate) return;
 
-            document.getElementById('modalTitle').textContent = 'Edit Skate';
-            
             // Populate dropdowns first
             populateDateDropdowns();
             populateTimeDropdowns();
             loadCustomTiers();
+
+            // Set label AFTER populate (which may reset it)
+            document.getElementById('modalTitle').textContent = 'Edit Skate';
+            document.querySelector('#skateModal .button[onclick="saveSkate()"]').textContent = 'Save Changes';
 
             // Parse skate number and tier from title
             let skateNumber = '';
@@ -1411,7 +1414,12 @@
                 }
             }
             if (!foundTier && tier) {
-                tierSelect.selectedIndex = 0;
+                // Add as custom option if not in list
+                const customOpt = document.createElement('option');
+                customOpt.value = tier;
+                customOpt.textContent = tier;
+                tierSelect.insertBefore(customOpt, tierSelect.options[tierSelect.options.length - 1]);
+                tierSelect.value = tier;
             }
 
             // Parse date
@@ -2069,13 +2077,32 @@
                             endTime = startDate.toTimeString().slice(0, 5);
                         }
 
+                        // Parse "Skate 234: Tier 3" into number + tier
+                        const rawTitle = row['Title (Optional)'] || row['Title'] || '';
+                        let csvSkateNumber = '';
+                        let csvTier = '';
+                        let csvTitle = rawTitle;
+
+                        const titleMatch = rawTitle.match(/^Skate\s+(\d+):\s*(.+)$/i);
+                        if (titleMatch) {
+                            csvSkateNumber = titleMatch[1];
+                            csvTier = titleMatch[2].trim();
+                            csvTitle = 'Skate ' + csvSkateNumber + ' ' + csvTier;
+                        }
+
+                        // Parse location - use first part before comma
+                        let csvLocation = row['Location (Optional)'] || row['Location'] || '';
+                        if (csvLocation.includes(',')) {
+                            csvLocation = csvLocation.split(',')[0].trim();
+                        }
+
                         parsedCSVData.push({
-                            title: row['Title (Optional)'] || '',
-                            tier: row['Title (Optional)'] || '',
+                            title: csvTitle,
+                            tier: csvTier,
                             date: date,
                             time_start: startTime,
                             time_end: endTime,
-                            location: row['Location (Optional)'] || '',
+                            location: csvLocation,
                             cost: '$25',
                             capacity: 24
                         });
