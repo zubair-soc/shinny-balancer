@@ -1580,9 +1580,6 @@
                     // Build other skates list for move menu
                     const today = new Date(); today.setHours(0,0,0,0);
                     const otherSkates = allSkates.filter(s => s.id !== currentSkateId && new Date(s.date + 'T00:00:00') >= today).sort((a,b) => new Date(a.date)-new Date(b.date));
-                    const moveSkateOptions = otherSkates.map(s =>
-                        `<button class="move-skate-item" onclick="movePlayerToSkate(${player => player.id}, ${s.id}, '${s.title.replace(/'/g,"\\'")}')">→ ${s.title} (${formatDate(s.date)})</button>`
-                    ).join('');
 
                     rosterList.innerHTML = sortedRoster.map(player => {
                         let classes = 'roster-item';
