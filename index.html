@@ -1458,6 +1458,8 @@
 
         function closeSkateModal() {
             document.getElementById('skateModal').classList.remove('active');
+            isEditMode = false;
+            currentSkateId = null;
         }
 
         async function saveSkate() {
@@ -1906,7 +1908,7 @@
 
         function closeRosterModal() {
             document.getElementById('rosterModal').classList.remove('active');
-            currentSkateId = null;
+            if (!isEditMode) currentSkateId = null;
         }
 
         // CSV/ICS Import Functions
