@@ -904,6 +904,7 @@
 
             <div class="modal-buttons">
                 <button class="button" onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
+                <button class="button" onclick="copyRosterToClipboard()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">📋 Copy for WhatsApp</button>
                 <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
             </div>
@@ -1837,6 +1838,62 @@
                 console.error('Error deleting skate:', error);
                 alert('Failed to delete skate');
             }
+        }
+
+        async function copyRosterToClipboard() {
+            const skate = allSkates.find(s => s.id === currentSkateId);
+            if (!skate) return;
+
+            // Fetch full roster
+            const { data, error } = await supabaseClient
+                .from('skate_registrations')
+                .select('*')
+                .eq('skate_id', currentSkateId)
+                .eq('is_waitlist', false)
+                .order('is_goalie', { ascending: false })
+                .order('position');
+
+            if (error) { alert('Failed to load roster'); return; }
+
+            // Build header
+            const dateStr = formatDate(skate.date);
+            const timeStr = formatTime(skate.time_start) + '\u2013' + formatTime(skate.time_end);
+            let text = '\uD83C\uDFD2 ' + skate.title + '\n';
+            text += 'Date & Time: ' + dateStr + ' \u00B7 ' + timeStr + '\n';
+            text += 'Cost: ' + skate.cost + ' \u2014 payments@shinnyofchampions.com\n';
+            text += 'Location: ' + skate.location + '\n';
+
+            // Sort: goalies first, then skaters
+            const goalies = data.filter(p => p.is_goalie);
+            const skaters = data.filter(p => !p.is_goalie);
+            const sorted = [...goalies, ...skaters];
+
+            // Fill goalie slots with "Open" if < 2
+            const goaliesToShow = [...goalies];
+            while (goaliesToShow.length < 2) goaliesToShow.push({ player_name: 'Open', is_goalie: true });
+            const fullList = [...goaliesToShow, ...skaters];
+
+            fullList.forEach((p, i) => {
+                text += (i + 1) + '. ' + p.player_name + (p.is_goalie ? ' \uD83E\uDD45' : '') + '\n';
+            });
+
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed'; ta.style.left = '-9999px';
+                document.body.appendChild(ta); ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+
+            // Toast confirmation
+            const toast = document.createElement('div');
+            toast.textContent = '\u2713 Copied! Ready to paste into WhatsApp';
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:8px;font-weight:600;z-index:9999;font-size:14px;white-space:nowrap;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
         }
 
         function closeRosterModal() {
