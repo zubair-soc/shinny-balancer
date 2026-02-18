@@ -755,7 +755,10 @@
                     <input type="number" id="skateNumber" placeholder="e.g., 223" oninput="updateSkateTitle()">
                 </div>
                 <div class="form-group">
-                    <label>Tier/Format</label>
+                    <label style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Tier/Format</span>
+                        <button id="deleteTierBtn" onclick="deleteCustomTier()" style="display:none; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:3px 10px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">🗑️ Delete Tier</button>
+                    </label>
                     <select id="skateTier" onchange="handleTierChange()">
                         <option value="">Select tier/format</option>
                         <option value="Tier 1">Tier 1</option>
@@ -1260,7 +1263,10 @@
 
         function handleTierChange() {
             const select = document.getElementById('skateTier');
-            
+            const defaultTiers = ['', 'Tier 1', 'Tier 2', 'Tier 3 Beginner', 'Mixed Skill', '3v3', 'Breakfast of Champions', 'Skills Development', 'custom'];
+            const isCustom = select.value !== '' && select.value !== 'custom' && !defaultTiers.includes(select.value);
+            document.getElementById('deleteTierBtn').style.display = isCustom ? 'block' : 'none';
+
             if (select.value === 'custom') {
                 document.getElementById('customTierInput').style.display = 'block';
                 document.getElementById('customTierText').focus();
@@ -1319,6 +1325,28 @@
             }
             
             localStorage.setItem('customTiers', JSON.stringify(tiers));
+        }
+
+        function deleteCustomTier() {
+            const select = document.getElementById('skateTier');
+            const tierName = select.value;
+            if (!tierName || !confirm('Delete tier "' + tierName + '"?')) return;
+
+            // Remove from dropdown
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === tierName) {
+                    select.remove(i);
+                    break;
+                }
+            }
+
+            // Reset selection
+            select.selectedIndex = 0;
+            document.getElementById('deleteTierBtn').style.display = 'none';
+            document.getElementById('skateTitle').value = '';
+
+            // Save updated list
+            saveCustomTiers();
         }
 
         function loadCustomTiers() {
