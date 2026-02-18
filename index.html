@@ -2264,9 +2264,29 @@
                 }).join('');
 
                 document.getElementById('glanceContent').innerHTML = `
-                    <div style="display:flex; gap:16px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;">
+                    <div id="glanceScroller" style="display:flex; gap:16px; overflow-x:auto; padding-bottom:12px; align-items:flex-start; cursor:grab; user-select:none;">
                         ${cols}
                     </div>`;
+
+                // Click and drag to scroll
+                const scroller = document.getElementById('glanceScroller');
+                let isDown = false, startX, scrollLeft;
+                scroller.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    scroller.style.cursor = 'grabbing';
+                    startX = e.pageX - scroller.offsetLeft;
+                    scrollLeft = scroller.scrollLeft;
+                });
+                document.addEventListener('mouseup', () => {
+                    isDown = false;
+                    if (scroller) scroller.style.cursor = 'grab';
+                });
+                scroller.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - scroller.offsetLeft;
+                    scroller.scrollLeft = scrollLeft - (x - startX);
+                });
 
             } catch (err) {
                 console.error(err);
