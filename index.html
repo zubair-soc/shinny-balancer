@@ -940,29 +940,30 @@
             }
         });
 
+        let allRegistrations = []; // cached globally
+
         async function loadSkates() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('skates')
-                    .select('*')
-                    .order('date', { ascending: true });
+                // Fetch skates and all registrations in parallel — one round trip each
+                const [skatesRes, regsRes] = await Promise.all([
+                    supabaseClient.from('skates').select('*').order('date', { ascending: true }),
+                    supabaseClient.from('skate_registrations').select('skate_id, is_goalie, is_waitlist')
+                ]);
 
-                if (error) {
-                    console.error('Supabase error:', error);
-                    console.error('Error message:', error.message);
-                    console.error('Error details:', JSON.stringify(error, null, 2));
-                    throw error;
-                }
+                if (skatesRes.error) throw skatesRes.error;
+                if (regsRes.error) throw regsRes.error;
 
-                allSkates = data;
+                allSkates = skatesRes.data;
+                allRegistrations = regsRes.data;
                 renderSkates();
             } catch (error) {
                 console.error('Error loading skates:', error);
-                console.error('Full error:', JSON.stringify(error, null, 2));
                 document.getElementById('skatesContainer').innerHTML = 
                     `<div class="empty-state"><h3>Failed to load skates</h3><p>Error: ${error.message || 'Unknown error'}</p><p>Check console for details</p></div>`;
             }
         }
+
+        let quickAddShown = false;
 
         async function renderSkates() {
             const upcomingContainer = document.getElementById('skatesContainer');
@@ -988,26 +989,19 @@
                 return skateDate < today;
             }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Reverse chronological
 
-            // Get registration counts for each skate
+            // Group registrations by skate_id in JS — no extra DB queries
             const skateCounts = {};
             const goalieSkaterCounts = {};
             for (const skate of allSkates) {
-                const { data } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('is_goalie')
-                    .eq('skate_id', skate.id)
-                    .eq('is_waitlist', false);
-                
-                if (data) {
-                    skateCounts[skate.id] = data.length;
-                    goalieSkaterCounts[skate.id] = {
-                        goalies: data.filter(p => p.is_goalie).length,
-                        skaters: data.filter(p => !p.is_goalie).length
-                    };
-                } else {
-                    skateCounts[skate.id] = 0;
-                    goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
-                }
+                skateCounts[skate.id] = 0;
+                goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
+            }
+            for (const reg of allRegistrations) {
+                if (reg.is_waitlist) continue;
+                if (!goalieSkaterCounts[reg.skate_id]) continue;
+                skateCounts[reg.skate_id]++;
+                if (reg.is_goalie) goalieSkaterCounts[reg.skate_id].goalies++;
+                else goalieSkaterCounts[reg.skate_id].skaters++;
             }
 
             // Helper function to render a single skate card
@@ -1069,6 +1063,12 @@
                 archiveToggle.style.display = 'block';
             } else {
                 archiveToggle.style.display = 'none';
+            }
+
+            // Auto-show Quick Add once after first data load
+            if (!quickAddShown) {
+                quickAddShown = true;
+                showQuickAdd();
             }
 
             // Render past skates grouped by month (descending)
@@ -2163,14 +2163,7 @@
             }
         }
 
-        // Auto-show Quick Add on page load (with delay to ensure skates are loaded)
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (allSkates && allSkates.length > 0) {
-                    showQuickAdd();
-                }
-            }, 1000); // Wait 1 second after page load
-        });
+        // Quick Add is triggered from renderSkates() after data is ready
     </script>
 </body>
 </html>
