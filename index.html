@@ -2178,36 +2178,19 @@
 
         async function movePlayerToSkate(playerId, targetSkateId, targetSkateName) {
             closeAllMenus();
-            const skate = allSkates.find(s => s.id === targetSkateId);
-            const player = // get from DOM isn't reliable, fetch from DB
-                null;
-
-            if (!confirm(\`Move this player to \${targetSkateName}?\`)) return;
-
+            if (!confirm('Move this player to ' + targetSkateName + '?')) return;
             try {
-                // Get the player record first
                 const { data: playerData, error: fetchError } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('*')
-                    .eq('id', playerId)
-                    .single();
-
+                    .from('skate_registrations').select('*').eq('id', playerId).single();
                 if (fetchError) throw fetchError;
 
-                // Get next position in target skate
                 const { data: existing } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('position')
-                    .eq('skate_id', targetSkateId)
-                    .order('position', { ascending: false })
-                    .limit(1);
-
+                    .from('skate_registrations').select('position')
+                    .eq('skate_id', targetSkateId).order('position', { ascending: false }).limit(1);
                 const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 1;
 
-                // Insert into target skate (carry over paid status)
                 const { error: insertError } = await supabaseClient
-                    .from('skate_registrations')
-                    .insert({
+                    .from('skate_registrations').insert({
                         skate_id: targetSkateId,
                         player_name: playerData.player_name,
                         is_paid: playerData.is_paid,
@@ -2215,29 +2198,21 @@
                         is_waitlist: false,
                         position: nextPosition
                     });
-
                 if (insertError) throw insertError;
 
-                // Delete from current skate
                 const { error: deleteError } = await supabaseClient
-                    .from('skate_registrations')
-                    .delete()
-                    .eq('id', playerId);
-
+                    .from('skate_registrations').delete().eq('id', playerId);
                 if (deleteError) throw deleteError;
 
-                // Reload
                 const currentSkate = allSkates.find(s => s.id === currentSkateId);
                 await loadRoster(currentSkateId, currentSkate.capacity);
                 await loadSkates();
 
-                // Brief confirmation
                 const toast = document.createElement('div');
-                toast.textContent = \`✓ Moved to \${targetSkateName}\`;
+                toast.textContent = '✓ Moved to ' + targetSkateName;
                 toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:8px;font-weight:600;z-index:9999;font-size:14px;';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 2500);
-
             } catch (err) {
                 console.error('Move failed:', err);
                 alert('Failed to move player');
