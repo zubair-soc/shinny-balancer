@@ -354,9 +354,14 @@
                 padding: 16px;
             }
 
-            /* Form grid stacks */
+            /* Form grid stacks to single column */
             .form-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Reset any span-2 items so they don't overflow */
+            .form-grid .form-group[style*="grid-column"] {
+                grid-column: span 1 !important;
             }
 
             /* Teams side by side -> stacked */
