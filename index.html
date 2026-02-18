@@ -493,6 +493,105 @@
             border-color: var(--primary);
         }
 
+
+        /* ===== PLAYER ACTION MENU ===== */
+        .player-menu-wrapper {
+            position: relative;
+        }
+
+        .player-menu-btn {
+            background: rgba(0,0,0,0.08);
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-muted);
+            line-height: 1;
+        }
+
+        .player-menu-btn:hover {
+            background: rgba(0,0,0,0.15);
+        }
+
+        .player-menu-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 9999;
+            min-width: 190px;
+            overflow: hidden;
+        }
+
+        .player-menu-dropdown.open {
+            display: block;
+        }
+
+        .player-menu-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .player-menu-item:hover {
+            background: var(--bg-start);
+        }
+
+        .player-menu-item.danger {
+            color: #ef4444;
+        }
+
+        .player-menu-item.danger:hover {
+            background: rgba(239,68,68,0.08);
+        }
+
+        .player-menu-divider {
+            height: 1px;
+            background: var(--card-border);
+            margin: 4px 0;
+        }
+
+        /* Move to skate submenu */
+        .move-skate-list {
+            display: none;
+            padding: 4px 0;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .move-skate-list.open {
+            display: block;
+        }
+
+        .move-skate-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 8px 16px 8px 28px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .move-skate-item:hover {
+            background: var(--bg-start);
+            color: var(--text);
+        }
         /* ===== MOBILE RESPONSIVE ===== */
         @media (max-width: 768px) {
             body {
@@ -1478,19 +1577,45 @@
                 if (sortedRoster.length === 0) {
                     rosterList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No players yet</div>';
                 } else {
+                    // Build other skates list for move menu
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const otherSkates = allSkates.filter(s => s.id !== currentSkateId && new Date(s.date + 'T00:00:00') >= today).sort((a,b) => new Date(a.date)-new Date(b.date));
+                    const moveSkateOptions = otherSkates.map(s =>
+                        `<button class="move-skate-item" onclick="movePlayerToSkate(${player => player.id}, ${s.id}, '${s.title.replace(/'/g,"\\'")}')">→ ${s.title} (${formatDate(s.date)})</button>`
+                    ).join('');
+
                     rosterList.innerHTML = sortedRoster.map(player => {
                         let classes = 'roster-item';
                         if (player.is_goalie) classes += ' goalie';
                         if (!player.is_paid) classes += ' unpaid';
 
+                        const skateOptions = otherSkates.map(s =>
+                            `<button class="move-skate-item" onclick="movePlayerToSkate(${player.id}, ${s.id}, '${s.title.replace(/'/g,"\\'")}')">→ ${s.title} (${formatDate(s.date)})</button>`
+                        ).join('');
+
+                        const hasMoveOptions = otherSkates.length > 0;
+
                         return `
                             <div class="${classes}">
-                                <span class="roster-item-name">${player.player_name} ${player.is_goalie ? '🥅' : ''}</span>
-                                <div class="roster-item-actions">
-                                    ${!player.is_goalie ? `<button class="icon-btn" onclick="toggleGoalie(${player.id}, true)" title="Mark as goalie">🥅</button>` : `<button class="icon-btn" onclick="toggleGoalie(${player.id}, false)" title="Remove goalie">👤</button>`}
-                                    ${player.is_paid ? `<button class="icon-btn" onclick="togglePaid(${player.id}, false)" title="Mark unpaid">💵→❌</button>` : `<button class="icon-btn" onclick="togglePaid(${player.id}, true)" title="Mark paid">❌→💵</button>`}
-                                    <button class="icon-btn" onclick="moveToWaitlist(${player.id})" title="Move to waitlist">⏸️</button>
-                                    <button class="icon-btn" onclick="deletePlayer(${player.id})" title="Remove">🗑️</button>
+                                <span class="roster-item-name">${player.player_name} ${player.is_goalie ? '🥅' : ''} ${!player.is_paid ? '⚠️' : ''}</span>
+                                <div class="player-menu-wrapper">
+                                    <button class="player-menu-btn" onclick="togglePlayerMenu('menu-${player.id}', event)">⋮</button>
+                                    <div class="player-menu-dropdown" id="menu-${player.id}">
+                                        ${!player.is_goalie
+                                            ? `<button class="player-menu-item" onclick="toggleGoalie(${player.id}, true); closeAllMenus()">🥅 Mark as Goalie</button>`
+                                            : `<button class="player-menu-item" onclick="toggleGoalie(${player.id}, false); closeAllMenus()">👤 Remove Goalie</button>`}
+                                        ${player.is_paid
+                                            ? `<button class="player-menu-item" onclick="togglePaid(${player.id}, false); closeAllMenus()">❌ Mark Unpaid</button>`
+                                            : `<button class="player-menu-item" onclick="togglePaid(${player.id}, true); closeAllMenus()">💵 Mark Paid</button>`}
+                                        <button class="player-menu-item" onclick="moveToWaitlist(${player.id}); closeAllMenus()">⏸️ Move to Waitlist</button>
+                                        ${hasMoveOptions ? `
+                                        <div class="player-menu-divider"></div>
+                                        <button class="player-menu-item" onclick="toggleMoveMenu('move-${player.id}', event)">🔄 Move to Skate ▸</button>
+                                        <div class="move-skate-list" id="move-${player.id}">${skateOptions}</div>
+                                        ` : ''}
+                                        <div class="player-menu-divider"></div>
+                                        <button class="player-menu-item danger" onclick="deletePlayer(${player.id}); closeAllMenus()">🗑️ Remove</button>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -1505,9 +1630,13 @@
                     waitlistList.innerHTML = waitlist.map(player => `
                         <div class="roster-item waitlist">
                             <span class="roster-item-name">${player.player_name}</span>
-                            <div class="roster-item-actions">
-                                <button class="icon-btn" onclick="moveToRoster(${player.id})" title="Move to roster">▶️</button>
-                                <button class="icon-btn" onclick="deletePlayer(${player.id})" title="Remove">🗑️</button>
+                            <div class="player-menu-wrapper">
+                                <button class="player-menu-btn" onclick="togglePlayerMenu('menu-wl-${player.id}', event)">⋮</button>
+                                <div class="player-menu-dropdown" id="menu-wl-${player.id}">
+                                    <button class="player-menu-item" onclick="moveToRoster(${player.id}); closeAllMenus()">▶️ Move to Roster</button>
+                                    <div class="player-menu-divider"></div>
+                                    <button class="player-menu-item danger" onclick="deletePlayer(${player.id}); closeAllMenus()">🗑️ Remove</button>
+                                </div>
                             </div>
                         </div>
                     `).join('');
@@ -2023,6 +2152,99 @@
 
             // Redirect to balancer
             window.location.href = 'balancer.html';
+        }
+
+
+        // ========== PLAYER ACTION MENU ==========
+
+        function togglePlayerMenu(menuId, event) {
+            event.stopPropagation();
+            const menu = document.getElementById(menuId);
+            const isOpen = menu.classList.contains('open');
+            closeAllMenus();
+            if (!isOpen) menu.classList.add('open');
+        }
+
+        function toggleMoveMenu(menuId, event) {
+            event.stopPropagation();
+            const menu = document.getElementById(menuId);
+            menu.classList.toggle('open');
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.player-menu-dropdown').forEach(m => m.classList.remove('open'));
+            document.querySelectorAll('.move-skate-list').forEach(m => m.classList.remove('open'));
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', closeAllMenus);
+
+        async function movePlayerToSkate(playerId, targetSkateId, targetSkateName) {
+            closeAllMenus();
+            const skate = allSkates.find(s => s.id === targetSkateId);
+            const player = // get from DOM isn't reliable, fetch from DB
+                null;
+
+            if (!confirm(\`Move this player to \${targetSkateName}?\`)) return;
+
+            try {
+                // Get the player record first
+                const { data: playerData, error: fetchError } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('*')
+                    .eq('id', playerId)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                // Get next position in target skate
+                const { data: existing } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('position')
+                    .eq('skate_id', targetSkateId)
+                    .order('position', { ascending: false })
+                    .limit(1);
+
+                const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 1;
+
+                // Insert into target skate (carry over paid status)
+                const { error: insertError } = await supabaseClient
+                    .from('skate_registrations')
+                    .insert({
+                        skate_id: targetSkateId,
+                        player_name: playerData.player_name,
+                        is_paid: playerData.is_paid,
+                        is_goalie: playerData.is_goalie,
+                        is_waitlist: false,
+                        position: nextPosition
+                    });
+
+                if (insertError) throw insertError;
+
+                // Delete from current skate
+                const { error: deleteError } = await supabaseClient
+                    .from('skate_registrations')
+                    .delete()
+                    .eq('id', playerId);
+
+                if (deleteError) throw deleteError;
+
+                // Reload
+                const currentSkate = allSkates.find(s => s.id === currentSkateId);
+                await loadRoster(currentSkateId, currentSkate.capacity);
+                await loadSkates();
+
+                // Brief confirmation
+                const toast = document.createElement('div');
+                toast.textContent = \`✓ Moved to \${targetSkateName}\`;
+                toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:8px;font-weight:600;z-index:9999;font-size:14px;';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2500);
+
+            } catch (err) {
+                console.error('Move failed:', err);
+                alert('Failed to move player');
+            }
         }
 
         // ========== QUICK ADD PLAYER FUNCTIONS ==========
