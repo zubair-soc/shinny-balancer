@@ -860,12 +860,12 @@
 
     <!-- At a Glance Modal -->
     <div id="glanceModal" class="modal">
-        <div class="modal-content" style="max-width: 1200px; width: 95%;">
+        <div class="modal-content" style="max-width: 95vw; width: 95vw; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <span>👁 Upcoming Skates at a Glance</span>
                 <button class="close-modal" onclick="closeGlance()">×</button>
             </div>
-            <div id="glanceContent" style="margin-top: 8px;">
+            <div id="glanceContent" style="margin-top: 8px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
                 <div class="loading">Loading...</div>
             </div>
         </div>
@@ -2264,7 +2264,7 @@
                 }).join('');
 
                 document.getElementById('glanceContent').innerHTML = `
-                    <div id="glanceScroller" style="display:flex; gap:16px; overflow-x:auto; padding-bottom:12px; align-items:flex-start; cursor:grab; user-select:none;">
+                    <div id="glanceScroller" style="display:flex; gap:16px; overflow-x:auto; overflow-y:hidden; padding-bottom:12px; align-items:flex-start; cursor:grab; user-select:none; flex:1; height:100%;">
                         ${cols}
                     </div>`;
 
