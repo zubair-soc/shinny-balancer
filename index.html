@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Skate Manager - Shinny Team Balancer</title>
     <style>
         * {
@@ -167,6 +167,7 @@
         }
 
         .skate-card:hover {
+            border-color: var(--primary);
             transform: translateY(-2px);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
@@ -299,7 +300,7 @@
         }
 
         .button {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border: none;
             color: white;
             padding: 12px 24px;
@@ -423,6 +424,9 @@
 
         .add-player-form input {
             flex: 1;
+            padding: 12px 16px;
+            font-size: 15px;
+            min-height: 48px;
         }
 
         .empty-state {
@@ -492,207 +496,6 @@
             background: var(--primary);
             border-color: var(--primary);
         }
-
-
-        /* ===== PLAYER ACTION MENU ===== */
-        .player-menu-wrapper {
-            position: relative;
-        }
-
-        .player-menu-btn {
-            background: rgba(0,0,0,0.08);
-            border: none;
-            border-radius: 6px;
-            padding: 4px 10px;
-            cursor: pointer;
-            font-size: 16px;
-            color: var(--text-muted);
-            line-height: 1;
-        }
-
-        .player-menu-btn:hover {
-            background: rgba(0,0,0,0.15);
-        }
-
-        .player-menu-dropdown {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            margin-top: 4px;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            z-index: 9999;
-            min-width: 190px;
-            overflow: hidden;
-        }
-
-        .player-menu-dropdown.open {
-            display: block;
-        }
-
-        .player-menu-item {
-            display: block;
-            width: 100%;
-            text-align: left;
-            padding: 10px 16px;
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 13px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .player-menu-item:hover {
-            background: var(--bg-start);
-        }
-
-        .player-menu-item.danger {
-            color: #ef4444;
-        }
-
-        .player-menu-item.danger:hover {
-            background: rgba(239,68,68,0.08);
-        }
-
-        .player-menu-divider {
-            height: 1px;
-            background: var(--card-border);
-            margin: 4px 0;
-        }
-
-        /* Move to skate submenu */
-        .move-skate-list {
-            display: none;
-            padding: 4px 0;
-            border-top: 1px solid var(--card-border);
-        }
-
-        .move-skate-list.open {
-            display: block;
-        }
-
-        .move-skate-item {
-            display: block;
-            width: 100%;
-            text-align: left;
-            padding: 8px 16px 8px 28px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .move-skate-item:hover {
-            background: var(--bg-start);
-            color: var(--text);
-        }
-        /* ===== MOBILE RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-                padding: 16px;
-            }
-
-            .header h1 {
-                font-size: 22px;
-            }
-
-            .header-buttons {
-                flex-wrap: wrap;
-                width: 100%;
-            }
-
-            .header-buttons .back-button,
-            .header-buttons .add-button {
-                flex: 1;
-                text-align: center;
-                font-size: 13px;
-                padding: 10px 12px;
-            }
-
-            /* Skate cards already responsive via auto-fill, just tighten min */
-            .skates-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            /* Modal fills screen on mobile */
-            .modal-content {
-                width: 95%;
-                padding: 20px 16px;
-                max-height: 95vh;
-                border-radius: 12px;
-            }
-
-            /* Form rows stack on mobile */
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
-
-            /* Date row (3 cols) stacks */
-            .form-group [style*="grid-template-columns: 2fr 1fr 1fr"] {
-                grid-template-columns: 1fr 1fr !important;
-            }
-
-            /* Roster details info bar — 3 col grid stacks */
-            #rosterSkateDetails [style*="repeat(3, 1fr)"] {
-                grid-template-columns: 1fr 1fr !important;
-            }
-
-            /* Roster header — title + balance button */
-            .roster-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .roster-header .button {
-                width: 100%;
-            }
-
-            /* Add player form */
-            .add-player-form {
-                flex-direction: column;
-            }
-
-            .add-player-form .button {
-                width: 100%;
-            }
-
-            /* Modal bottom buttons */
-            .modal-buttons {
-                flex-wrap: wrap;
-            }
-
-            .modal-buttons .button {
-                flex: 1;
-                min-width: 100px;
-                font-size: 13px;
-                padding: 10px 12px;
-            }
-
-            /* Theme toggle smaller on mobile so it doesn't block content */
-            .theme-toggle {
-                width: 44px;
-                height: 44px;
-                font-size: 20px;
-                bottom: 16px;
-                left: 16px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -707,7 +510,6 @@
             <div class="header-buttons">
                 <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
-                <button class="add-button" onclick="showGlance()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">👁 At a Glance</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>
@@ -755,10 +557,7 @@
                     <input type="number" id="skateNumber" placeholder="e.g., 223" oninput="updateSkateTitle()">
                 </div>
                 <div class="form-group">
-                    <label style="display:flex; justify-content:space-between; align-items:center;">
-                        <span>Tier/Format</span>
-                        <button id="deleteTierBtn" onclick="deleteCustomTier()" style="display:none; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; padding:3px 10px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500;">🗑️ Delete Tier</button>
-                    </label>
+                    <label>Tier/Format</label>
                     <select id="skateTier" onchange="handleTierChange()">
                         <option value="">Select tier/format</option>
                         <option value="Tier 1">Tier 1</option>
@@ -781,7 +580,7 @@
 
             <div class="form-group">
                 <label>Skate Title (auto-generated)</label>
-                <input type="text" id="skateTitle" placeholder="Auto-generated or type manually" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
+                <input type="text" id="skateTitle" readonly style="background: rgba(0, 0, 0, 0.5); cursor: not-allowed;">
             </div>
 
             <div class="form-group">
@@ -871,7 +670,7 @@
                 <button class="close-modal" onclick="closeRosterModal()">×</button>
             </div>
 
-            <div id="rosterSkateDetails" style="margin-bottom: 24px; padding: 16px; background: rgba(var(--primary-rgb), 0.08); border: 1px solid rgba(var(--primary-rgb), 0.2); border-radius: 10px;">
+            <div id="rosterSkateDetails" style="margin-bottom: 24px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px;">
             </div>
 
             <div class="roster-section">
@@ -907,7 +706,6 @@
 
             <div class="modal-buttons">
                 <button class="button" onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
-                <button class="button" onclick="copyRosterToClipboard()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">📋 Copy for WhatsApp</button>
                 <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
             </div>
@@ -956,20 +754,6 @@
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeQuickAdd()">Cancel</button>
                 <button class="button" onclick="quickAddPlayer()">Add Player</button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- At a Glance Modal -->
-    <div id="glanceModal" class="modal">
-        <div class="modal-content" style="max-width: 95vw; width: 95vw; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <span>👁 Upcoming Skates at a Glance</span>
-                <button class="close-modal" onclick="closeGlance()">×</button>
-            </div>
-            <div id="glanceContent" style="margin-top: 8px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
-                <div class="loading">Loading...</div>
             </div>
         </div>
     </div>
@@ -1035,14 +819,14 @@
             
             if (showingArchive) {
                 pastSection.style.setProperty('display', 'block', 'important');
-                toggleBtn.innerHTML = `📦 Hide Past Skates (<span id="archiveCount">${archiveCount}</span>)`;
+                toggleBtn.innerHTML = `📦 Hide Past Skates (${archiveCount})`;
                 // Scroll to past skates section
                 setTimeout(() => {
                     pastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
                 pastSection.style.setProperty('display', 'none', 'important');
-                toggleBtn.innerHTML = `📦 Show Past Skates (<span id="archiveCount">${archiveCount}</span>)`;
+                toggleBtn.innerHTML = `📦 Show Past Skates (${archiveCount})`;
             }
         }
 
@@ -1058,30 +842,29 @@
             }
         });
 
-        let allRegistrations = []; // cached globally
-
         async function loadSkates() {
             try {
-                // Fetch skates and all registrations in parallel — one round trip each
-                const [skatesRes, regsRes] = await Promise.all([
-                    supabaseClient.from('skates').select('*').order('date', { ascending: true }),
-                    supabaseClient.from('skate_registrations').select('skate_id, is_goalie, is_waitlist')
-                ]);
+                const { data, error } = await supabaseClient
+                    .from('skates')
+                    .select('*')
+                    .order('date', { ascending: true });
 
-                if (skatesRes.error) throw skatesRes.error;
-                if (regsRes.error) throw regsRes.error;
+                if (error) {
+                    console.error('Supabase error:', error);
+                    console.error('Error message:', error.message);
+                    console.error('Error details:', JSON.stringify(error, null, 2));
+                    throw error;
+                }
 
-                allSkates = skatesRes.data;
-                allRegistrations = regsRes.data;
+                allSkates = data;
                 renderSkates();
             } catch (error) {
                 console.error('Error loading skates:', error);
+                console.error('Full error:', JSON.stringify(error, null, 2));
                 document.getElementById('skatesContainer').innerHTML = 
                     `<div class="empty-state"><h3>Failed to load skates</h3><p>Error: ${error.message || 'Unknown error'}</p><p>Check console for details</p></div>`;
             }
         }
-
-        let quickAddShown = false;
 
         async function renderSkates() {
             const upcomingContainer = document.getElementById('skatesContainer');
@@ -1107,67 +890,62 @@
                 return skateDate < today;
             }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Reverse chronological
 
-            // Group registrations by skate_id in JS — no extra DB queries
+            // Get registration counts for each skate
             const skateCounts = {};
             const goalieSkaterCounts = {};
             for (const skate of allSkates) {
-                skateCounts[skate.id] = 0;
-                goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
-            }
-            for (const reg of allRegistrations) {
-                if (reg.is_waitlist) continue;
-                if (!goalieSkaterCounts[reg.skate_id]) continue;
-                skateCounts[reg.skate_id]++;
-                if (reg.is_goalie) goalieSkaterCounts[reg.skate_id].goalies++;
-                else goalieSkaterCounts[reg.skate_id].skaters++;
+                const { data } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('is_goalie')
+                    .eq('skate_id', skate.id)
+                    .eq('is_waitlist', false);
+                
+                if (data) {
+                    skateCounts[skate.id] = data.length;
+                    goalieSkaterCounts[skate.id] = {
+                        goalies: data.filter(p => p.is_goalie).length,
+                        skaters: data.filter(p => !p.is_goalie).length
+                    };
+                } else {
+                    skateCounts[skate.id] = 0;
+                    goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
+                }
             }
 
-            // Helper function to render a single skate card
-            const renderSkateCard = (skate) => {
-                const count = skateCounts[skate.id] || 0;
-                const isFull = count >= skate.capacity;
-                const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
-                const maxSkaters = skate.capacity - 2;
-                const hasPlayers = goalies > 0 || skaters > 0;
-                const countColorClass = hasPlayers ? 'has-players' : 'no-players';
-                return `
-                    <div class="skate-card" onclick="openSkate(${skate.id})">
-                        <div class="skate-title">${skate.title}</div>
-                        <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
-                        <div class="skate-detail">🕐 ${formatTime(skate.time_start)}&ndash;${formatTime(skate.time_end)}</div>
-                        <div class="skate-detail">💰 ${skate.cost}</div>
-                        <div class="skate-detail">📍 ${skate.location}</div>
-                        ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
-                        <div class="skate-count ${countColorClass}">${goalies}/2 goalies &middot; ${skaters}/${maxSkaters} skaters</div>
-                    </div>
-                `;
+            // Helper function to render skate cards
+            const renderSkateCards = (skates) => {
+                return skates.map(skate => {
+                    const count = skateCounts[skate.id] || 0;
+                    const isFull = count >= skate.capacity;
+                    const countClass = isFull ? 'count-full' : 'count-ok';
+                    
+                    const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
+                    // Capacity is for skaters only, not including goalies
+                    const maxSkaters = skate.capacity;
+                    
+                    // Determine if we have players or not
+                    const hasPlayers = goalies > 0 || skaters > 0;
+                    const countColorClass = hasPlayers ? 'has-players' : 'no-players';
+                    
+                    return `
+                        <div class="skate-card" onclick="openSkate(${skate.id})">
+                            <div class="skate-title">${skate.title}</div>
+                            <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
+                            <div class="skate-detail">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
+                            <div class="skate-detail">💰 ${skate.cost}</div>
+                            <div class="skate-detail">📍 ${skate.location}</div>
+                            ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
+                            <div class="skate-count ${countColorClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
+                        </div>
+                    `;
+                }).join('');
             };
 
-            // Helper to render skates grouped by month
-            const renderSkatesByMonth = (skates) => {
-                const groups = {};
-                skates.forEach(skate => {
-                    const d = new Date(skate.date + 'T00:00:00');
-                    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-                    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                    if (!groups[key]) groups[key] = { label, skates: [] };
-                    groups[key].skates.push(skate);
-                });
-                return Object.keys(groups).sort().map(key =>
-                    '<div style="margin-bottom: 32px;">' +
-                    '<h3 style="font-size: 15px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--card-border);">' + groups[key].label + '</h3>' +
-                    '<div class="skates-grid">' + groups[key].skates.map(renderSkateCard).join('') + '</div>' +
-                    '</div>'
-                ).join('');
-            };
-
-            // Render upcoming skates grouped by month
+            // Render upcoming skates
             if (futureSkates.length === 0) {
-                upcomingContainer.className = 'skates-grid';
                 upcomingContainer.innerHTML = '<div class="empty-state"><h3>No upcoming skates</h3><p>All skates are in the past</p></div>';
             } else {
-                upcomingContainer.className = '';
-                upcomingContainer.innerHTML = renderSkatesByMonth(futureSkates);
+                upcomingContainer.innerHTML = renderSkateCards(futureSkates);
             }
 
             // Update counts
@@ -1183,29 +961,9 @@
                 archiveToggle.style.display = 'none';
             }
 
-            // Auto-show Quick Add once after first data load
-            if (!quickAddShown) {
-                quickAddShown = true;
-                showQuickAdd();
-            }
-
-            // Render past skates grouped by month (descending)
+            // Render past skates (always render, visibility controlled by toggle)
             if (pastSkates.length > 0) {
-                const pastGroups = {};
-                pastSkates.forEach(skate => {
-                    const d = new Date(skate.date + 'T00:00:00');
-                    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-                    const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                    if (!pastGroups[key]) pastGroups[key] = { label, skates: [] };
-                    pastGroups[key].skates.push(skate);
-                });
-                pastContainer.className = '';
-                pastContainer.innerHTML = Object.keys(pastGroups).sort().reverse().map(key =>
-                    '<div style="margin-bottom: 32px;">' +
-                    '<h3 style="font-size: 15px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--card-border);">' + pastGroups[key].label + '</h3>' +
-                    '<div class="skates-grid">' + pastGroups[key].skates.map(renderSkateCard).join('') + '</div>' +
-                    '</div>'
-                ).join('');
+                pastContainer.innerHTML = renderSkateCards(pastSkates);
             }
         }
 
@@ -1263,10 +1021,7 @@
 
         function handleTierChange() {
             const select = document.getElementById('skateTier');
-            const defaultTiers = ['', 'Tier 1', 'Tier 2', 'Tier 3 Beginner', 'Mixed Skill', '3v3', 'Breakfast of Champions', 'Skills Development', 'custom'];
-            const isCustom = select.value !== '' && select.value !== 'custom' && !defaultTiers.includes(select.value);
-            document.getElementById('deleteTierBtn').style.display = isCustom ? 'block' : 'none';
-
+            
             if (select.value === 'custom') {
                 document.getElementById('customTierInput').style.display = 'block';
                 document.getElementById('customTierText').focus();
@@ -1327,28 +1082,6 @@
             localStorage.setItem('customTiers', JSON.stringify(tiers));
         }
 
-        function deleteCustomTier() {
-            const select = document.getElementById('skateTier');
-            const tierName = select.value;
-            if (!tierName || !confirm('Delete tier "' + tierName + '"?')) return;
-
-            // Remove from dropdown
-            for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].value === tierName) {
-                    select.remove(i);
-                    break;
-                }
-            }
-
-            // Reset selection
-            select.selectedIndex = 0;
-            document.getElementById('deleteTierBtn').style.display = 'none';
-            document.getElementById('skateTitle').value = '';
-
-            // Save updated list
-            saveCustomTiers();
-        }
-
         function loadCustomTiers() {
             const saved = localStorage.getItem('customTiers');
             if (saved) {
@@ -1373,7 +1106,6 @@
         function showCreateModal() {
             isEditMode = false;
             document.getElementById('modalTitle').textContent = 'Create New Skate';
-            document.querySelector('#skateModal .button[onclick="saveSkate()"]').textContent = 'Create Skate';
             document.getElementById('skateNumber').value = '';
             document.getElementById('skateTitle').value = '';
             document.getElementById('skateTier').selectedIndex = 0;
@@ -1407,14 +1139,12 @@
             const skate = allSkates.find(s => s.id === currentSkateId);
             if (!skate) return;
 
+            document.getElementById('modalTitle').textContent = 'Edit Skate';
+            
             // Populate dropdowns first
             populateDateDropdowns();
             populateTimeDropdowns();
             loadCustomTiers();
-
-            // Set label AFTER populate (which may reset it)
-            document.getElementById('modalTitle').textContent = 'Edit Skate';
-            document.querySelector('#skateModal .button[onclick="saveSkate()"]').textContent = 'Save Changes';
 
             // Parse skate number and tier from title
             let skateNumber = '';
@@ -1442,12 +1172,7 @@
                 }
             }
             if (!foundTier && tier) {
-                // Add as custom option if not in list
-                const customOpt = document.createElement('option');
-                customOpt.value = tier;
-                customOpt.textContent = tier;
-                tierSelect.insertBefore(customOpt, tierSelect.options[tierSelect.options.length - 1]);
-                tierSelect.value = tier;
+                tierSelect.selectedIndex = 0;
             }
 
             // Parse date
@@ -1486,8 +1211,6 @@
 
         function closeSkateModal() {
             document.getElementById('skateModal').classList.remove('active');
-            isEditMode = false;
-            currentSkateId = null;
         }
 
         async function saveSkate() {
@@ -1616,42 +1339,19 @@
                 if (sortedRoster.length === 0) {
                     rosterList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No players yet</div>';
                 } else {
-                    // Build other skates list for move menu
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const otherSkates = allSkates.filter(s => s.id !== currentSkateId && new Date(s.date + 'T00:00:00') >= today).sort((a,b) => new Date(a.date)-new Date(b.date));
-
                     rosterList.innerHTML = sortedRoster.map(player => {
                         let classes = 'roster-item';
                         if (player.is_goalie) classes += ' goalie';
                         if (!player.is_paid) classes += ' unpaid';
 
-                        const skateOptions = otherSkates.map(s =>
-                            `<button class="move-skate-item" onclick="movePlayerToSkate(${player.id}, ${s.id}, '${s.title.replace(/'/g,"\\'")}')">→ ${s.title} (${formatDate(s.date)})</button>`
-                        ).join('');
-
-                        const hasMoveOptions = otherSkates.length > 0;
-
                         return `
                             <div class="${classes}">
-                                <span class="roster-item-name">${player.player_name} ${player.is_goalie ? '🥅' : ''} ${!player.is_paid ? '⚠️' : ''}</span>
-                                <div class="player-menu-wrapper">
-                                    <button class="player-menu-btn" onclick="togglePlayerMenu('menu-${player.id}', event)">⋮</button>
-                                    <div class="player-menu-dropdown" id="menu-${player.id}">
-                                        ${!player.is_goalie
-                                            ? `<button class="player-menu-item" onclick="toggleGoalie(${player.id}, true); closeAllMenus()">🥅 Mark as Goalie</button>`
-                                            : `<button class="player-menu-item" onclick="toggleGoalie(${player.id}, false); closeAllMenus()">👤 Remove Goalie</button>`}
-                                        ${player.is_paid
-                                            ? `<button class="player-menu-item" onclick="togglePaid(${player.id}, false); closeAllMenus()">❌ Mark Unpaid</button>`
-                                            : `<button class="player-menu-item" onclick="togglePaid(${player.id}, true); closeAllMenus()">💵 Mark Paid</button>`}
-                                        <button class="player-menu-item" onclick="moveToWaitlist(${player.id}); closeAllMenus()">⏸️ Move to Waitlist</button>
-                                        ${hasMoveOptions ? `
-                                        <div class="player-menu-divider"></div>
-                                        <button class="player-menu-item" onclick="toggleMoveMenu('move-${player.id}', event)">🔄 Move to Skate ▸</button>
-                                        <div class="move-skate-list" id="move-${player.id}">${skateOptions}</div>
-                                        ` : ''}
-                                        <div class="player-menu-divider"></div>
-                                        <button class="player-menu-item danger" onclick="deletePlayer(${player.id}); closeAllMenus()">🗑️ Remove</button>
-                                    </div>
+                                <span class="roster-item-name">${player.player_name} ${player.is_goalie ? '🥅' : ''}</span>
+                                <div class="roster-item-actions">
+                                    ${!player.is_goalie ? `<button class="icon-btn" onclick="toggleGoalie(${player.id}, true)" title="Mark as goalie">🥅</button>` : `<button class="icon-btn" onclick="toggleGoalie(${player.id}, false)" title="Remove goalie">👤</button>`}
+                                    ${player.is_paid ? `<button class="icon-btn" onclick="togglePaid(${player.id}, false)" title="Mark unpaid">💵→❌</button>` : `<button class="icon-btn" onclick="togglePaid(${player.id}, true)" title="Mark paid">❌→💵</button>`}
+                                    <button class="icon-btn" onclick="moveToWaitlist(${player.id})" title="Move to waitlist">⏸️</button>
+                                    <button class="icon-btn" onclick="deletePlayer(${player.id})" title="Remove">🗑️</button>
                                 </div>
                             </div>
                         `;
@@ -1666,13 +1366,9 @@
                     waitlistList.innerHTML = waitlist.map(player => `
                         <div class="roster-item waitlist">
                             <span class="roster-item-name">${player.player_name}</span>
-                            <div class="player-menu-wrapper">
-                                <button class="player-menu-btn" onclick="togglePlayerMenu('menu-wl-${player.id}', event)">⋮</button>
-                                <div class="player-menu-dropdown" id="menu-wl-${player.id}">
-                                    <button class="player-menu-item" onclick="moveToRoster(${player.id}); closeAllMenus()">▶️ Move to Roster</button>
-                                    <div class="player-menu-divider"></div>
-                                    <button class="player-menu-item danger" onclick="deletePlayer(${player.id}); closeAllMenus()">🗑️ Remove</button>
-                                </div>
+                            <div class="roster-item-actions">
+                                <button class="icon-btn" onclick="moveToRoster(${player.id})" title="Move to roster">▶️</button>
+                                <button class="icon-btn" onclick="deletePlayer(${player.id})" title="Remove">🗑️</button>
                             </div>
                         </div>
                     `).join('');
@@ -1878,65 +1574,9 @@
             }
         }
 
-        async function copyRosterToClipboard() {
-            const skate = allSkates.find(s => s.id === currentSkateId);
-            if (!skate) return;
-
-            // Fetch full roster
-            const { data, error } = await supabaseClient
-                .from('skate_registrations')
-                .select('*')
-                .eq('skate_id', currentSkateId)
-                .eq('is_waitlist', false)
-                .order('is_goalie', { ascending: false })
-                .order('position');
-
-            if (error) { alert('Failed to load roster'); return; }
-
-            // Build header
-            const dateStr = formatDate(skate.date);
-            const timeStr = formatTime(skate.time_start) + '\u2013' + formatTime(skate.time_end);
-            let text = '\uD83C\uDFD2 ' + skate.title + '\n';
-            text += 'Date & Time: ' + dateStr + ' \u00B7 ' + timeStr + '\n';
-            text += 'Cost: ' + skate.cost + ' \u2014 payments@shinnyofchampions.com\n';
-            text += 'Location: ' + skate.location + '\n';
-
-            // Sort: goalies first, then skaters
-            const goalies = data.filter(p => p.is_goalie);
-            const skaters = data.filter(p => !p.is_goalie);
-            const sorted = [...goalies, ...skaters];
-
-            // Fill goalie slots with "Open" if < 2
-            const goaliesToShow = [...goalies];
-            while (goaliesToShow.length < 2) goaliesToShow.push({ player_name: 'Open', is_goalie: true });
-            const fullList = [...goaliesToShow, ...skaters];
-
-            fullList.forEach((p, i) => {
-                text += (i + 1) + '. ' + p.player_name + (p.is_goalie ? ' \uD83E\uDD45' : '') + '\n';
-            });
-
-            try {
-                await navigator.clipboard.writeText(text);
-            } catch (e) {
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed'; ta.style.left = '-9999px';
-                document.body.appendChild(ta); ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-            }
-
-            // Toast confirmation
-            const toast = document.createElement('div');
-            toast.textContent = '\u2713 Copied! Ready to paste into WhatsApp';
-            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:8px;font-weight:600;z-index:9999;font-size:14px;white-space:nowrap;';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2500);
-        }
-
         function closeRosterModal() {
             document.getElementById('rosterModal').classList.remove('active');
-            if (!isEditMode) currentSkateId = null;
+            currentSkateId = null;
         }
 
         // CSV/ICS Import Functions
@@ -2107,32 +1747,13 @@
                             endTime = startDate.toTimeString().slice(0, 5);
                         }
 
-                        // Parse "Skate 234: Tier 3" into number + tier
-                        const rawTitle = row['Title (Optional)'] || row['Title'] || '';
-                        let csvSkateNumber = '';
-                        let csvTier = '';
-                        let csvTitle = rawTitle;
-
-                        const titleMatch = rawTitle.match(/^Skate\s+(\d+):\s*(.+)$/i);
-                        if (titleMatch) {
-                            csvSkateNumber = titleMatch[1];
-                            csvTier = titleMatch[2].trim();
-                            csvTitle = 'Skate ' + csvSkateNumber + ' ' + csvTier;
-                        }
-
-                        // Parse location - use first part before comma
-                        let csvLocation = row['Location (Optional)'] || row['Location'] || '';
-                        if (csvLocation.includes(',')) {
-                            csvLocation = csvLocation.split(',')[0].trim();
-                        }
-
                         parsedCSVData.push({
-                            title: csvTitle,
-                            tier: csvTier,
+                            title: row['Title (Optional)'] || '',
+                            tier: row['Title (Optional)'] || '',
                             date: date,
                             time_start: startTime,
                             time_end: endTime,
-                            location: csvLocation,
+                            location: row['Location (Optional)'] || '',
                             cost: '$25',
                             capacity: 24
                         });
@@ -2265,74 +1886,6 @@
             window.location.href = 'balancer.html';
         }
 
-
-        // ========== PLAYER ACTION MENU ==========
-
-        function togglePlayerMenu(menuId, event) {
-            event.stopPropagation();
-            const menu = document.getElementById(menuId);
-            const isOpen = menu.classList.contains('open');
-            closeAllMenus();
-            if (!isOpen) menu.classList.add('open');
-        }
-
-        function toggleMoveMenu(menuId, event) {
-            event.stopPropagation();
-            const menu = document.getElementById(menuId);
-            menu.classList.toggle('open');
-        }
-
-        function closeAllMenus() {
-            document.querySelectorAll('.player-menu-dropdown').forEach(m => m.classList.remove('open'));
-            document.querySelectorAll('.move-skate-list').forEach(m => m.classList.remove('open'));
-        }
-
-        // Close menus when clicking outside
-        document.addEventListener('click', closeAllMenus);
-
-        async function movePlayerToSkate(playerId, targetSkateId, targetSkateName) {
-            closeAllMenus();
-            if (!confirm('Move this player to ' + targetSkateName + '?')) return;
-            try {
-                const { data: playerData, error: fetchError } = await supabaseClient
-                    .from('skate_registrations').select('*').eq('id', playerId).single();
-                if (fetchError) throw fetchError;
-
-                const { data: existing } = await supabaseClient
-                    .from('skate_registrations').select('position')
-                    .eq('skate_id', targetSkateId).order('position', { ascending: false }).limit(1);
-                const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 1;
-
-                const { error: insertError } = await supabaseClient
-                    .from('skate_registrations').insert({
-                        skate_id: targetSkateId,
-                        player_name: playerData.player_name,
-                        is_paid: playerData.is_paid,
-                        is_goalie: playerData.is_goalie,
-                        is_waitlist: false,
-                        position: nextPosition
-                    });
-                if (insertError) throw insertError;
-
-                const { error: deleteError } = await supabaseClient
-                    .from('skate_registrations').delete().eq('id', playerId);
-                if (deleteError) throw deleteError;
-
-                const currentSkate = allSkates.find(s => s.id === currentSkateId);
-                await loadRoster(currentSkateId, currentSkate.capacity);
-                await loadSkates();
-
-                const toast = document.createElement('div');
-                toast.textContent = '✓ Moved to ' + targetSkateName;
-                toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:10px 20px;border-radius:8px;font-weight:600;z-index:9999;font-size:14px;';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2500);
-            } catch (err) {
-                console.error('Move failed:', err);
-                alert('Failed to move player');
-            }
-        }
-
         // ========== QUICK ADD PLAYER FUNCTIONS ==========
         
         let selectedSkatesForQuickAdd = new Set();
@@ -2461,21 +2014,9 @@
                 }
 
                 if (successCount > 0) {
+                    closeQuickAdd();
                     await loadSkates();
-                    // Clear name and reset selections, but keep modal open
-                    document.getElementById('quickAddPlayerName').value = '';
-                    selectedSkatesForQuickAdd.clear();
-                    document.querySelectorAll('.quick-add-skate-card').forEach(card => {
-                        card.classList.remove('selected');
-                        card.querySelector('.quick-add-checkmark span').style.display = 'none';
-                    });
-                    document.getElementById('quickAddPlayerName').focus();
-                    // Brief flash confirmation instead of alert
-                    const btn = document.querySelector('#quickAddModal .button:not(.button-secondary)');
-                    const orig = btn.textContent;
-                    btn.textContent = '✓ Added!';
-                    btn.style.background = '#059669';
-                    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1200);
+                    alert(`✓ Added "${playerName}" to ${successCount} skate(s)!`);
                 } else {
                     alert('Failed to add player to any skates');
                 }
@@ -2486,127 +2027,14 @@
             }
         }
 
-
-        // ========== AT A GLANCE ==========
-
-        async function showGlance() {
-            document.getElementById('glanceModal').classList.add('active');
-            document.getElementById('glanceContent').innerHTML = '<div class="loading">Loading rosters...</div>';
-
-            try {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                const futureSkates = allSkates.filter(s => new Date(s.date + 'T00:00:00') >= today)
-                    .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                if (futureSkates.length === 0) {
-                    document.getElementById('glanceContent').innerHTML = '<div class="empty-state"><h3>No upcoming skates</h3></div>';
-                    return;
+        // Auto-show Quick Add on page load (with delay to ensure skates are loaded)
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (allSkates && allSkates.length > 0) {
+                    showQuickAdd();
                 }
-
-                // Fetch all registrations for upcoming skates in one query
-                const skateIds = futureSkates.map(s => s.id);
-                const { data: regs, error } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('skate_id, player_name, is_goalie, is_waitlist, position')
-                    .in('skate_id', skateIds)
-                    .order('position');
-
-                if (error) throw error;
-
-                // Group by skate
-                const regsBySkate = {};
-                skateIds.forEach(id => regsBySkate[id] = { roster: [], waitlist: [] });
-                (regs || []).forEach(r => {
-                    if (!regsBySkate[r.skate_id]) return;
-                    if (r.is_waitlist) regsBySkate[r.skate_id].waitlist.push(r);
-                    else regsBySkate[r.skate_id].roster.push(r);
-                });
-
-                // Render
-                const cols = futureSkates.map(skate => {
-                    const { roster, waitlist } = regsBySkate[skate.id];
-                    const goalies = roster.filter(p => p.is_goalie);
-                    const skaters = roster.filter(p => !p.is_goalie);
-                    const maxSkaters = skate.capacity - 2;
-                    const isFull = roster.length >= skate.capacity;
-                    const spotsLeft = skate.capacity - roster.length;
-
-                    const statusColor = isFull ? '#ef4444' : 'var(--primary)';
-                    const statusText = isFull ? '🔴 Full' : `🟢 ${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`;
-
-                    const renderPlayer = (p, i) => {
-                        const bg = p.is_goalie ? 'background:#fef08a;color:#713f12;' : 'background:var(--bg-start);color:var(--text);';
-                        return `<div style="${bg} padding:6px 10px; border-radius:6px; margin-bottom:4px; font-size:13px; display:flex; justify-content:space-between;">
-                            <span>${i + 1}. ${p.player_name}${p.is_goalie ? ' 🥅' : ''}</span>
-                        </div>`;
-                    };
-
-                    const waitlistHtml = waitlist.length > 0 ? `
-                        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--card-border);">
-                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Waitlist (${waitlist.length})</div>
-                            ${waitlist.map((p, i) => `<div style="padding:5px 10px; border-radius:6px; margin-bottom:4px; font-size:12px; color:var(--text-muted); background:var(--card-border);">${i+1}. ${p.player_name}</div>`).join('')}
-                        </div>` : '';
-
-                    return `
-                        <div style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; padding:16px; min-width:220px; flex:1;">
-                            <div style="font-weight:700; font-size:15px; color:var(--text); margin-bottom:4px;">${skate.title}</div>
-                            <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">📅 ${formatDate(skate.date)}</div>
-                            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                            <div style="font-size:12px; font-weight:600; color:${statusColor}; margin-bottom:10px;">${statusText} · ${roster.length}/${skate.capacity}</div>
-
-                            ${goalies.length > 0 ? `
-                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (${goalies.length}/2)</div>
-                            ${goalies.map((p, i) => renderPlayer(p, i)).join('')}
-                            <div style="margin-top:8px;"></div>` : `
-                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (0/2)</div>
-                            <div style="font-size:12px; color:var(--text-muted); padding:6px 10px; margin-bottom:8px;">No goalies yet</div>`}
-
-                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Skaters (${skaters.length}/${maxSkaters})</div>
-                            ${skaters.length > 0 ? skaters.map((p, i) => renderPlayer(p, i)).join('') : '<div style="font-size:12px; color:var(--text-muted); padding:6px 10px;">No skaters yet</div>'}
-
-                            ${waitlistHtml}
-                        </div>
-                    `;
-                }).join('');
-
-                document.getElementById('glanceContent').innerHTML = `
-                    <div id="glanceScroller" style="display:flex; gap:16px; overflow-x:auto; overflow-y:hidden; padding-bottom:12px; align-items:flex-start; cursor:grab; user-select:none; flex:1; height:100%;">
-                        ${cols}
-                    </div>`;
-
-                // Click and drag to scroll
-                const scroller = document.getElementById('glanceScroller');
-                let isDown = false, startX, scrollLeft;
-                scroller.addEventListener('mousedown', (e) => {
-                    isDown = true;
-                    scroller.style.cursor = 'grabbing';
-                    startX = e.pageX - scroller.offsetLeft;
-                    scrollLeft = scroller.scrollLeft;
-                });
-                document.addEventListener('mouseup', () => {
-                    isDown = false;
-                    if (scroller) scroller.style.cursor = 'grab';
-                });
-                scroller.addEventListener('mousemove', (e) => {
-                    if (!isDown) return;
-                    e.preventDefault();
-                    const x = e.pageX - scroller.offsetLeft;
-                    scroller.scrollLeft = scrollLeft - (x - startX);
-                });
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById('glanceContent').innerHTML = '<div class="empty-state"><h3>Failed to load</h3></div>';
-            }
-        }
-
-        function closeGlance() {
-            document.getElementById('glanceModal').classList.remove('active');
-        }
-
-        // Quick Add is triggered from renderSkates() after data is ready
+            }, 1000); // Wait 1 second after page load
+        });
     </script>
 </body>
 </html>
