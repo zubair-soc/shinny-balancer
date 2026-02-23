@@ -286,7 +286,7 @@
             .header-buttons {
                 width: 100%;
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
             }
 
@@ -573,6 +573,7 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
+                <button class="back-button" onclick="showAtAGlance()">👥 At a Glance</button>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
@@ -821,6 +822,24 @@
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeQuickAdd()">Cancel</button>
                 <button class="button" onclick="quickAddPlayer()">Add Player</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- At a Glance Modal -->
+    <div id="atAGlanceModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <span>👥 At a Glance - All Registrations</span>
+                <button class="close-modal" onclick="closeAtAGlance()">×</button>
+            </div>
+
+            <div id="atAGlanceContent" style="max-height: 600px; overflow-y: auto;">
+                <div class="loading">Loading registrations...</div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeAtAGlance()">Close</button>
             </div>
         </div>
     </div>
@@ -2128,6 +2147,112 @@
                 console.error('Error in quickAddPlayer:', error);
                 alert('Failed to add player');
             }
+        }
+
+        // ========== AT A GLANCE FUNCTIONS ==========
+        async function showAtAGlance() {
+            document.getElementById('atAGlanceModal').classList.add('active');
+            const content = document.getElementById('atAGlanceContent');
+            content.innerHTML = '<div class="loading">Loading registrations...</div>';
+            
+            try {
+                // Get all future skates
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                
+                const futureSkates = allSkates.filter(skate => {
+                    const skateDate = new Date(skate.date + 'T00:00:00');
+                    return skateDate >= now;
+                }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                if (futureSkates.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><h3>No upcoming skates</h3></div>';
+                    return;
+                }
+
+                // Get registrations for all future skates
+                const skateData = [];
+                for (const skate of futureSkates) {
+                    const { data: registrations } = await supabaseClient
+                        .from('skate_registrations')
+                        .select('*')
+                        .eq('skate_id', skate.id)
+                        .eq('is_waitlist', false)
+                        .order('position');
+                    
+                    const goalies = registrations?.filter(p => p.is_goalie) || [];
+                    const skaters = registrations?.filter(p => !p.is_goalie) || [];
+                    
+                    skateData.push({
+                        skate,
+                        goalies,
+                        skaters,
+                        total: registrations?.length || 0
+                    });
+                }
+
+                // Render
+                content.innerHTML = skateData.map(({ skate, goalies, skaters, total }) => {
+                    const date = new Date(skate.date + 'T00:00:00');
+                    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    
+                    return `
+                        <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                <div>
+                                    <h3 style="font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px;">
+                                        ${skate.title}
+                                    </h3>
+                                    <div style="font-size: 14px; color: var(--text-muted);">
+                                        📅 ${dateStr} • 🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}
+                                    </div>
+                                </div>
+                                <div style="font-size: 16px; font-weight: 700; color: var(--primary);">
+                                    ${total}/${skate.capacity}
+                                </div>
+                            </div>
+                            
+                            ${goalies.length > 0 ? `
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">
+                                        Goalies (${goalies.length})
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                        ${goalies.map(p => `
+                                            <span style="background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                                                ${p.player_name}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${skaters.length > 0 ? `
+                                <div>
+                                    <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">
+                                        Skaters (${skaters.length})
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                        ${skaters.map(p => `
+                                            <span style="background: var(--bg-start); border: 1px solid var(--card-border); color: var(--text); padding: 4px 10px; border-radius: 6px; font-size: 13px;">
+                                                ${p.player_name}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : '<div style="color: var(--text-muted); font-size: 14px;">No skaters registered yet</div>'}
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading At a Glance:', error);
+                content.innerHTML = '<div class="empty-state"><h3>Failed to load registrations</h3></div>';
+            }
+        }
+
+        function closeAtAGlance() {
+            document.getElementById('atAGlanceModal').classList.remove('active');
         }
 
         // Auto-show Quick Add on page load (with delay to ensure skates are loaded)
