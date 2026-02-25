@@ -2530,6 +2530,9 @@
         async function showAtAGlance() {
             document.getElementById('atAGlanceModal').classList.add('active');
             document.getElementById('atAGlanceContent').innerHTML = '<div class="loading">Loading rosters...</div>';
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
 
             try {
                 const today = new Date();
@@ -2588,37 +2591,33 @@
                         </div>` : '';
 
                     return `
-                        <div style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; padding:16px; min-width:220px; flex:0 0 220px; display:flex; flex-direction:column; max-height:100%;">
-                            <div style="flex-shrink:0;">
-                                <div style="font-weight:700; font-size:15px; color:var(--text); margin-bottom:4px;">${skate.title}</div>
-                                <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">📅 ${formatDate(skate.date)}</div>
-                                <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                                <div style="font-size:12px; font-weight:600; color:${statusColor}; margin-bottom:10px;">${statusText} · ${roster.length}/${skate.capacity}</div>
-                            </div>
-                            
-                            <div style="flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;">
-                                ${goalies.length > 0 ? `
-                                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (${goalies.length}/2)</div>
-                                ${goalies.map((p, i) => renderPlayer(p, i)).join('')}
-                                <div style="margin-top:8px;"></div>` : `
-                                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (0/2)</div>
-                                <div style="font-size:12px; color:var(--text-muted); padding:6px 10px; margin-bottom:8px;">No goalies yet</div>`}
+                        <div style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; padding:16px; min-width:220px; flex:0 0 220px;">
+                            <div style="font-weight:700; font-size:15px; color:var(--text); margin-bottom:4px;">${skate.title}</div>
+                            <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">📅 ${formatDate(skate.date)}</div>
+                            <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
+                            <div style="font-size:12px; font-weight:600; color:${statusColor}; margin-bottom:10px;">${statusText} · ${roster.length}/${skate.capacity}</div>
 
-                                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Skaters (${skaters.length}/${maxSkaters})</div>
-                                ${skaters.length > 0 ? skaters.map((p, i) => renderPlayer(p, i)).join('') : '<div style="font-size:12px; color:var(--text-muted); padding:6px 10px;">No skaters yet</div>'}
+                            ${goalies.length > 0 ? `
+                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (${goalies.length}/2)</div>
+                            ${goalies.map((p, i) => renderPlayer(p, i)).join('')}
+                            <div style="margin-top:8px;"></div>` : `
+                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (0/2)</div>
+                            <div style="font-size:12px; color:var(--text-muted); padding:6px 10px; margin-bottom:8px;">No goalies yet</div>`}
 
-                                ${waitlistHtml}
-                            </div>
+                            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Skaters (${skaters.length}/${maxSkaters})</div>
+                            ${skaters.length > 0 ? skaters.map((p, i) => renderPlayer(p, i)).join('') : '<div style="font-size:12px; color:var(--text-muted); padding:6px 10px;">No skaters yet</div>'}
+
+                            ${waitlistHtml}
                         </div>
                     `;
                 }).join('');
 
                 document.getElementById('atAGlanceContent').innerHTML = `
-                    <div id="glanceScroller" style="display:flex; gap:16px; overflow-x:auto; overflow-y:hidden; padding-bottom:12px; align-items:flex-start; cursor:grab; user-select:none; flex:1; height:100%;">
+                    <div id="glanceScroller" style="display:flex; gap:16px; overflow:auto; padding-bottom:12px; align-items:flex-start; cursor:grab; user-select:none; flex:1; height:100%;">
                         ${cols}
                     </div>`;
 
-                // Click and drag to scroll
+                // Click and drag to scroll horizontally
                 const scroller = document.getElementById('glanceScroller');
                 let isDown = false, startX, scrollLeft;
                 scroller.addEventListener('mousedown', (e) => {
@@ -2646,6 +2645,8 @@
 
         function closeAtAGlance() {
             document.getElementById('atAGlanceModal').classList.remove('active');
+            // Restore body scroll
+            document.body.style.overflow = '';
         }
 
         // Auto-show Quick Add on page load (with delay to ensure skates are loaded)
