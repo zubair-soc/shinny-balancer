@@ -2591,8 +2591,8 @@
                     const goalies = roster.filter(p => p.is_goalie);
                     const skaters = roster.filter(p => !p.is_goalie);
                     const maxSkaters = skate.capacity;
-                    const isFull = roster.length >= skate.capacity;
-                    const spotsLeft = skate.capacity - roster.length;
+                    const isFull = skaters.length >= skate.capacity; // Only count skaters
+                    const spotsLeft = skate.capacity - skaters.length; // Only count skaters
 
                     const statusColor = isFull ? '#ef4444' : 'var(--primary)';
                     const statusText = isFull ? '🔴 Full' : `🟢 ${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`;
@@ -2615,7 +2615,7 @@
                             <div style="font-weight:700; font-size:15px; color:var(--text); margin-bottom:4px;">${skate.title}</div>
                             <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">📅 ${formatDate(skate.date)}</div>
                             <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                            <div style="font-size:12px; font-weight:600; color:${statusColor}; margin-bottom:10px;">${statusText} · ${roster.length}/${skate.capacity}</div>
+                            <div style="font-size:12px; font-weight:600; color:${statusColor}; margin-bottom:10px;">${statusText} · ${skaters.length}/${skate.capacity}</div>
 
                             ${goalies.length > 0 ? `
                             <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Goalies (${goalies.length}/2)</div>
