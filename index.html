@@ -372,7 +372,7 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            transition: transform 0.2s;
+            transition: transform 0.15s ease, background 0.15s ease;
         }
 
         .button:hover {
@@ -2468,13 +2468,11 @@
             const playerName = capitalizeName(document.getElementById('quickAddPlayerName').value);
             
             if (!playerName) {
-                alert('Please enter a player name');
-                return;
+                return; // Just silently return if no name
             }
 
             if (selectedSkatesForQuickAdd.size === 0) {
-                alert('Please select at least one skate');
-                return;
+                return; // Just silently return if no skates selected
             }
 
             try {
@@ -2512,16 +2510,32 @@
                 }
 
                 if (successCount > 0) {
-                    closeQuickAdd();
+                    // Haptic feedback on mobile
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50); // Quick 50ms vibration
+                    }
+                    
+                    // Visual feedback - pulse the button
+                    const addBtn = event?.target || document.querySelector('#quickAddModal .button:not(.button-secondary)');
+                    if (addBtn) {
+                        addBtn.style.transform = 'scale(0.95)';
+                        addBtn.style.background = '#059669';
+                        setTimeout(() => {
+                            addBtn.style.transform = 'scale(1)';
+                            addBtn.style.background = '';
+                        }, 150);
+                    }
+                    
+                    // Clear the input and keep modal open
+                    document.getElementById('quickAddPlayerName').value = '';
+                    document.getElementById('quickAddPlayerName').focus();
+                    
+                    // Reload skates in background
                     await loadSkates();
-                    alert(`✓ Added "${playerName}" to ${successCount} skate(s)!`);
-                } else {
-                    alert('Failed to add player to any skates');
                 }
 
             } catch (error) {
                 console.error('Error in quickAddPlayer:', error);
-                alert('Failed to add player');
             }
         }
 
