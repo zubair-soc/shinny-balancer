@@ -835,6 +835,7 @@
             </div>
 
             <div class="modal-buttons">
+                <button class="button" onclick="copyForWhatsApp()" style="background: #25D366; color: white; border: none;">📋 Copy for WhatsApp</button>
                 <button class="button" onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
                 <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
@@ -1784,6 +1785,66 @@
         function closeRosterModal() {
             document.getElementById('rosterModal').classList.remove('active');
             currentSkateId = null;
+        }
+
+        async function copyForWhatsApp() {
+            if (!currentSkateId) return;
+            
+            try {
+                const skate = allSkates.find(s => s.id === currentSkateId);
+                if (!skate) return;
+
+                // Get roster
+                const { data, error } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('*')
+                    .eq('skate_id', currentSkateId)
+                    .eq('is_waitlist', false)
+                    .order('position');
+
+                if (error) throw error;
+
+                // Sort: goalies first, then skaters
+                const sortedRoster = data.sort((a, b) => {
+                    if (a.is_goalie && !b.is_goalie) return -1;
+                    if (!a.is_goalie && b.is_goalie) return 1;
+                    return a.position - b.position;
+                });
+
+                // Format date
+                const date = new Date(skate.date + 'T00:00:00');
+                const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                // Build WhatsApp message
+                let message = `🏒 ${skate.title}\n`;
+                message += `Date & Time: ${dateStr} · ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}\n`;
+                message += `Cost: ${skate.cost} — payments@shinnyofchampions.com\n`;
+                message += `Location: ${skate.location}\n`;
+
+                // Add players with numbering
+                sortedRoster.forEach((player, index) => {
+                    const num = index + 1;
+                    const emoji = player.is_goalie ? ' 🥅' : '';
+                    message += `${num}. ${player.player_name}${emoji}\n`;
+                });
+
+                // Copy to clipboard
+                await navigator.clipboard.writeText(message);
+                
+                // Show feedback
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.style.background = '#059669';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '#25D366';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error copying for WhatsApp:', error);
+                alert('Failed to copy. Please try again.');
+            }
         }
 
         // CSV/ICS Import Functions
