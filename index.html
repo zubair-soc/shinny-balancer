@@ -1062,8 +1062,8 @@
                         <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'D'); event.stopPropagation()">D</div>
                         <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'E'); event.stopPropagation()">E</div>
                         <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'F'); event.stopPropagation()">F</div>
-                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'G'); event.stopPropagation()">G</div>
                         <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'H'); event.stopPropagation()">H</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'I'); event.stopPropagation()">I</div>
                         <div class="friend-group-btn clear" onclick="setFriendGroup(${playerId}, null); event.stopPropagation()">Clear Group</div>
                     </div>
                 `;
@@ -1080,7 +1080,21 @@
             }
             
             // Toggle submenu
-            submenu.classList.toggle('active');
+            const isActive = submenu.classList.toggle('active');
+            
+            // On mobile, check if submenu goes off screen
+            if (isActive && window.innerWidth < 768) {
+                setTimeout(() => {
+                    const rect = submenu.getBoundingClientRect();
+                    if (rect.right > window.innerWidth) {
+                        // Position to the left instead
+                        submenu.style.left = 'auto';
+                        submenu.style.right = '100%';
+                        submenu.style.marginLeft = '0';
+                        submenu.style.marginRight = '4px';
+                    }
+                }, 10);
+            }
         }
 
         async function setFriendGroup(playerId, letter) {
