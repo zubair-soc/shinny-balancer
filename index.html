@@ -552,6 +552,16 @@
             min-width: 180px;
             margin-left: 4px;
             display: none;
+            z-index: 10000;
+        }
+
+        @media (max-width: 768px) {
+            .friend-group-submenu {
+                left: auto;
+                right: 100%;
+                margin-left: 0;
+                margin-right: 4px;
+            }
         }
 
         .friend-group-submenu.active {
@@ -1068,7 +1078,6 @@
                     </div>
                 `;
                 submenu.addEventListener('click', (e) => e.stopPropagation());
-                menu.querySelector('.menu-item:has(+ .menu-item)')?.parentElement.appendChild(submenu);
                 
                 // Find the Friend Group menu item and append submenu there
                 const friendGroupItem = Array.from(menu.querySelectorAll('.menu-item'))
@@ -1080,21 +1089,7 @@
             }
             
             // Toggle submenu
-            const isActive = submenu.classList.toggle('active');
-            
-            // On mobile, check if submenu goes off screen
-            if (isActive && window.innerWidth < 768) {
-                setTimeout(() => {
-                    const rect = submenu.getBoundingClientRect();
-                    if (rect.right > window.innerWidth) {
-                        // Position to the left instead
-                        submenu.style.left = 'auto';
-                        submenu.style.right = '100%';
-                        submenu.style.marginLeft = '0';
-                        submenu.style.marginRight = '4px';
-                    }
-                }, 10);
-            }
+            submenu.classList.toggle('active');
         }
 
         async function setFriendGroup(playerId, letter) {
