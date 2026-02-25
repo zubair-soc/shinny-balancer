@@ -557,10 +557,25 @@
 
         @media (max-width: 768px) {
             .friend-group-submenu {
-                left: auto;
-                right: 100%;
-                margin-left: 0;
-                margin-right: 4px;
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                margin: 0;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                border: 2px solid var(--primary);
+                min-width: 240px;
+            }
+            
+            .friend-group-submenu::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: -1;
             }
         }
 
