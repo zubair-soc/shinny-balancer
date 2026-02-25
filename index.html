@@ -730,7 +730,7 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
-                <button class="back-button" onclick="showAtAGlance()">👥 At a Glance</button>
+                <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
@@ -927,7 +927,7 @@
             </div>
 
             <div class="modal-buttons">
-                <button class="button" onclick="copyForWhatsApp()" style="background: #25D366; color: white; border: none;">📋 Copy for WhatsApp</button>
+                <button class="button" onclick="copyForWhatsApp(event)" style="background: #25D366; color: white; border: none;">📋 Copy for WhatsApp</button>
                 <button class="button" onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
                 <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
@@ -1948,7 +1948,7 @@
             currentSkateId = null;
         }
 
-        async function copyForWhatsApp() {
+        async function copyForWhatsApp(event) {
             if (!currentSkateId) return;
             
             try {
@@ -1989,18 +1989,53 @@
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
 
-                // Copy to clipboard
-                await navigator.clipboard.writeText(message);
+                // Copy to clipboard with fallback
+                let copied = false;
+                
+                // Try modern clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(message);
+                        copied = true;
+                    } catch (e) {
+                        console.log('Modern clipboard failed, trying fallback');
+                    }
+                }
+                
+                // Fallback method
+                if (!copied) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = message;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        copied = true;
+                    } catch (e) {
+                        console.error('Fallback copy failed:', e);
+                    }
+                    document.body.removeChild(textArea);
+                }
+                
+                if (!copied) {
+                    throw new Error('Clipboard copy failed');
+                }
                 
                 // Show feedback
-                const btn = event.target;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✓ Copied!';
-                btn.style.background = '#059669';
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.background = '#25D366';
-                }, 2000);
+                const btn = event?.target || event?.currentTarget;
+                if (btn) {
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✓ Copied!';
+                    btn.style.background = '#059669';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = '#25D366';
+                    }, 2000);
+                } else {
+                    alert('✓ Copied to clipboard!');
+                }
 
             } catch (error) {
                 console.error('Error copying for WhatsApp:', error);
