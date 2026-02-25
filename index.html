@@ -540,6 +540,60 @@
             background: rgba(239, 68, 68, 0.1);
         }
 
+        /* Friend group submenu */
+        .friend-group-submenu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            margin-left: 4px;
+            display: none;
+        }
+
+        .friend-group-submenu.active {
+            display: block;
+        }
+
+        .friend-group-buttons {
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .friend-group-btn {
+            padding: 8px;
+            background: var(--bg-start);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .friend-group-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .friend-group-btn.clear {
+            grid-column: span 4;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .friend-group-btn.clear:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
         .capacity-bar {
             height: 4px;
             background: var(--card-border);
@@ -983,7 +1037,72 @@
             document.querySelectorAll('.menu-dropdown').forEach(menu => {
                 menu.classList.remove('active');
             });
+            document.querySelectorAll('.friend-group-submenu').forEach(submenu => {
+                submenu.classList.remove('active');
+            });
         });
+
+        // ========== FRIEND GROUP FUNCTIONS ==========
+        function showFriendGroupMenu(playerId, event) {
+            event.stopPropagation();
+            
+            // Create submenu if it doesn't exist
+            const menu = document.getElementById(`menu-${playerId}`);
+            let submenu = document.getElementById(`friend-submenu-${playerId}`);
+            
+            if (!submenu) {
+                submenu = document.createElement('div');
+                submenu.id = `friend-submenu-${playerId}`;
+                submenu.className = 'friend-group-submenu';
+                submenu.innerHTML = `
+                    <div class="friend-group-buttons">
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'A'); event.stopPropagation()">A</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'B'); event.stopPropagation()">B</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'C'); event.stopPropagation()">C</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'D'); event.stopPropagation()">D</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'E'); event.stopPropagation()">E</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'F'); event.stopPropagation()">F</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'G'); event.stopPropagation()">G</div>
+                        <div class="friend-group-btn" onclick="setFriendGroup(${playerId}, 'H'); event.stopPropagation()">H</div>
+                        <div class="friend-group-btn clear" onclick="setFriendGroup(${playerId}, null); event.stopPropagation()">Clear Group</div>
+                    </div>
+                `;
+                submenu.addEventListener('click', (e) => e.stopPropagation());
+                menu.querySelector('.menu-item:has(+ .menu-item)')?.parentElement.appendChild(submenu);
+                
+                // Find the Friend Group menu item and append submenu there
+                const friendGroupItem = Array.from(menu.querySelectorAll('.menu-item'))
+                    .find(item => item.textContent.includes('Friend Group'));
+                if (friendGroupItem) {
+                    friendGroupItem.style.position = 'relative';
+                    friendGroupItem.appendChild(submenu);
+                }
+            }
+            
+            // Toggle submenu
+            submenu.classList.toggle('active');
+        }
+
+        async function setFriendGroup(playerId, letter) {
+            try {
+                const { error } = await supabaseClient
+                    .from('skate_registrations')
+                    .update({ friend_group: letter })
+                    .eq('id', playerId);
+
+                if (error) throw error;
+
+                // Reload roster
+                const skate = allSkates.find(s => s.id === currentSkateId);
+                await loadRoster(currentSkateId, skate.capacity);
+                
+                // Close menu
+                closeMenu(playerId);
+            } catch (error) {
+                console.error('Error setting friend group:', error);
+                alert('Failed to set friend group');
+            }
+        }
 
         // ========== THEME TOGGLE ==========
         function toggleTheme() {
@@ -1555,10 +1674,14 @@
                         const playerDisplay = player.is_goalie 
                             ? `${player.player_name} 🥅`
                             : `${skaterNumber++}. ${player.player_name}`;
+                        
+                        // Show friend group tag if set
+                        const friendTag = player.friend_group ? 
+                            `<span style="display: inline-block; background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${player.friend_group}</span>` : '';
 
                         return `
                             <div class="${classes}">
-                                <span class="roster-item-name">${playerDisplay}</span>
+                                <span class="roster-item-name">${playerDisplay}${friendTag}</span>
                                 <div class="player-menu">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
@@ -1570,6 +1693,7 @@
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, false); closeMenu(${player.id})">❌ Mark Unpaid</div>` : 
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
                                         }
+                                        <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${player.friend_group}]` : ''} ›</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
                                     </div>
