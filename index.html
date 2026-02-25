@@ -543,14 +543,14 @@
         /* Friend group submenu */
         .friend-group-submenu {
             position: absolute;
-            left: 100%;
+            right: 100%;
             top: 0;
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             min-width: 180px;
-            margin-left: 4px;
+            margin-right: 4px;
             display: none;
             z-index: 10000;
         }
@@ -1033,6 +1033,21 @@
                 .split(' ')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
+        }
+
+        // Get color for friend group letter
+        function getFriendGroupColor(letter) {
+            const colors = {
+                'A': '#ef4444', // Red
+                'B': '#f97316', // Orange
+                'C': '#eab308', // Yellow
+                'D': '#22c55e', // Green
+                'E': '#06b6d4', // Cyan
+                'F': '#3b82f6', // Blue
+                'H': '#8b5cf6', // Purple
+                'I': '#ec4899'  // Pink
+            };
+            return colors[letter] || '#10b981'; // Default to primary green
         }
 
         // ========== THREE-DOT MENU FUNCTIONS ==========
@@ -1707,7 +1722,7 @@
                         
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
-                            `<span style="display: inline-block; background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${player.friend_group}</span>` : '';
+                            `<span style="display: inline-block; background: ${getFriendGroupColor(player.friend_group)}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${player.friend_group}</span>` : '';
 
                         return `
                             <div class="${classes}">
