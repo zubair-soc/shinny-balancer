@@ -462,6 +462,71 @@
             background: rgba(0, 0, 0, 0.2);
         }
 
+        /* Three-dot menu */
+        .player-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .menu-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 18px;
+            color: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        .menu-button:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 180px;
+            margin-top: 4px;
+        }
+
+        .menu-dropdown.active {
+            display: block;
+        }
+
+        .menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-item:hover {
+            background: var(--bg-start);
+        }
+
+        .menu-item.danger {
+            color: #ef4444;
+        }
+
+        .menu-item.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
         .capacity-bar {
             height: 4px;
             background: var(--card-border);
@@ -867,6 +932,45 @@
             return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         }
 
+        // Capitalize names properly (e.g., "dan nguyen" -> "Dan Nguyen")
+        function capitalizeName(name) {
+            if (!name) return '';
+            return name.trim()
+                .toLowerCase()
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // ========== THREE-DOT MENU FUNCTIONS ==========
+        function toggleMenu(playerId, event) {
+            event.stopPropagation();
+            const menu = document.getElementById(`menu-${playerId}`);
+            const allMenus = document.querySelectorAll('.menu-dropdown');
+            
+            // Close all other menus
+            allMenus.forEach(m => {
+                if (m.id !== `menu-${playerId}`) {
+                    m.classList.remove('active');
+                }
+            });
+            
+            // Toggle this menu
+            menu.classList.toggle('active');
+        }
+
+        function closeMenu(playerId) {
+            const menu = document.getElementById(`menu-${playerId}`);
+            if (menu) menu.classList.remove('active');
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.menu-dropdown').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        });
+
         // ========== THEME TOGGLE ==========
         function toggleTheme() {
             const body = document.body;
@@ -971,26 +1075,31 @@
                 return skateDate < today;
             }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Reverse chronological
 
-            // Get registration counts for each skate
+            // Get registration counts for ALL skates in ONE BULK QUERY (fast!)
+            const skateIds = allSkates.map(s => s.id);
+            const { data: allRegs } = await supabaseClient
+                .from('skate_registrations')
+                .select('skate_id, is_goalie, is_waitlist')
+                .in('skate_id', skateIds)
+                .eq('is_waitlist', false);
+            
+            // Group counts by skate
             const skateCounts = {};
             const goalieSkaterCounts = {};
-            for (const skate of allSkates) {
-                const { data } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('is_goalie')
-                    .eq('skate_id', skate.id)
-                    .eq('is_waitlist', false);
-                
-                if (data) {
-                    skateCounts[skate.id] = data.length;
-                    goalieSkaterCounts[skate.id] = {
-                        goalies: data.filter(p => p.is_goalie).length,
-                        skaters: data.filter(p => !p.is_goalie).length
-                    };
-                } else {
-                    skateCounts[skate.id] = 0;
-                    goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
-                }
+            allSkates.forEach(skate => {
+                skateCounts[skate.id] = 0;
+                goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
+            });
+            
+            if (allRegs) {
+                allRegs.forEach(reg => {
+                    skateCounts[reg.skate_id]++;
+                    if (reg.is_goalie) {
+                        goalieSkaterCounts[reg.skate_id].goalies++;
+                    } else {
+                        goalieSkaterCounts[reg.skate_id].skaters++;
+                    }
+                });
             }
 
             // Helper function to render skate cards
@@ -1422,19 +1531,34 @@
                 if (sortedRoster.length === 0) {
                     rosterList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No players yet</div>';
                 } else {
+                    let skaterNumber = 1; // Counter for skaters only
                     rosterList.innerHTML = sortedRoster.map(player => {
                         let classes = 'roster-item';
                         if (player.is_goalie) classes += ' goalie';
                         if (!player.is_paid) classes += ' unpaid';
 
+                        // Number skaters only, not goalies
+                        const playerDisplay = player.is_goalie 
+                            ? `${player.player_name} 🥅`
+                            : `${skaterNumber++}. ${player.player_name}`;
+
                         return `
                             <div class="${classes}">
-                                <span class="roster-item-name">${player.player_name} ${player.is_goalie ? '🥅' : ''}</span>
-                                <div class="roster-item-actions">
-                                    ${!player.is_goalie ? `<button class="icon-btn" onclick="toggleGoalie(${player.id}, true)" title="Mark as goalie">🥅</button>` : `<button class="icon-btn" onclick="toggleGoalie(${player.id}, false)" title="Remove goalie">👤</button>`}
-                                    ${player.is_paid ? `<button class="icon-btn" onclick="togglePaid(${player.id}, false)" title="Mark unpaid">💵→❌</button>` : `<button class="icon-btn" onclick="togglePaid(${player.id}, true)" title="Mark paid">❌→💵</button>`}
-                                    <button class="icon-btn" onclick="moveToWaitlist(${player.id})" title="Move to waitlist">⏸️</button>
-                                    <button class="icon-btn" onclick="deletePlayer(${player.id})" title="Remove">🗑️</button>
+                                <span class="roster-item-name">${playerDisplay}</span>
+                                <div class="player-menu">
+                                    <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
+                                    <div id="menu-${player.id}" class="menu-dropdown">
+                                        ${!player.is_goalie ? 
+                                            `<div class="menu-item" onclick="toggleGoalie(${player.id}, true); closeMenu(${player.id})">🥅 Mark as Goalie</div>` : 
+                                            `<div class="menu-item" onclick="toggleGoalie(${player.id}, false); closeMenu(${player.id})">👤 Remove Goalie</div>`
+                                        }
+                                        ${player.is_paid ? 
+                                            `<div class="menu-item" onclick="togglePaid(${player.id}, false); closeMenu(${player.id})">❌ Mark Unpaid</div>` : 
+                                            `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
+                                        }
+                                        <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
+                                        <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -1477,7 +1601,7 @@
         }
 
         async function addPlayerToSkate() {
-            const playerName = document.getElementById('newPlayerName').value.trim();
+            const playerName = capitalizeName(document.getElementById('newPlayerName').value);
             
             if (!playerName) {
                 alert('Please enter a player name');
@@ -1517,7 +1641,7 @@
         }
 
         async function addToWaitlist() {
-            const playerName = document.getElementById('newWaitlistName').value.trim();
+            const playerName = capitalizeName(document.getElementById('newWaitlistName').value);
             
             if (!playerName) {
                 alert('Please enter a player name');
@@ -2084,7 +2208,7 @@
         }
 
         async function quickAddPlayer() {
-            const playerName = document.getElementById('quickAddPlayerName').value.trim();
+            const playerName = capitalizeName(document.getElementById('quickAddPlayerName').value);
             
             if (!playerName) {
                 alert('Please enter a player name');
