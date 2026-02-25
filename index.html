@@ -1200,6 +1200,12 @@
 
                 allSkates = data;
                 renderSkates();
+                
+                // Auto-show Quick Add on first load only
+                if (!window.hasShownQuickAdd && allSkates.length > 0) {
+                    window.hasShownQuickAdd = true;
+                    setTimeout(() => showQuickAdd(), 300); // Small delay for smooth UX
+                }
             } catch (error) {
                 console.error('Error loading skates:', error);
                 console.error('Full error:', JSON.stringify(error, null, 2));
@@ -2663,14 +2669,6 @@
             document.body.style.overflow = '';
         }
 
-        // Auto-show Quick Add on page load (with delay to ensure skates are loaded)
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                if (allSkates && allSkates.length > 0) {
-                    showQuickAdd();
-                }
-            }, 1000); // Wait 1 second after page load
-        });
     </script>
 </body>
 </html>
