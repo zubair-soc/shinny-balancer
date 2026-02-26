@@ -1807,14 +1807,14 @@
                 }
 
                 // Update counts with Goalies and Skaters breakdown
-                document.getElementById('rosterCount').textContent = `Goalies (${goalieCount}/2) · Skaters (${skaterCount}/${capacity - 2})`;
+                document.getElementById('rosterCount').textContent = `Goalies (${goalieCount}/2) · Skaters (${skaterCount}/${capacity})`;
                 document.getElementById('waitlistCount').textContent = `(${waitlist.length})`;
 
-                // Update capacity bar
-                const fillPercent = (sortedRoster.length / capacity) * 100;
+                // Update capacity bar (only count skaters, not goalies)
+                const fillPercent = (skaterCount / capacity) * 100;
                 const fill = document.getElementById('capacityFill');
                 fill.style.width = fillPercent + '%';
-                if (sortedRoster.length >= capacity) {
+                if (skaterCount >= capacity) {
                     fill.classList.add('capacity-full');
                 } else {
                     fill.classList.remove('capacity-full');
