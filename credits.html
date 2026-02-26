@@ -571,24 +571,34 @@
         async function loadData() {
             try {
                 // Load players
+                console.log('Loading players...');
                 const { data: players, error: playersError } = await supabaseClient
                     .from('players')
                     .select('*')
                     .order('name');
 
-                if (playersError) throw playersError;
-                allPlayers = players;
+                if (playersError) {
+                    console.error('Players error:', playersError);
+                    throw playersError;
+                }
+                console.log('Players loaded:', players?.length || 0);
+                allPlayers = players || [];
 
                 // Load credits
+                console.log('Loading credits...');
                 const { data: credits, error: creditsError } = await supabaseClient
                     .from('player_credits')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (creditsError) throw creditsError;
+                if (creditsError) {
+                    console.error('Credits error:', creditsError);
+                    throw creditsError;
+                }
+                console.log('Credits loaded:', credits?.length || 0);
                 
                 // Manually join player names
-                allCredits = credits.map(credit => {
+                allCredits = (credits || []).map(credit => {
                     const player = allPlayers.find(p => p.id === credit.player_id);
                     return {
                         ...credit,
@@ -596,12 +606,17 @@
                     };
                 });
 
+                console.log('Final credits with players:', allCredits.length);
                 updateSummary();
                 renderCredits();
             } catch (error) {
                 console.error('Error loading data:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
                 document.getElementById('creditsContent').innerHTML = 
-                    '<div class="empty-state"><h3>Failed to load credits</h3><p>Check console for details</p></div>';
+                    `<div class="empty-state">
+                        <h3>Failed to load credits</h3>
+                        <p>${error.message || 'Check console for details'}</p>
+                    </div>`;
             }
         }
 
