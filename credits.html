@@ -1077,12 +1077,17 @@
 
                 const nextPosition = roster && roster.length > 0 ? roster[0].position + 1 : 1;
 
+                // Get player name
+                const player = allPlayers.find(p => p.id === applyingPlayerId);
+                if (!player) throw new Error('Player not found');
+
                 // Add player to skate
                 const { error: addError } = await supabaseClient
                     .from('skate_registrations')
                     .insert({
                         skate_id: skateId,
                         player_id: applyingPlayerId,
+                        player_name: player.name,
                         is_goalie: false,
                         is_paid: true,
                         is_waitlist: false,
