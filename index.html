@@ -1192,6 +1192,20 @@
             }
         }
 
+        // ========== CLICK OUTSIDE MODALS TO CLOSE ==========
+        document.addEventListener('click', (e) => {
+            // Check if click is on a modal backdrop (not modal-content)
+            if (e.target.classList.contains('modal')) {
+                // Close the appropriate modal
+                if (e.target.id === 'skateModal') closeSkateModal();
+                else if (e.target.id === 'rosterModal') closeRosterModal();
+                else if (e.target.id === 'csvPreviewModal') closeCSVPreviewModal();
+                else if (e.target.id === 'quickAddModal') closeQuickAdd();
+                else if (e.target.id === 'moveToSkateModal') closeMoveToSkateModal();
+                else if (e.target.id === 'atAGlanceModal') closeAtAGlance();
+            }
+        });
+
         // ========== ARCHIVE TOGGLE ==========
         let showingArchive = false;
 
