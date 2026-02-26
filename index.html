@@ -1781,6 +1781,7 @@
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
                                         }
                                         <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${player.friend_group}]` : ''} ›</div>
+                                        <div class="menu-item" onclick="giveCredit(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">💳 Give Credit</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
@@ -2092,6 +2093,97 @@
         function closeMoveToSkateModal() {
             document.getElementById('moveToSkateModal').classList.remove('active');
             playerToMove = null;
+        }
+
+        // ========== GIVE CREDIT FUNCTION ==========
+        async function giveCredit(registrationId, playerName) {
+            if (!currentSkateId) return;
+
+            // Get the skate cost
+            const skate = allSkates.find(s => s.id === currentSkateId);
+            if (!skate) return;
+
+            const creditAmount = parseFloat(skate.cost.replace('$', ''));
+            
+            if (!confirm(`Give ${playerName} a $${creditAmount} credit and remove them from ${skate.title}?`)) {
+                return;
+            }
+
+            try {
+                // Get registration details to find player_id
+                const { data: registration, error: regError } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('player_id, player_name')
+                    .eq('id', registrationId)
+                    .single();
+
+                if (regError) throw regError;
+
+                // Find or create player in players table
+                let playerId = registration.player_id;
+                
+                if (!playerId) {
+                    // Try to find player by name
+                    const { data: existingPlayer } = await supabaseClient
+                        .from('players')
+                        .select('id')
+                        .ilike('name', registration.player_name)
+                        .single();
+
+                    if (existingPlayer) {
+                        playerId = existingPlayer.id;
+                    } else {
+                        // Create new player
+                        const { data: newPlayer, error: createError } = await supabaseClient
+                            .from('players')
+                            .insert({ name: registration.player_name })
+                            .select('id')
+                            .single();
+
+                        if (createError) throw createError;
+                        playerId = newPlayer.id;
+                    }
+                }
+
+                // Create credit
+                const { error: creditError } = await supabaseClient
+                    .from('player_credits')
+                    .insert({
+                        player_id: playerId,
+                        amount: creditAmount,
+                        reason: `Dropped from ${skate.title}`,
+                        source_skate_id: currentSkateId,
+                        status: 'active',
+                        created_by: 'System',
+                        created_at: new Date().toISOString()
+                    });
+
+                if (creditError) throw creditError;
+
+                // Delete player from skate
+                const { error: deleteError } = await supabaseClient
+                    .from('skate_registrations')
+                    .delete()
+                    .eq('id', registrationId);
+
+                if (deleteError) throw deleteError;
+
+                // Haptic feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+
+                // Refresh roster and skate counts
+                await loadRoster(currentSkateId, skate.capacity);
+                await loadSkates();
+
+                // Show success message briefly
+                alert(`✓ $${creditAmount} credit given to ${playerName}`);
+
+            } catch (error) {
+                console.error('Error giving credit:', error);
+                alert('Failed to give credit: ' + error.message);
+            }
         }
 
         async function confirmDeleteSkate() {
