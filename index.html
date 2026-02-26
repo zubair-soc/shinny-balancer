@@ -984,6 +984,33 @@
         </div>
     </div>
 
+    <!-- Move to Another Skate Modal -->
+    <div id="moveToSkateModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <span>🔄 Move Player to Another Skate</span>
+                <button class="close-modal" onclick="closeMoveToSkateModal()">×</button>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
+                <strong id="movePlayerName" style="color: var(--primary);"></strong>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
+                    Select Destination Skate:
+                </label>
+                <div id="moveToSkatesList" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Skates will be loaded here -->
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeMoveToSkateModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- At a Glance Modal -->
     <div id="atAGlanceModal" class="modal">
         <div class="modal-content" style="max-width: 95vw; width: 95vw; height: 85vh; display: flex; flex-direction: column;">
@@ -1739,6 +1766,7 @@
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
                                         }
                                         <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${player.friend_group}]` : ''} ›</div>
+                                        <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
                                     </div>
@@ -1942,6 +1970,113 @@
             } catch (error) {
                 console.error('Error deleting player:', error);
             }
+        }
+
+        // ========== MOVE TO ANOTHER SKATE FUNCTIONS ==========
+        let playerToMove = null;
+
+        async function showMoveToSkateModal(registrationId, playerName) {
+            playerToMove = registrationId;
+            document.getElementById('movePlayerName').textContent = playerName;
+            
+            // Get future skates (excluding current skate)
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            
+            const futureSkates = allSkates.filter(skate => {
+                const skateDate = new Date(skate.date + 'T00:00:00');
+                return skateDate >= now && skate.id !== currentSkateId;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const skatesList = document.getElementById('moveToSkatesList');
+            
+            if (futureSkates.length === 0) {
+                skatesList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No other upcoming skates available</div>';
+            } else {
+                skatesList.innerHTML = futureSkates.map(skate => {
+                    const date = new Date(skate.date + 'T00:00:00');
+                    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    
+                    return `
+                        <div class="quick-add-skate-card" onclick="movePlayerToSkate(${skate.id})" style="cursor: pointer;">
+                            <div class="quick-add-skate-info">
+                                <div class="quick-add-skate-title">${skate.title || `Skate ${skate.id}`}</div>
+                                <div class="quick-add-skate-date">${dateStr} · ${formatTime(skate.time_start)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('moveToSkateModal').classList.add('active');
+        }
+
+        async function movePlayerToSkate(targetSkateId) {
+            if (!playerToMove) return;
+
+            try {
+                // Get player data from current registration
+                const { data: playerData, error: fetchError } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('*')
+                    .eq('id', playerToMove)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                // Get next position in target skate
+                const { data: targetRoster } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('position')
+                    .eq('skate_id', targetSkateId)
+                    .order('position', { ascending: false })
+                    .limit(1);
+
+                const nextPosition = targetRoster && targetRoster.length > 0 ? targetRoster[0].position + 1 : 1;
+
+                // Add to new skate
+                const { error: insertError } = await supabaseClient
+                    .from('skate_registrations')
+                    .insert({
+                        skate_id: targetSkateId,
+                        player_name: playerData.player_name,
+                        is_goalie: playerData.is_goalie,
+                        is_paid: playerData.is_paid,
+                        is_waitlist: false,
+                        friend_group: playerData.friend_group,
+                        position: nextPosition
+                    });
+
+                if (insertError) throw insertError;
+
+                // Delete from old skate
+                const { error: deleteError } = await supabaseClient
+                    .from('skate_registrations')
+                    .delete()
+                    .eq('id', playerToMove);
+
+                if (deleteError) throw deleteError;
+
+                // Close modal and refresh
+                closeMoveToSkateModal();
+                const skate = allSkates.find(s => s.id === currentSkateId);
+                await loadRoster(currentSkateId, skate.capacity);
+                await loadSkates(); // Refresh skate counts
+                
+                // Visual feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+
+            } catch (error) {
+                console.error('Error moving player:', error);
+                alert('Failed to move player');
+            }
+        }
+
+        function closeMoveToSkateModal() {
+            document.getElementById('moveToSkateModal').classList.remove('active');
+            playerToMove = null;
         }
 
         async function confirmDeleteSkate() {
