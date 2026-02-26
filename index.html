@@ -2547,9 +2547,17 @@
                         }, 150);
                     }
                     
-                    // Clear the input and keep modal open
+                    // Clear the input
                     document.getElementById('quickAddPlayerName').value = '';
                     document.getElementById('quickAddPlayerName').focus();
+                    
+                    // Clear skate selections
+                    selectedSkatesForQuickAdd.clear();
+                    document.querySelectorAll('.quick-add-skate-card').forEach(card => {
+                        card.classList.remove('selected');
+                        card.querySelector('.quick-add-checkmark span').style.display = 'none';
+                    });
+                    updateSelectedSkatesCount();
                     
                     // Reload skates in background
                     await loadSkates();
