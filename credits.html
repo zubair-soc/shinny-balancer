@@ -584,14 +584,17 @@
                     .from('player_credits')
                     .select(`
                         *,
-                        player:players(name),
-                        source_skate:skates(title),
-                        used_skate:skates(title)
+                        players!player_id(name)
                     `)
                     .order('created_at', { ascending: false });
 
                 if (creditsError) throw creditsError;
-                allCredits = credits;
+                
+                // Transform the data structure
+                allCredits = credits.map(credit => ({
+                    ...credit,
+                    player: { name: credit.players?.name || 'Unknown' }
+                }));
 
                 updateSummary();
                 renderCredits();

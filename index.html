@@ -507,6 +507,16 @@
             z-index: 1000;
             min-width: 180px;
             margin-top: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* If menu would go off bottom of screen, open upward */
+        .menu-dropdown.open-up {
+            top: auto;
+            bottom: 100%;
+            margin-top: 0;
+            margin-bottom: 4px;
         }
 
         .menu-dropdown.active {
@@ -1088,16 +1098,33 @@
             allMenus.forEach(m => {
                 if (m.id !== `menu-${playerId}`) {
                     m.classList.remove('active');
+                    m.classList.remove('open-up');
                 }
             });
             
             // Toggle this menu
             menu.classList.toggle('active');
+            
+            // Check if menu goes off bottom of screen
+            if (menu.classList.contains('active')) {
+                setTimeout(() => {
+                    const rect = menu.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    
+                    // If less than 50px space below, open upward
+                    if (spaceBelow < 50) {
+                        menu.classList.add('open-up');
+                    }
+                }, 10);
+            }
         }
 
         function closeMenu(playerId) {
             const menu = document.getElementById(`menu-${playerId}`);
-            if (menu) menu.classList.remove('active');
+            if (menu) {
+                menu.classList.remove('active');
+                menu.classList.remove('open-up');
+            }
         }
 
         // Close menus when clicking outside
