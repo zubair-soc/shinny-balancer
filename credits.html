@@ -510,6 +510,7 @@
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="🔍 Search by player name..." onkeyup="filterCredits()">
             </div>
+            <button class="button" onclick="showAddCreditModal()">➕ Add Credit</button>
             <div class="filter-buttons">
                 <button class="filter-btn active" onclick="setFilter('active')">Active</button>
                 <button class="filter-btn" onclick="setFilter('all')">All</button>
@@ -548,6 +549,35 @@
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeEditModal()">Cancel</button>
                 <button class="button" onclick="saveCredit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Credit Modal -->
+    <div id="addCreditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">➕ Add Credit Manually</div>
+            
+            <div class="form-group">
+                <label>Player *</label>
+                <select id="addPlayer">
+                    <option value="">Select player...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Amount *</label>
+                <input type="number" id="addAmount" step="0.01" min="0" placeholder="25.00">
+            </div>
+
+            <div class="form-group">
+                <label>Reason *</label>
+                <input type="text" id="addReason" placeholder="Paid for full skate without realizing">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeAddCreditModal()">Cancel</button>
+                <button class="button" onclick="createCredit()">Add Credit</button>
             </div>
         </div>
     </div>
@@ -747,6 +777,56 @@
             editingCreditId = null;
         }
 
+        function showAddCreditModal() {
+            // Populate player dropdown
+            const playerSelect = document.getElementById('addPlayer');
+            playerSelect.innerHTML = '<option value="">Select player...</option>' +
+                allPlayers.map(p => `
+                    <option value="${p.id}">${p.name}</option>
+                `).join('');
+
+            document.getElementById('addAmount').value = '';
+            document.getElementById('addReason').value = '';
+            document.getElementById('addCreditModal').classList.add('active');
+            document.getElementById('addPlayer').focus();
+        }
+
+        function closeAddCreditModal() {
+            document.getElementById('addCreditModal').classList.remove('active');
+        }
+
+        async function createCredit() {
+            const playerId = document.getElementById('addPlayer').value;
+            const amount = document.getElementById('addAmount').value;
+            const reason = document.getElementById('addReason').value;
+
+            if (!playerId || !amount || !reason) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('player_credits')
+                    .insert({
+                        player_id: parseInt(playerId),
+                        amount: parseFloat(amount),
+                        reason: reason,
+                        status: 'active',
+                        created_by: 'Manual',
+                        created_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+
+                closeAddCreditModal();
+                await loadData();
+            } catch (error) {
+                console.error('Error creating credit:', error);
+                alert('Failed to create credit: ' + error.message);
+            }
+        }
+
         async function saveCredit() {
             const playerId = document.getElementById('editPlayer').value;
             const amount = document.getElementById('editAmount').value;
@@ -814,6 +894,7 @@
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 if (e.target.id === 'editModal') closeEditModal();
+                else if (e.target.id === 'addCreditModal') closeAddCreditModal();
             }
         });
     </script>

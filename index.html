@@ -2204,9 +2204,6 @@
                 await loadRoster(currentSkateId, skate.capacity);
                 await loadSkates();
 
-                // Show success message briefly
-                alert(`✓ $${creditAmount} credit given to ${playerName}`);
-
             } catch (error) {
                 console.error('Error giving credit:', error);
                 alert('Failed to give credit: ' + error.message);
