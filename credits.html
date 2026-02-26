@@ -582,6 +582,42 @@
         </div>
     </div>
 
+    <!-- Apply Credit Modal -->
+    <div id="applyCreditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">💳 Apply Credit to Skate</div>
+            
+            <div style="margin-bottom: 20px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
+                <div style="font-weight: 600; margin-bottom: 4px;" id="applyPlayerName"></div>
+                <div style="color: var(--primary); font-size: 18px; font-weight: 700;" id="applyAvailableAmount"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Select Skate to Apply Credit *</label>
+                <select id="applySkate">
+                    <option value="">Loading skates...</option>
+                </select>
+            </div>
+
+            <div id="creditPreview" style="display: none; margin-top: 16px; padding: 12px; background: var(--bg-start); border-radius: 8px;">
+                <div style="font-weight: 600; margin-bottom: 8px;">Credits to be used (oldest first):</div>
+                <div id="creditBreakdown" style="font-size: 13px; color: var(--text-muted);"></div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                        <span>Total Applied:</span>
+                        <span style="color: var(--primary);" id="totalApplied"></span>
+                    </div>
+                    <div id="remainingToPay" style="display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-muted); font-size: 13px;"></div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeApplyCreditModal()">Cancel</button>
+                <button class="button" onclick="confirmApplyCredit()" id="applyButton" disabled>Apply Credit</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://fqbtfgkwhnfyodinjvcn.supabase.co';
@@ -699,6 +735,7 @@
             const html = Object.entries(byPlayer).map(([playerName, credits]) => {
                 const activeCredits = credits.filter(c => c.status === 'active');
                 const totalAvailable = activeCredits.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+                const playerId = credits[0]?.player_id;
 
                 return `
                     <div class="credit-card">
@@ -707,6 +744,11 @@
                                 <div class="player-name">${playerName}</div>
                                 <div class="credit-amount">$${totalAvailable.toFixed(2)} available</div>
                             </div>
+                            ${totalAvailable > 0 ? `
+                                <button class="button" onclick="showApplyCreditModal(${playerId}, '${playerName.replace(/'/g, "\\'")}', ${totalAvailable})" style="padding: 8px 16px; font-size: 13px;">
+                                    Apply Credit
+                                </button>
+                            ` : ''}
                         </div>
                         <div class="credit-details">
                             ${credits.map(credit => `
@@ -827,6 +869,238 @@
             }
         }
 
+        // ========== APPLY CREDIT FUNCTIONS ==========
+        let applyingPlayerId = null;
+        let applyingPlayerName = '';
+        let availableAmount = 0;
+        let allSkates = [];
+
+        async function showApplyCreditModal(playerId, playerName, totalAvailable) {
+            applyingPlayerId = playerId;
+            applyingPlayerName = playerName;
+            availableAmount = totalAvailable;
+
+            document.getElementById('applyPlayerName').textContent = playerName;
+            document.getElementById('applyAvailableAmount').textContent = `$${totalAvailable.toFixed(2)} available`;
+
+            // Load upcoming skates
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                const { data: skates, error } = await supabaseClient
+                    .from('skates')
+                    .select('*')
+                    .gte('date', today.toISOString().split('T')[0])
+                    .order('date');
+
+                if (error) throw error;
+                allSkates = skates || [];
+
+                const skateSelect = document.getElementById('applySkate');
+                if (allSkates.length === 0) {
+                    skateSelect.innerHTML = '<option value="">No upcoming skates available</option>';
+                } else {
+                    skateSelect.innerHTML = '<option value="">Select a skate...</option>' +
+                        allSkates.map(s => {
+                            const date = new Date(s.date + 'T00:00:00');
+                            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                            const cost = parseFloat(s.cost.replace('$', ''));
+                            return `<option value="${s.id}" data-cost="${cost}">${s.title} - ${dateStr} (${s.cost})</option>`;
+                        }).join('');
+                }
+
+                skateSelect.onchange = updateCreditPreview;
+                document.getElementById('applyCreditModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading skates:', error);
+                alert('Failed to load skates');
+            }
+        }
+
+        function closeApplyCreditModal() {
+            document.getElementById('applyCreditModal').classList.remove('active');
+            document.getElementById('creditPreview').style.display = 'none';
+            applyingPlayerId = null;
+        }
+
+        function updateCreditPreview() {
+            const select = document.getElementById('applySkate');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedOption.value) {
+                document.getElementById('creditPreview').style.display = 'none';
+                document.getElementById('applyButton').disabled = true;
+                return;
+            }
+
+            const skateCost = parseFloat(selectedOption.dataset.cost);
+            
+            // Get player's active credits sorted by created_at (FIFO - oldest first)
+            const playerCredits = allCredits
+                .filter(c => c.player_id === applyingPlayerId && c.status === 'active')
+                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            // Calculate which credits to use
+            let remaining = skateCost;
+            const creditsToUse = [];
+            
+            for (const credit of playerCredits) {
+                if (remaining <= 0) break;
+                
+                const creditAmount = parseFloat(credit.amount);
+                const amountToUse = Math.min(creditAmount, remaining);
+                
+                creditsToUse.push({
+                    ...credit,
+                    amountToUse: amountToUse,
+                    fullyUsed: amountToUse === creditAmount
+                });
+                
+                remaining -= amountToUse;
+            }
+
+            const totalApplied = skateCost - Math.max(0, remaining);
+
+            // Display breakdown
+            const breakdown = creditsToUse.map(c => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>• $${c.amountToUse.toFixed(2)} from "${c.reason}"</span>
+                    <span>${c.fullyUsed ? '(fully used)' : `($${(c.amount - c.amountToUse).toFixed(2)} remains)`}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('creditBreakdown').innerHTML = breakdown || '<div>No credits needed</div>';
+            document.getElementById('totalApplied').textContent = `$${totalApplied.toFixed(2)}`;
+            
+            if (remaining > 0) {
+                document.getElementById('remainingToPay').innerHTML = `
+                    <span>Remaining to pay:</span>
+                    <span style="color: #ef4444; font-weight: 600;">$${remaining.toFixed(2)}</span>
+                `;
+            } else {
+                document.getElementById('remainingToPay').innerHTML = '';
+            }
+
+            document.getElementById('creditPreview').style.display = 'block';
+            document.getElementById('applyButton').disabled = totalApplied === 0;
+        }
+
+        async function confirmApplyCredit() {
+            const select = document.getElementById('applySkate');
+            const skateId = parseInt(select.value);
+            const selectedOption = select.options[select.selectedIndex];
+            const skateCost = parseFloat(selectedOption.dataset.cost);
+            
+            if (!skateId) return;
+
+            try {
+                // Get player's active credits sorted by created_at (FIFO)
+                const playerCredits = allCredits
+                    .filter(c => c.player_id === applyingPlayerId && c.status === 'active')
+                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+                // Calculate which credits to use
+                let remaining = skateCost;
+                const updates = [];
+                
+                for (const credit of playerCredits) {
+                    if (remaining <= 0) break;
+                    
+                    const creditAmount = parseFloat(credit.amount);
+                    const amountToUse = Math.min(creditAmount, remaining);
+                    
+                    if (amountToUse === creditAmount) {
+                        // Fully used - mark as used
+                        updates.push({
+                            id: credit.id,
+                            update: {
+                                status: 'used',
+                                used_on_skate_id: skateId,
+                                used_at: new Date().toISOString(),
+                                used_by: 'System'
+                            }
+                        });
+                    } else {
+                        // Partially used - split the credit
+                        // 1. Reduce original credit amount
+                        updates.push({
+                            id: credit.id,
+                            update: {
+                                amount: creditAmount - amountToUse
+                            }
+                        });
+                        
+                        // 2. Create new "used" credit for the used portion
+                        updates.push({
+                            insert: {
+                                player_id: credit.player_id,
+                                amount: amountToUse,
+                                reason: credit.reason + ' (partial)',
+                                source_skate_id: credit.source_skate_id,
+                                status: 'used',
+                                used_on_skate_id: skateId,
+                                used_at: new Date().toISOString(),
+                                used_by: 'System',
+                                created_at: credit.created_at,
+                                created_by: credit.created_by
+                            }
+                        });
+                    }
+                    
+                    remaining -= amountToUse;
+                }
+
+                // Execute all credit updates
+                for (const op of updates) {
+                    if (op.insert) {
+                        const { error } = await supabaseClient
+                            .from('player_credits')
+                            .insert(op.insert);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient
+                            .from('player_credits')
+                            .update(op.update)
+                            .eq('id', op.id);
+                        if (error) throw error;
+                    }
+                }
+
+                // Get next position for this skate
+                const { data: roster } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('position')
+                    .eq('skate_id', skateId)
+                    .order('position', { ascending: false })
+                    .limit(1);
+
+                const nextPosition = roster && roster.length > 0 ? roster[0].position + 1 : 1;
+
+                // Add player to skate
+                const { error: addError } = await supabaseClient
+                    .from('skate_registrations')
+                    .insert({
+                        skate_id: skateId,
+                        player_id: applyingPlayerId,
+                        is_goalie: false,
+                        is_paid: true,
+                        is_waitlist: false,
+                        position: nextPosition
+                    });
+
+                if (addError) throw addError;
+
+                closeApplyCreditModal();
+                await loadData();
+                
+                alert(`✓ Credit applied! ${applyingPlayerName} added to skate.`);
+            } catch (error) {
+                console.error('Error applying credit:', error);
+                alert('Failed to apply credit: ' + error.message);
+            }
+        }
+
         async function saveCredit() {
             const playerId = document.getElementById('editPlayer').value;
             const amount = document.getElementById('editAmount').value;
@@ -895,6 +1169,7 @@
             if (e.target.classList.contains('modal')) {
                 if (e.target.id === 'editModal') closeEditModal();
                 else if (e.target.id === 'addCreditModal') closeAddCreditModal();
+                else if (e.target.id === 'applyCreditModal') closeApplyCreditModal();
             }
         });
     </script>
