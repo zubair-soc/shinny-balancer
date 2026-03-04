@@ -2293,7 +2293,8 @@
 
         function closeRosterModal() {
             document.getElementById('rosterModal').classList.remove('active');
-            currentSkateId = null;
+            // Don't clear currentSkateId here - we need it for editing!
+            // It will be cleared when appropriate (after save, or opening different skate)
         }
 
         async function copyForWhatsApp(event) {
