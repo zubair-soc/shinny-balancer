@@ -1650,6 +1650,7 @@
 
         function closeSkateModal() {
             document.getElementById('skateModal').classList.remove('active');
+            isEditMode = false; // Reset edit mode
         }
 
         async function saveSkate() {
@@ -1705,9 +1706,10 @@
 
                     if (error) throw error;
 
-                    closeSkateModal();
                     await loadSkates();
-                    alert('✓ Skate updated!');
+                    closeSkateModal();
+                    // Reopen the roster modal with updated skate
+                    await openSkate(currentSkateId);
                 } else {
                     // Create new skate
                     const { data, error } = await supabaseClient
@@ -2612,6 +2614,7 @@
             const playerList = sortedData.map(p => {
                 let line = p.player_name;
                 if (p.is_goalie) line += ' g';
+                if (p.friend_group) line += ` ${p.friend_group}`;
                 return line;
             }).join('\n');
 
