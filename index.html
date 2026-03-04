@@ -1579,6 +1579,9 @@
             
             const skate = allSkates.find(s => s.id === currentSkateId);
             if (!skate) return;
+            
+            console.log('Editing skate:', skate);
+            console.log('time_start:', skate.time_start, 'time_end:', skate.time_end);
 
             document.getElementById('modalTitle').textContent = 'Edit Skate';
             document.getElementById('saveSkateBtn').textContent = 'Save Changes';
@@ -1593,10 +1596,18 @@
             let tier = skate.tier || '';
             
             if (skate.title) {
-                const match = skate.title.match(/^Skate\s+(\d+)\s+(.+)$/);
+                // Try "Skate 238: Breakfast of Champions" format (with colon)
+                let match = skate.title.match(/^Skate\s+(\d+):\s*(.+)$/);
                 if (match) {
                     skateNumber = match[1];
                     tier = match[2];
+                } else {
+                    // Try "Skate 238 Breakfast of Champions" format (without colon)
+                    match = skate.title.match(/^Skate\s+(\d+)\s+(.+)$/);
+                    if (match) {
+                        skateNumber = match[1];
+                        tier = match[2];
+                    }
                 }
             }
 
@@ -1623,17 +1634,37 @@
             document.getElementById('skateMonth').value = parseInt(dateParts[1]);
             document.getElementById('skateDay').value = parseInt(dateParts[2]);
 
-            // Set time
-            document.getElementById('skateStartTime').value = skate.time_start;
+            // Set time with better matching
+            const timeSelect = document.getElementById('skateStartTime');
+            if (skate.time_start) {
+                // Try direct match first
+                timeSelect.value = skate.time_start;
+                
+                // If that didn't work (dropdown not set), try to find it
+                if (!timeSelect.value) {
+                    for (let i = 0; i < timeSelect.options.length; i++) {
+                        if (timeSelect.options[i].value === skate.time_start) {
+                            timeSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                timeSelect.value = '19:00';
+            }
             
             // Calculate duration from start and end time
-            const [startH, startM] = skate.time_start.split(':').map(Number);
-            const [endH, endM] = skate.time_end.split(':').map(Number);
-            const durationMins = (endH * 60 + endM) - (startH * 60 + startM);
-            document.getElementById('skateDuration').value = durationMins.toString();
+            if (skate.time_start && skate.time_end) {
+                const [startH, startM] = skate.time_start.split(':').map(Number);
+                const [endH, endM] = skate.time_end.split(':').map(Number);
+                const durationMins = (endH * 60 + endM) - (startH * 60 + startM);
+                document.getElementById('skateDuration').value = durationMins.toString();
+            } else {
+                document.getElementById('skateDuration').value = '90'; // Default 1:30
+            }
 
-            document.getElementById('skateCost').value = skate.cost;
-            document.getElementById('skateCapacity').value = skate.capacity;
+            document.getElementById('skateCost').value = skate.cost || '$25';
+            document.getElementById('skateCapacity').value = skate.capacity || 24;
             
             // Set location
             const locationSelect = document.getElementById('skateLocation');
