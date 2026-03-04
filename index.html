@@ -1573,7 +1573,10 @@
         function showEditSkateModal() {
             if (!currentSkateId) return;
             
+            console.log('showEditSkateModal - currentSkateId:', currentSkateId);
             isEditMode = true;
+            console.log('Set isEditMode to:', isEditMode);
+            
             const skate = allSkates.find(s => s.id === currentSkateId);
             if (!skate) return;
 
@@ -1696,7 +1699,10 @@
             };
 
             try {
+                console.log('saveSkate - isEditMode:', isEditMode, 'currentSkateId:', currentSkateId);
+                
                 if (isEditMode && currentSkateId) {
+                    console.log('Updating skate:', currentSkateId);
                     // Update existing skate
                     const { data, error } = await supabaseClient
                         .from('skates')
@@ -1705,12 +1711,14 @@
                         .select();
 
                     if (error) throw error;
+                    console.log('Update successful:', data);
 
                     await loadSkates();
                     closeSkateModal();
                     // Reopen the roster modal with updated skate
                     await openSkate(currentSkateId);
                 } else {
+                    console.log('Creating new skate');
                     // Create new skate
                     const { data, error } = await supabaseClient
                         .from('skates')
