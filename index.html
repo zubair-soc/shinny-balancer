@@ -1640,15 +1640,19 @@
             console.log('Trying to set time to:', skate.time_start);
             
             if (skate.time_start) {
-                // Try direct match first
-                timeSelect.value = skate.time_start;
+                // Strip seconds if present (06:30:00 -> 06:30)
+                const timeValue = skate.time_start.substring(0, 5);
+                console.log('Time value after stripping seconds:', timeValue);
+                
+                // Try direct match
+                timeSelect.value = timeValue;
                 console.log('After direct assignment, selected value:', timeSelect.value);
                 
-                // If that didn't work (dropdown not set), try to find it
+                // If that didn't work, try to find it
                 if (!timeSelect.value || timeSelect.value === '') {
                     console.log('Direct assignment failed, searching options...');
                     for (let i = 0; i < timeSelect.options.length; i++) {
-                        if (timeSelect.options[i].value === skate.time_start) {
+                        if (timeSelect.options[i].value === timeValue) {
                             console.log('Found match at index', i, ':', timeSelect.options[i].value);
                             timeSelect.selectedIndex = i;
                             break;
@@ -1656,22 +1660,18 @@
                     }
                     console.log('After search, selected value:', timeSelect.value);
                 }
-                
-                // Last resort - log first few options to see format
-                if (!timeSelect.value || timeSelect.value === '') {
-                    console.log('Still no match! First 5 options are:');
-                    for (let i = 0; i < Math.min(5, timeSelect.options.length); i++) {
-                        console.log(`  [${i}] value="${timeSelect.options[i].value}" text="${timeSelect.options[i].text}"`);
-                    }
-                }
             } else {
                 timeSelect.value = '19:00';
             }
             
             // Calculate duration from start and end time
             if (skate.time_start && skate.time_end) {
-                const [startH, startM] = skate.time_start.split(':').map(Number);
-                const [endH, endM] = skate.time_end.split(':').map(Number);
+                // Strip seconds if present
+                const startTime = skate.time_start.substring(0, 5);
+                const endTime = skate.time_end.substring(0, 5);
+                
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
                 const durationMins = (endH * 60 + endM) - (startH * 60 + startM);
                 document.getElementById('skateDuration').value = durationMins.toString();
             } else {
