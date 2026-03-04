@@ -1636,17 +1636,32 @@
 
             // Set time with better matching
             const timeSelect = document.getElementById('skateStartTime');
+            console.log('Time dropdown has', timeSelect.options.length, 'options');
+            console.log('Trying to set time to:', skate.time_start);
+            
             if (skate.time_start) {
                 // Try direct match first
                 timeSelect.value = skate.time_start;
+                console.log('After direct assignment, selected value:', timeSelect.value);
                 
                 // If that didn't work (dropdown not set), try to find it
-                if (!timeSelect.value) {
+                if (!timeSelect.value || timeSelect.value === '') {
+                    console.log('Direct assignment failed, searching options...');
                     for (let i = 0; i < timeSelect.options.length; i++) {
                         if (timeSelect.options[i].value === skate.time_start) {
+                            console.log('Found match at index', i, ':', timeSelect.options[i].value);
                             timeSelect.selectedIndex = i;
                             break;
                         }
+                    }
+                    console.log('After search, selected value:', timeSelect.value);
+                }
+                
+                // Last resort - log first few options to see format
+                if (!timeSelect.value || timeSelect.value === '') {
+                    console.log('Still no match! First 5 options are:');
+                    for (let i = 0; i < Math.min(5, timeSelect.options.length); i++) {
+                        console.log(`  [${i}] value="${timeSelect.options[i].value}" text="${timeSelect.options[i].text}"`);
                     }
                 }
             } else {
