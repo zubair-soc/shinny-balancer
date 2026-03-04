@@ -1542,6 +1542,9 @@
 
         function showCreateModal() {
             isEditMode = false;
+            currentSkateId = null; // Clear any previous skate ID
+            console.log('showCreateModal - reset isEditMode to false');
+            
             document.getElementById('modalTitle').textContent = 'Create New Skate';
             document.getElementById('saveSkateBtn').textContent = 'Create Skate';
             document.getElementById('skateNumber').value = '';
@@ -1699,7 +1702,7 @@
 
         function closeSkateModal() {
             document.getElementById('skateModal').classList.remove('active');
-            isEditMode = false; // Reset edit mode
+            // Don't reset isEditMode here - let it persist until save completes
         }
 
         async function saveSkate() {
@@ -1759,6 +1762,7 @@
                     if (error) throw error;
                     console.log('Update successful:', data);
 
+                    isEditMode = false; // Reset after successful update
                     await loadSkates();
                     closeSkateModal();
                     // Reopen the roster modal with updated skate
@@ -1773,6 +1777,7 @@
 
                     if (error) throw error;
 
+                    isEditMode = false; // Reset after successful create
                     closeSkateModal();
                     await loadSkates();
                     alert('✓ Skate created!');
