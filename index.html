@@ -1812,9 +1812,13 @@
 
         async function loadRoster(skateId, capacity) {
             try {
+                // Get roster with ratings from registrants table
                 const { data, error } = await supabaseClient
                     .from('skate_registrations')
-                    .select('*')
+                    .select(`
+                        *,
+                        registrants(rating)
+                    `)
                     .eq('skate_id', skateId)
                     .order('position');
 
@@ -1850,13 +1854,19 @@
                             ? `${player.player_name} 🥅`
                             : `${skaterNumber++}. ${player.player_name}`;
                         
+                        // Show rating if available
+                        const rating = player.registrants?.rating;
+                        const ratingDisplay = rating ? 
+                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', ${rating})" title="Click to edit rating">${rating}</span>` : 
+                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', 0)" title="Click to add rating">No rating</span>`;
+                        
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
                             `<span style="display: inline-block; background: ${getFriendGroupColor(player.friend_group)}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${player.friend_group}</span>` : '';
 
                         return `
                             <div class="${classes}">
-                                <span class="roster-item-name">${playerDisplay}${friendTag}</span>
+                                <span class="roster-item-name">${playerDisplay}${ratingDisplay}${friendTag}</span>
                                 <div class="player-menu">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
@@ -2271,6 +2281,67 @@
             }
         }
 
+        // ========== EDIT RATING FUNCTION ==========
+        async function editRating(registrationId, playerName, currentRating) {
+            const newRating = prompt(`Edit rating for ${playerName}:`, currentRating || 0);
+            
+            if (newRating === null) return; // Cancelled
+            
+            const rating = parseFloat(newRating);
+            if (isNaN(rating) || rating < 0 || rating > 10) {
+                alert('Please enter a valid rating between 0 and 10');
+                return;
+            }
+            
+            try {
+                // Get player_id from registration
+                const { data: registration } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('player_id, player_name')
+                    .eq('id', registrationId)
+                    .single();
+                
+                if (!registration) throw new Error('Registration not found');
+                
+                // Check if player exists in registrants table
+                const { data: existing } = await supabaseClient
+                    .from('registrants')
+                    .select('id')
+                    .ilike('name', registration.player_name)
+                    .single();
+                
+                if (existing) {
+                    // Update existing rating
+                    const { error } = await supabaseClient
+                        .from('registrants')
+                        .update({ 
+                            rating: rating,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', existing.id);
+                    
+                    if (error) throw error;
+                } else {
+                    // Create new registrant with rating
+                    const { error } = await supabaseClient
+                        .from('registrants')
+                        .insert({ 
+                            name: registration.player_name,
+                            rating: rating
+                        });
+                    
+                    if (error) throw error;
+                }
+                
+                // Reload roster to show updated rating
+                await loadRoster(currentSkateId, allSkates.find(s => s.id === currentSkateId)?.capacity || 24);
+                
+            } catch (error) {
+                console.error('Error updating rating:', error);
+                alert('Failed to update rating: ' + error.message);
+            }
+        }
+
         async function confirmDeleteSkate() {
             if (!confirm('Delete this entire skate? This cannot be undone.')) return;
 
@@ -2674,9 +2745,15 @@
             const playerList = sortedData.map(p => {
                 let line = p.player_name;
                 if (p.is_goalie) line += ' g';
-                if (p.friend_group) line += ` ${p.friend_group}`;
+                // Add friend group letter if exists
+                if (p.friend_group && p.friend_group.trim()) {
+                    line += ` ${p.friend_group}`;
+                }
                 return line;
             }).join('\n');
+            
+            console.log('Exporting to balancer:', playerList);
+            console.log('Sample player:', sortedData[0]);
 
             // Store in localStorage to pass to balancer
             localStorage.setItem('importedRoster', playerList);
