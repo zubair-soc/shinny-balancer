@@ -1826,6 +1826,8 @@
                     .from('registrants')
                     .select('name, rating');
 
+                console.log('Loaded ratings:', ratings?.length || 0);
+
                 // Create a map for quick lookup
                 const ratingMap = {};
                 if (ratings) {
@@ -1834,11 +1836,17 @@
                     });
                 }
 
+                console.log('Rating map sample:', Object.keys(ratingMap).slice(0, 5));
+
                 // Add ratings to roster data
-                const dataWithRatings = data.map(player => ({
-                    ...player,
-                    rating: ratingMap[player.player_name.toLowerCase()] || null
-                }));
+                const dataWithRatings = data.map(player => {
+                    const rating = ratingMap[player.player_name.toLowerCase()];
+                    console.log(`Lookup: "${player.player_name}" → ${rating}`);
+                    return {
+                        ...player,
+                        rating: rating || null
+                    };
+                });
 
                 const roster = dataWithRatings.filter(p => !p.is_waitlist);
                 const waitlist = dataWithRatings.filter(p => p.is_waitlist);
