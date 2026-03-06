@@ -1821,12 +1821,20 @@
 
                 if (error) throw error;
 
-                // Get all ratings from registrants table
-                const { data: ratings } = await supabaseClient
-                    .from('registrants')
+                // Get all ratings from players table (team balancer database)
+                const { data: ratings, error: ratingsError } = await supabaseClient
+                    .from('players')
                     .select('name, rating');
 
+                if (ratingsError) {
+                    console.error('Error loading ratings:', ratingsError);
+                    console.log('Will show roster without ratings');
+                }
+
                 console.log('Loaded ratings:', ratings?.length || 0);
+                if (ratings && ratings.length > 0) {
+                    console.log('Sample rating:', ratings[0]);
+                }
 
                 // Create a map for quick lookup
                 const ratingMap = {};
@@ -2327,9 +2335,9 @@
                 
                 if (!registration) throw new Error('Registration not found');
                 
-                // Check if player exists in registrants table
+                // Check if player exists in players table (team balancer)
                 const { data: existing } = await supabaseClient
-                    .from('registrants')
+                    .from('players')
                     .select('id')
                     .ilike('name', registration.player_name)
                     .single();
@@ -2337,7 +2345,7 @@
                 if (existing) {
                     // Update existing rating
                     const { error } = await supabaseClient
-                        .from('registrants')
+                        .from('players')
                         .update({ 
                             rating: rating,
                             updated_at: new Date().toISOString()
@@ -2346,9 +2354,9 @@
                     
                     if (error) throw error;
                 } else {
-                    // Create new registrant with rating
+                    // Create new player with rating
                     const { error } = await supabaseClient
-                        .from('registrants')
+                        .from('players')
                         .insert({ 
                             name: registration.player_name,
                             rating: rating
