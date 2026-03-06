@@ -1812,20 +1812,36 @@
 
         async function loadRoster(skateId, capacity) {
             try {
-                // Get roster with ratings from registrants table
+                // Get roster
                 const { data, error } = await supabaseClient
                     .from('skate_registrations')
-                    .select(`
-                        *,
-                        registrants(rating)
-                    `)
+                    .select('*')
                     .eq('skate_id', skateId)
                     .order('position');
 
                 if (error) throw error;
 
-                const roster = data.filter(p => !p.is_waitlist);
-                const waitlist = data.filter(p => p.is_waitlist);
+                // Get all ratings from registrants table
+                const { data: ratings } = await supabaseClient
+                    .from('registrants')
+                    .select('name, rating');
+
+                // Create a map for quick lookup
+                const ratingMap = {};
+                if (ratings) {
+                    ratings.forEach(r => {
+                        ratingMap[r.name.toLowerCase()] = r.rating;
+                    });
+                }
+
+                // Add ratings to roster data
+                const dataWithRatings = data.map(player => ({
+                    ...player,
+                    rating: ratingMap[player.player_name.toLowerCase()] || null
+                }));
+
+                const roster = dataWithRatings.filter(p => !p.is_waitlist);
+                const waitlist = dataWithRatings.filter(p => p.is_waitlist);
 
                 // Sort roster: goalies first, then skaters
                 const sortedRoster = roster.sort((a, b) => {
@@ -1855,7 +1871,7 @@
                             : `${skaterNumber++}. ${player.player_name}`;
                         
                         // Show rating if available
-                        const rating = player.registrants?.rating;
+                        const rating = player.rating;
                         const ratingDisplay = rating ? 
                             `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', ${rating})" title="Click to edit rating">${rating}</span>` : 
                             `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', 0)" title="Click to add rating">No rating</span>`;
