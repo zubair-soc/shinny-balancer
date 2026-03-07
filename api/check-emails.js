@@ -353,7 +353,7 @@ module.exports = async function handler(req, res) {
 
     // Process each email
     const debugInfo = [];
-    for (const message of messages.slice(0, 10)) { // Process max 10 at a time
+    for (const message of messages.slice(0, 30)) { // Process max 30 at a time
       try {
         const { body, subject } = await getEmailDetails(message.id, accessToken);
         console.log('📧 Email subject:', subject);
