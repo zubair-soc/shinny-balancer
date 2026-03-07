@@ -1,8 +1,6 @@
 // Vercel Serverless Function: Check Gmail for e-transfer emails
 // Path: /api/check-emails.js
 
-import { createClient } from '@supabase/supabase-js';
-
 // Gmail OAuth
 const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
@@ -12,7 +10,71 @@ const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 const SUPABASE_URL = 'https://vbmsvtcglwxjzpabnnoi.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZibXN2dGNnbHd4anpwYWJubm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4Mzg5OTIsImV4cCI6MjA4ODQxNDk5Mn0.GwKfpNQ3Fv9CCtvodsabDmpryqY0ZOg6asX-WWaC4E4';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Simple Supabase client (fetch-based)
+class SimpleSupabase {
+  constructor(url, key) {
+    this.url = url;
+    this.key = key;
+    this.headers = {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  async query(table, options = {}) {
+    let url = `${this.url}/rest/v1/${table}`;
+    
+    // Add select
+    if (options.select) {
+      url += `?select=${options.select}`;
+    }
+    
+    // Add filters
+    if (options.eq) {
+      Object.entries(options.eq).forEach(([key, value]) => {
+        url += url.includes('?') ? '&' : '?';
+        url += `${key}=eq.${value}`;
+      });
+    }
+    
+    if (options.in) {
+      Object.entries(options.in).forEach(([key, values]) => {
+        url += url.includes('?') ? '&' : '?';
+        url += `${key}=in.(${values.join(',')})`;
+      });
+    }
+    
+    // Add order
+    if (options.order) {
+      url += url.includes('?') ? '&' : '?';
+      url += `order=${options.order.column}.${options.order.ascending ? 'asc' : 'desc'}`;
+    }
+    
+    const response = await fetch(url, {
+      headers: this.headers
+    });
+    
+    return await response.json();
+  }
+
+  async insert(table, data) {
+    const url = `${this.url}/rest/v1/${table}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...this.headers,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(data)
+    });
+    
+    return await response.json();
+  }
+}
+
+const supabase = new SimpleSupabase(SUPABASE_URL, SUPABASE_KEY);
 
 // ========== GET ACCESS TOKEN ==========
 async function getAccessToken() {
@@ -129,10 +191,10 @@ async function matchToSkates(payment) {
   if (skateNumbers.length === 0) return { skates: [], confidence: 0 };
 
   // Find skates
-  const { data: skates } = await supabase
-    .from('skates')
-    .select('*')
-    .in('id', skateNumbers);
+  const skates = await supabase.query('skates', {
+    select: '*',
+    in: { id: skateNumbers }
+  });
 
   if (!skates || skates.length === 0) return { skates: [], confidence: 0 };
 
@@ -151,32 +213,29 @@ async function matchToSkates(payment) {
 async function matchToPlayer(payment) {
   const senderName = payment.sender_name;
 
-  // Try exact match
-  const { data: exactMatch } = await supabase
-    .from('players')
-    .select('*')
-    .ilike('name', senderName)
-    .limit(1);
+  // Get all players and do matching in JavaScript
+  const players = await supabase.query('players', { select: '*' });
 
-  if (exactMatch && exactMatch.length > 0) {
-    return { player: exactMatch[0], confidence: 30 };
+  if (!players) return { player: null, confidence: 0 };
+
+  // Try exact match (case insensitive)
+  const exactMatch = players.find(p => 
+    p.name.toLowerCase() === senderName.toLowerCase()
+  );
+
+  if (exactMatch) {
+    return { player: exactMatch, confidence: 30 };
   }
 
   // Try fuzzy match
   const nameParts = senderName.toLowerCase().split(' ').filter(p => p.length > 2);
   
   if (nameParts.length >= 2) {
-    const { data: players } = await supabase
-      .from('players')
-      .select('*');
-
-    if (players) {
-      for (const player of players) {
-        const normalizedPlayer = player.name.toLowerCase();
-        const matches = nameParts.filter(part => normalizedPlayer.includes(part));
-        if (matches.length >= 2) {
-          return { player, confidence: 15 };
-        }
+    for (const player of players) {
+      const normalizedPlayer = player.name.toLowerCase();
+      const matches = nameParts.filter(part => normalizedPlayer.includes(part));
+      if (matches.length >= 2) {
+        return { player, confidence: 15 };
       }
     }
   }
@@ -187,15 +246,14 @@ async function matchToPlayer(payment) {
 // ========== PROCESS PAYMENT ==========
 async function processPayment(parsed) {
   // Check if already processed
-  const { data: existing } = await supabase
-    .from('test_payment_records')
-    .select('id')
-    .eq('etransfer_reference', parsed.etransfer_reference)
-    .single();
+  const existing = await supabase.query('test_payment_records', {
+    select: 'id',
+    eq: { etransfer_reference: parsed.etransfer_reference }
+  });
 
-  if (existing) {
+  if (existing && existing.length > 0) {
     console.log('Already processed:', parsed.etransfer_reference);
-    return { status: 'duplicate', id: existing.id };
+    return { status: 'duplicate', id: existing[0].id };
   }
 
   // Match to skates and player
@@ -205,55 +263,51 @@ async function processPayment(parsed) {
   const totalConfidence = skateMatch.confidence + playerMatch.confidence;
 
   // Insert payment record
-  const { data: payment, error } = await supabase
-    .from('test_payment_records')
-    .insert({
-      etransfer_date: parsed.etransfer_date,
-      etransfer_reference: parsed.etransfer_reference,
-      amount: parsed.amount,
-      sender_name: parsed.sender_name,
-      sender_email: parsed.sender_email,
-      memo: parsed.memo,
-      raw_email_body: parsed.raw_email_body,
-      email_subject: parsed.email_subject,
-      email_received_at: new Date().toISOString()
-    })
-    .select()
-    .single();
+  const payment = await supabase.insert('test_payment_records', {
+    etransfer_date: parsed.etransfer_date,
+    etransfer_reference: parsed.etransfer_reference,
+    amount: parsed.amount,
+    sender_name: parsed.sender_name,
+    sender_email: parsed.sender_email,
+    memo: parsed.memo,
+    raw_email_body: parsed.raw_email_body,
+    email_subject: parsed.email_subject,
+    email_received_at: new Date().toISOString()
+  });
 
-  if (error) throw error;
+  if (!payment || payment.length === 0) {
+    throw new Error('Failed to insert payment');
+  }
+
+  const paymentId = payment[0].id;
 
   // Log match result
-  await supabase
-    .from('test_payment_log')
-    .insert({
-      payment_id: payment.id,
-      action: 'auto_matched',
-      matched_skate_ids: skateMatch.skates.map(s => s.id),
-      matched_player_id: playerMatch.player?.id || null,
-      confidence_score: totalConfidence,
-      admin_notes: `Auto-matched: ${skateMatch.skates.length} skates, player: ${playerMatch.player?.name || 'none'}`
-    });
+  await supabase.insert('test_payment_log', {
+    payment_id: paymentId,
+    action: 'auto_matched',
+    matched_skate_ids: skateMatch.skates.map(s => s.id),
+    matched_player_id: playerMatch.player?.id || null,
+    confidence_score: totalConfidence,
+    admin_notes: `Auto-matched: ${skateMatch.skates.length} skates, player: ${playerMatch.player?.name || 'none'}`
+  });
 
   // Create assignments
   if (skateMatch.skates.length > 0 && playerMatch.player) {
     for (const skate of skateMatch.skates) {
-      await supabase
-        .from('test_payment_assignments')
-        .insert({
-          payment_id: payment.id,
-          skate_id: skate.id,
-          player_id: playerMatch.player.id,
-          would_add_to_roster: true,
-          assignment_type: totalConfidence >= 80 ? 'auto' : 'needs_review',
-          notes: `Confidence: ${totalConfidence}%`
-        });
+      await supabase.insert('test_payment_assignments', {
+        payment_id: paymentId,
+        skate_id: skate.id,
+        player_id: playerMatch.player.id,
+        would_add_to_roster: true,
+        assignment_type: totalConfidence >= 80 ? 'auto' : 'needs_review',
+        notes: `Confidence: ${totalConfidence}%`
+      });
     }
   }
 
   return {
     status: 'processed',
-    id: payment.id,
+    id: paymentId,
     confidence: totalConfidence,
     skates: skateMatch.skates.length,
     player: playerMatch.player?.name || 'none'
@@ -261,7 +315,7 @@ async function processPayment(parsed) {
 }
 
 // ========== MAIN HANDLER ==========
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   try {
     console.log('🔍 Checking for new emails...');
 
