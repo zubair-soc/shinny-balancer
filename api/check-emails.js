@@ -349,12 +349,20 @@ module.exports = async function handler(req, res) {
     const results = [];
 
     // Process each email
+    const debugInfo = [];
     for (const message of messages.slice(0, 10)) { // Process max 10 at a time
       try {
         const { body, subject } = await getEmailDetails(message.id, accessToken);
         console.log('📧 Email subject:', subject);
         console.log('📧 Body length:', body.length);
         console.log('📧 Body first 1000 chars:', body.substring(0, 1000));
+        
+        // Add to debug info
+        debugInfo.push({
+          subject,
+          bodyLength: body.length,
+          bodyPreview: body.substring(0, 500)
+        });
         
         const parsed = parseInteracEmail(body, subject);
 
@@ -377,7 +385,8 @@ module.exports = async function handler(req, res) {
       total_emails: messages.length,
       processed: results.filter(r => r.status === 'processed' || r.status === 'duplicate').length,
       failed: results.filter(r => r.status === 'parse_failed' || r.status === 'error').length,
-      results
+      results,
+      debug: debugInfo.slice(0, 2) // Include first 2 email previews
     });
 
   } catch (error) {
