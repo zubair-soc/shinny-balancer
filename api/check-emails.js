@@ -353,7 +353,8 @@ module.exports = async function handler(req, res) {
       try {
         const { body, subject } = await getEmailDetails(message.id, accessToken);
         console.log('📧 Email subject:', subject);
-        console.log('📧 Body preview:', body.substring(0, 500));
+        console.log('📧 Body length:', body.length);
+        console.log('📧 Body first 1000 chars:', body.substring(0, 1000));
         
         const parsed = parseInteracEmail(body, subject);
 
