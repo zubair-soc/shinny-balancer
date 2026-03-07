@@ -580,9 +580,14 @@
 
         // Render payments
         function renderPayments() {
-            const autoMatched = payments.filter(p => p.confidence >= 80);
-            const needsReview = payments.filter(p => p.confidence >= 40 && p.confidence < 80);
-            const unknown = payments.filter(p => p.confidence < 40);
+            // Sort all payments by date (newest first)
+            const sortedPayments = [...payments].sort((a, b) => 
+                new Date(b.created_at || b.etransfer_date) - new Date(a.created_at || a.etransfer_date)
+            );
+
+            const autoMatched = sortedPayments.filter(p => p.confidence >= 80);
+            const needsReview = sortedPayments.filter(p => p.confidence >= 40 && p.confidence < 80);
+            const unknown = sortedPayments.filter(p => p.confidence < 40);
 
             // Update badges
             document.getElementById('autoMatchedBadge').textContent = autoMatched.length;
@@ -714,7 +719,29 @@
         // View details
         function viewDetails(paymentId) {
             const payment = payments.find(p => p.id === paymentId);
-            alert(`Payment Details:\n\n${JSON.stringify(payment, null, 2)}`);
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+            
+            const content = document.createElement('div');
+            content.style.cssText = 'background: white; padding: 24px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow: auto;';
+            
+            const json = JSON.stringify(payment, null, 2);
+            
+            content.innerHTML = `
+                <h3 style="margin: 0 0 16px 0;">Payment Details</h3>
+                <textarea readonly style="width: 100%; min-height: 400px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;">${json}</textarea>
+                <div style="margin-top: 16px; display: flex; gap: 8px;">
+                    <button onclick="navigator.clipboard.writeText(\`${json.replace(/`/g, '\\`')}\`).then(() => alert('Copied!'))" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">Copy JSON</button>
+                    <button onclick="this.closest('[data-modal]').remove()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                </div>
+            `;
+            
+            modal.setAttribute('data-modal', 'true');
+            modal.appendChild(content);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
         }
 
         // Delete payment

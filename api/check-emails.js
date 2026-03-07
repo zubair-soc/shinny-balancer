@@ -213,11 +213,15 @@ async function matchToSkates(payment) {
 
   if (skateNumbers.length === 0) return { skates: [], confidence: 0 };
 
+  console.log('🔍 Looking for skates:', skateNumbers);
+
   // Find skates
   const skates = await supabase.query('skates', {
     select: '*',
     in: { id: skateNumbers }
   });
+
+  console.log('🔍 Skates found:', skates ? skates.length : 'null', skates);
 
   if (!skates || skates.length === 0) return { skates: [], confidence: 0 };
 
