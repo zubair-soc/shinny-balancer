@@ -140,22 +140,26 @@ async function getEmailDetails(messageId, accessToken) {
 // ========== PARSE EMAIL ==========
 function parseInteracEmail(body, subject) {
   const patterns = {
-    amount: /\$(\d+\.?\d{0,2})\s*(?:\(CAD\)|CAD)?/,
-    sender: /(?:Sent From|From):\s*(.+?)(?:\n|$)/i,
-    memo: /(?:Message|Memo):\s*(.+?)(?:\n|Date:|Reference:|$)/is,
-    date: /Date:\s*([^,\n]+(?:,\s*\d{4})?)/i,
-    reference: /Reference\s*(?:Number)?:\s*(\w+)/i,
+    amount: /Amount:\s*\$(\d+\.?\d{0,2})\s*(?:\(CAD\)|CAD)?/i,
+    sender: /Sent From:\s*(.+?)(?:\n|$)/i,
+    memo: /Message:\s*\n([\s\S]+?)(?=\nDate:|$)/i, // Multi-line message
+    date: /Date:\s*([^\n]+)/i,
+    reference: /Reference Number:\s*(\w+)/i,
     email: /(?:Email|E-mail):\s*([^\s\n]+@[^\s\n]+)/i
   };
 
   const amount = body.match(patterns.amount)?.[1];
   const sender = body.match(patterns.sender)?.[1]?.trim();
-  const memo = body.match(patterns.memo)?.[1]?.trim();
+  const memoRaw = body.match(patterns.memo)?.[1];
+  const memo = memoRaw ? memoRaw.trim().replace(/\n+/g, ' ') : ''; // Collapse newlines to spaces
   const dateStr = body.match(patterns.date)?.[1]?.trim();
   const reference = body.match(patterns.reference)?.[1];
   const senderEmail = body.match(patterns.email)?.[1];
 
-  if (!amount || !sender || !reference) return null;
+  if (!amount || !sender || !reference) {
+    console.log('Parse failed - missing fields:', { amount, sender, reference });
+    return null;
+  }
 
   let etransferDate = new Date().toISOString().split('T')[0];
   if (dateStr) {
@@ -163,6 +167,8 @@ function parseInteracEmail(body, subject) {
       etransferDate = new Date(dateStr).toISOString().split('T')[0];
     } catch (e) {}
   }
+
+  console.log('✅ Parsed:', { amount, sender, memo, reference });
 
   return {
     amount: parseFloat(amount),
