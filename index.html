@@ -742,6 +742,7 @@
                 <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
                 <a href="credits.html" class="back-button">💳 Credits</a>
+                <a href="payments.html" class="back-button">💰 Payments</a>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
@@ -2441,38 +2442,88 @@
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
 
-                // Copy to clipboard with fallback
+                // Mobile-friendly copy with multiple fallbacks
                 let copied = false;
                 
-                // Try modern clipboard API
+                // Method 1: Try modern clipboard API (works on HTTPS)
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     try {
                         await navigator.clipboard.writeText(message);
                         copied = true;
+                        console.log('✓ Copied via navigator.clipboard');
                     } catch (e) {
-                        console.log('Modern clipboard failed, trying fallback');
+                        console.log('navigator.clipboard failed:', e.message);
                     }
                 }
                 
-                // Fallback method
-                if (!copied) {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = message;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.select();
+                // Method 2: iOS-specific fallback
+                if (!copied && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                     try {
-                        document.execCommand('copy');
-                        copied = true;
+                        const textArea = document.createElement('textarea');
+                        textArea.value = message;
+                        textArea.contentEditable = true;
+                        textArea.readOnly = false;
+                        textArea.style.position = 'absolute';
+                        textArea.style.left = '-9999px';
+                        textArea.style.fontSize = '12pt'; // Prevent zoom on iOS
+                        document.body.appendChild(textArea);
+                        
+                        // iOS specific selection
+                        const range = document.createRange();
+                        range.selectNodeContents(textArea);
+                        const selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        textArea.setSelectionRange(0, message.length);
+                        
+                        copied = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        if (copied) {
+                            console.log('✓ Copied via iOS fallback');
+                        }
                     } catch (e) {
-                        console.error('Fallback copy failed:', e);
+                        console.log('iOS fallback failed:', e.message);
                     }
-                    document.body.removeChild(textArea);
+                }
+                
+                // Method 3: Standard fallback for other mobile browsers
+                if (!copied) {
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = message;
+                        textArea.style.position = 'fixed';
+                        textArea.style.top = '0';
+                        textArea.style.left = '0';
+                        textArea.style.width = '2em';
+                        textArea.style.height = '2em';
+                        textArea.style.padding = '0';
+                        textArea.style.border = 'none';
+                        textArea.style.outline = 'none';
+                        textArea.style.boxShadow = 'none';
+                        textArea.style.background = 'transparent';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        
+                        copied = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        if (copied) {
+                            console.log('✓ Copied via standard fallback');
+                        }
+                    } catch (e) {
+                        console.log('Standard fallback failed:', e.message);
+                    }
                 }
                 
                 if (!copied) {
-                    throw new Error('Clipboard copy failed');
+                    // Last resort: Show the text for manual copy
+                    const shouldShowText = confirm('Automatic copy failed. Click OK to see the text and copy it manually.');
+                    if (shouldShowText) {
+                        prompt('Copy this text:', message);
+                    }
+                    return;
                 }
                 
                 // Show feedback
