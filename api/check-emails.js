@@ -293,6 +293,14 @@ async function processPayment(parsed) {
   const playerMatch = await matchToPlayer(parsed);
 
   const totalConfidence = Math.min(100, skateMatch.confidence + playerMatch.confidence);
+  
+  console.log('🎯 Total match:', {
+    sender: parsed.sender_name,
+    memo: parsed.memo,
+    skateConfidence: skateMatch.confidence,
+    playerConfidence: playerMatch.confidence,
+    totalConfidence
+  });
 
   // Insert payment record
   const payment = await supabase.insert('test_payment_records', {
