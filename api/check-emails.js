@@ -119,21 +119,35 @@ async function getEmailDetails(messageId, accessToken) {
 
   const data = await response.json();
   
+  // Recursively find text/plain part
+  function findTextPart(part) {
+    if (part.mimeType === 'text/plain' && part.body?.data) {
+      return part.body.data;
+    }
+    
+    if (part.parts) {
+      for (const subpart of part.parts) {
+        const result = findTextPart(subpart);
+        if (result) return result;
+      }
+    }
+    
+    return null;
+  }
+  
   // Extract body
   let body = '';
-  if (data.payload.parts) {
-    const textPart = data.payload.parts.find(p => p.mimeType === 'text/plain');
-    if (textPart?.body?.data) {
-      body = Buffer.from(textPart.body.data, 'base64').toString();
-    }
-  } else if (data.payload.body?.data) {
-    body = Buffer.from(data.payload.body.data, 'base64').toString();
+  const textData = findTextPart(data.payload);
+  if (textData) {
+    body = Buffer.from(textData, 'base64').toString('utf-8');
   }
 
   // Extract subject
   const subjectHeader = data.payload.headers.find(h => h.name === 'Subject');
   const subject = subjectHeader?.value || '';
 
+  console.log('📧 Extracted body length:', body.length);
+  
   return { body, subject };
 }
 
