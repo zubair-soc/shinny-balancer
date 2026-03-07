@@ -222,12 +222,21 @@ async function matchToSkates(payment) {
   if (!skates || skates.length === 0) return { skates: [], confidence: 0 };
 
   // Check amount
-  const expectedAmount = skates.reduce((sum, s) => 
-    sum + parseFloat(s.cost.replace('$', '')), 0
-  );
+  const expectedAmount = skates.reduce((sum, s) => {
+    const cost = typeof s.cost === 'string' ? s.cost.replace('$', '') : s.cost;
+    return sum + parseFloat(cost);
+  }, 0);
 
   const amountMatches = Math.abs(expectedAmount - payment.amount) < 0.01;
   const confidence = amountMatches ? 90 : 70;
+  
+  console.log('💰 Skate match:', { 
+    skateIds: skates.map(s => s.id), 
+    expectedAmount, 
+    actualAmount: payment.amount, 
+    amountMatches, 
+    confidence 
+  });
 
   return { skates, confidence, amountMatches };
 }
@@ -283,7 +292,7 @@ async function processPayment(parsed) {
   const skateMatch = await matchToSkates(parsed);
   const playerMatch = await matchToPlayer(parsed);
 
-  const totalConfidence = skateMatch.confidence + playerMatch.confidence;
+  const totalConfidence = Math.min(100, skateMatch.confidence + playerMatch.confidence);
 
   // Insert payment record
   const payment = await supabase.insert('test_payment_records', {
