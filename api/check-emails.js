@@ -1,0 +1,307 @@
+// Vercel Serverless Function: Check Gmail for e-transfer emails
+// Path: /api/check-emails.js
+
+import { createClient } from '@supabase/supabase-js';
+
+// Gmail OAuth
+const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID;
+const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
+const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
+
+// Supabase (test database)
+const SUPABASE_URL = 'https://vbmsvtcglwxjzpabnnoi.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZibXN2dGNnbHd4anpwYWJubm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4Mzg5OTIsImV4cCI6MjA4ODQxNDk5Mn0.GwKfpNQ3Fv9CCtvodsabDmpryqY0ZOg6asX-WWaC4E4';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ========== GET ACCESS TOKEN ==========
+async function getAccessToken() {
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: GMAIL_CLIENT_ID,
+      client_secret: GMAIL_CLIENT_SECRET,
+      refresh_token: GMAIL_REFRESH_TOKEN,
+      grant_type: 'refresh_token'
+    })
+  });
+
+  const data = await response.json();
+  if (data.error) throw new Error(data.error);
+  return data.access_token;
+}
+
+// ========== FETCH EMAILS ==========
+async function fetchEmails(accessToken) {
+  // Search for Interac emails from last 7 days
+  const query = 'from:notify@payments.interac.ca subject:"INTERAC e-Transfer" newer_than:7d';
+  
+  const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}`;
+  
+  const response = await fetch(searchUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  const data = await response.json();
+  return data.messages || [];
+}
+
+// ========== GET EMAIL DETAILS ==========
+async function getEmailDetails(messageId, accessToken) {
+  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`;
+  
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+
+  const data = await response.json();
+  
+  // Extract body
+  let body = '';
+  if (data.payload.parts) {
+    const textPart = data.payload.parts.find(p => p.mimeType === 'text/plain');
+    if (textPart?.body?.data) {
+      body = Buffer.from(textPart.body.data, 'base64').toString();
+    }
+  } else if (data.payload.body?.data) {
+    body = Buffer.from(data.payload.body.data, 'base64').toString();
+  }
+
+  // Extract subject
+  const subjectHeader = data.payload.headers.find(h => h.name === 'Subject');
+  const subject = subjectHeader?.value || '';
+
+  return { body, subject };
+}
+
+// ========== PARSE EMAIL ==========
+function parseInteracEmail(body, subject) {
+  const patterns = {
+    amount: /\$(\d+\.?\d{0,2})\s*(?:\(CAD\)|CAD)?/,
+    sender: /(?:Sent From|From):\s*(.+?)(?:\n|$)/i,
+    memo: /(?:Message|Memo):\s*(.+?)(?:\n|Date:|Reference:|$)/is,
+    date: /Date:\s*([^,\n]+(?:,\s*\d{4})?)/i,
+    reference: /Reference\s*(?:Number)?:\s*(\w+)/i,
+    email: /(?:Email|E-mail):\s*([^\s\n]+@[^\s\n]+)/i
+  };
+
+  const amount = body.match(patterns.amount)?.[1];
+  const sender = body.match(patterns.sender)?.[1]?.trim();
+  const memo = body.match(patterns.memo)?.[1]?.trim();
+  const dateStr = body.match(patterns.date)?.[1]?.trim();
+  const reference = body.match(patterns.reference)?.[1];
+  const senderEmail = body.match(patterns.email)?.[1];
+
+  if (!amount || !sender || !reference) return null;
+
+  let etransferDate = new Date().toISOString().split('T')[0];
+  if (dateStr) {
+    try {
+      etransferDate = new Date(dateStr).toISOString().split('T')[0];
+    } catch (e) {}
+  }
+
+  return {
+    amount: parseFloat(amount),
+    sender_name: sender,
+    sender_email: senderEmail || null,
+    memo: memo || '',
+    etransfer_date: etransferDate,
+    etransfer_reference: reference,
+    raw_email_body: body,
+    email_subject: subject
+  };
+}
+
+// ========== MATCH TO SKATES ==========
+async function matchToSkates(payment) {
+  const memo = payment.memo || '';
+  
+  // Extract skate numbers
+  const skateNumbers = [];
+  const numberPattern = /\b(\d{3})\b/g;
+  let match;
+  while ((match = numberPattern.exec(memo)) !== null) {
+    skateNumbers.push(parseInt(match[1]));
+  }
+
+  if (skateNumbers.length === 0) return { skates: [], confidence: 0 };
+
+  // Find skates
+  const { data: skates } = await supabase
+    .from('skates')
+    .select('*')
+    .in('id', skateNumbers);
+
+  if (!skates || skates.length === 0) return { skates: [], confidence: 0 };
+
+  // Check amount
+  const expectedAmount = skates.reduce((sum, s) => 
+    sum + parseFloat(s.cost.replace('$', '')), 0
+  );
+
+  const amountMatches = Math.abs(expectedAmount - payment.amount) < 0.01;
+  const confidence = amountMatches ? 90 : 70;
+
+  return { skates, confidence, amountMatches };
+}
+
+// ========== MATCH TO PLAYER ==========
+async function matchToPlayer(payment) {
+  const senderName = payment.sender_name;
+
+  // Try exact match
+  const { data: exactMatch } = await supabase
+    .from('players')
+    .select('*')
+    .ilike('name', senderName)
+    .limit(1);
+
+  if (exactMatch && exactMatch.length > 0) {
+    return { player: exactMatch[0], confidence: 30 };
+  }
+
+  // Try fuzzy match
+  const nameParts = senderName.toLowerCase().split(' ').filter(p => p.length > 2);
+  
+  if (nameParts.length >= 2) {
+    const { data: players } = await supabase
+      .from('players')
+      .select('*');
+
+    if (players) {
+      for (const player of players) {
+        const normalizedPlayer = player.name.toLowerCase();
+        const matches = nameParts.filter(part => normalizedPlayer.includes(part));
+        if (matches.length >= 2) {
+          return { player, confidence: 15 };
+        }
+      }
+    }
+  }
+
+  return { player: null, confidence: 0 };
+}
+
+// ========== PROCESS PAYMENT ==========
+async function processPayment(parsed) {
+  // Check if already processed
+  const { data: existing } = await supabase
+    .from('test_payment_records')
+    .select('id')
+    .eq('etransfer_reference', parsed.etransfer_reference)
+    .single();
+
+  if (existing) {
+    console.log('Already processed:', parsed.etransfer_reference);
+    return { status: 'duplicate', id: existing.id };
+  }
+
+  // Match to skates and player
+  const skateMatch = await matchToSkates(parsed);
+  const playerMatch = await matchToPlayer(parsed);
+
+  const totalConfidence = skateMatch.confidence + playerMatch.confidence;
+
+  // Insert payment record
+  const { data: payment, error } = await supabase
+    .from('test_payment_records')
+    .insert({
+      etransfer_date: parsed.etransfer_date,
+      etransfer_reference: parsed.etransfer_reference,
+      amount: parsed.amount,
+      sender_name: parsed.sender_name,
+      sender_email: parsed.sender_email,
+      memo: parsed.memo,
+      raw_email_body: parsed.raw_email_body,
+      email_subject: parsed.email_subject,
+      email_received_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Log match result
+  await supabase
+    .from('test_payment_log')
+    .insert({
+      payment_id: payment.id,
+      action: 'auto_matched',
+      matched_skate_ids: skateMatch.skates.map(s => s.id),
+      matched_player_id: playerMatch.player?.id || null,
+      confidence_score: totalConfidence,
+      admin_notes: `Auto-matched: ${skateMatch.skates.length} skates, player: ${playerMatch.player?.name || 'none'}`
+    });
+
+  // Create assignments
+  if (skateMatch.skates.length > 0 && playerMatch.player) {
+    for (const skate of skateMatch.skates) {
+      await supabase
+        .from('test_payment_assignments')
+        .insert({
+          payment_id: payment.id,
+          skate_id: skate.id,
+          player_id: playerMatch.player.id,
+          would_add_to_roster: true,
+          assignment_type: totalConfidence >= 80 ? 'auto' : 'needs_review',
+          notes: `Confidence: ${totalConfidence}%`
+        });
+    }
+  }
+
+  return {
+    status: 'processed',
+    id: payment.id,
+    confidence: totalConfidence,
+    skates: skateMatch.skates.length,
+    player: playerMatch.player?.name || 'none'
+  };
+}
+
+// ========== MAIN HANDLER ==========
+export default async function handler(req, res) {
+  try {
+    console.log('🔍 Checking for new emails...');
+
+    // Get access token
+    const accessToken = await getAccessToken();
+
+    // Fetch emails
+    const messages = await fetchEmails(accessToken);
+    console.log(`📧 Found ${messages.length} emails`);
+
+    const results = [];
+
+    // Process each email
+    for (const message of messages.slice(0, 10)) { // Process max 10 at a time
+      try {
+        const { body, subject } = await getEmailDetails(message.id, accessToken);
+        const parsed = parseInteracEmail(body, subject);
+
+        if (parsed) {
+          const result = await processPayment(parsed);
+          results.push(result);
+          console.log('✅ Processed:', parsed.etransfer_reference, result);
+        }
+      } catch (error) {
+        console.error('Error processing email:', message.id, error);
+        results.push({ status: 'error', error: error.message });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      processed: results.length,
+      results
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}

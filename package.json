@@ -1,0 +1,8 @@
+{
+  "name": "shinny-balancer",
+  "version": "1.0.0",
+  "description": "Hockey skate management with payment automation",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}
