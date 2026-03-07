@@ -338,12 +338,18 @@ module.exports = async function handler(req, res) {
     for (const message of messages.slice(0, 10)) { // Process max 10 at a time
       try {
         const { body, subject } = await getEmailDetails(message.id, accessToken);
+        console.log('📧 Email subject:', subject);
+        console.log('📧 Body preview:', body.substring(0, 500));
+        
         const parsed = parseInteracEmail(body, subject);
 
         if (parsed) {
           const result = await processPayment(parsed);
           results.push(result);
           console.log('✅ Processed:', parsed.etransfer_reference, result);
+        } else {
+          console.log('❌ Failed to parse email');
+          results.push({ status: 'parse_failed', subject });
         }
       } catch (error) {
         console.error('Error processing email:', message.id, error);
@@ -353,7 +359,9 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({
       success: true,
-      processed: results.length,
+      total_emails: messages.length,
+      processed: results.filter(r => r.status === 'processed' || r.status === 'duplicate').length,
+      failed: results.filter(r => r.status === 'parse_failed' || r.status === 'error').length,
       results
     });
 
