@@ -140,6 +140,8 @@ async function getEmailDetails(messageId, accessToken) {
   const textData = findTextPart(data.payload);
   if (textData) {
     body = Buffer.from(textData, 'base64').toString('utf-8');
+    // Normalize line endings immediately
+    body = body.replace(/\r\n/g, '\n');
   }
 
   // Extract subject
@@ -147,15 +149,13 @@ async function getEmailDetails(messageId, accessToken) {
   const subject = subjectHeader?.value || '';
 
   console.log('📧 Extracted body length:', body.length);
+  console.log('📧 Body sample (first 200 chars):', body.substring(0, 200));
   
   return { body, subject };
 }
 
 // ========== PARSE EMAIL ==========
 function parseInteracEmail(body, subject) {
-  // Normalize line endings (convert \r\n to \n)
-  body = body.replace(/\r\n/g, '\n');
-  
   const patterns = {
     amount: /Amount:\s*\$(\d+\.?\d{0,2})\s*(?:\(CAD\)|CAD)?/i,
     sender: /Sent From:\s*(.+?)(?:\n|$)/i,
