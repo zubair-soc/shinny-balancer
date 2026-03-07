@@ -153,6 +153,9 @@ async function getEmailDetails(messageId, accessToken) {
 
 // ========== PARSE EMAIL ==========
 function parseInteracEmail(body, subject) {
+  // Normalize line endings (convert \r\n to \n)
+  body = body.replace(/\r\n/g, '\n');
+  
   const patterns = {
     amount: /Amount:\s*\$(\d+\.?\d{0,2})\s*(?:\(CAD\)|CAD)?/i,
     sender: /Sent From:\s*(.+?)(?:\n|$)/i,
