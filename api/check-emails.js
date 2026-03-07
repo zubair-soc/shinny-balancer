@@ -211,38 +211,107 @@ async function matchToSkates(payment) {
     skateNumbers.push(parseInt(match[1]));
   }
 
-  if (skateNumbers.length === 0) return { skates: [], confidence: 0 };
+  // Try skate number matching first
+  if (skateNumbers.length > 0) {
+    console.log('🔍 Looking for skates:', skateNumbers);
 
-  console.log('🔍 Looking for skates:', skateNumbers);
+    const skates = await supabase.query('skates', {
+      select: '*',
+      in: { id: skateNumbers }
+    });
 
-  // Find skates
-  const skates = await supabase.query('skates', {
-    select: '*',
-    in: { id: skateNumbers }
-  });
+    console.log('🔍 Skates found:', skates ? skates.length : 'null', skates);
 
-  console.log('🔍 Skates found:', skates ? skates.length : 'null', skates);
+    if (skates && skates.length > 0) {
+      // Check amount
+      const expectedAmount = skates.reduce((sum, s) => {
+        const cost = typeof s.cost === 'string' ? s.cost.replace('$', '') : s.cost;
+        return sum + parseFloat(cost);
+      }, 0);
 
-  if (!skates || skates.length === 0) return { skates: [], confidence: 0 };
+      const amountMatches = Math.abs(expectedAmount - payment.amount) < 0.01;
+      const confidence = amountMatches ? 90 : 70;
+      
+      console.log('💰 Skate match (by number):', { 
+        skateIds: skates.map(s => s.id), 
+        expectedAmount, 
+        actualAmount: payment.amount, 
+        amountMatches, 
+        confidence 
+      });
 
-  // Check amount
-  const expectedAmount = skates.reduce((sum, s) => {
-    const cost = typeof s.cost === 'string' ? s.cost.replace('$', '') : s.cost;
-    return sum + parseFloat(cost);
-  }, 0);
+      return { skates, confidence, amountMatches };
+    }
+  }
 
-  const amountMatches = Math.abs(expectedAmount - payment.amount) < 0.01;
-  const confidence = amountMatches ? 90 : 70;
+  // Fallback: Try date matching
+  console.log('🔍 No skate numbers found, trying date matching...');
   
-  console.log('💰 Skate match:', { 
-    skateIds: skates.map(s => s.id), 
-    expectedAmount, 
-    actualAmount: payment.amount, 
-    amountMatches, 
-    confidence 
-  });
+  // Extract dates from memo (March 15, Mar 15, 3/15, etc.)
+  const datePatterns = [
+    /(?:march|mar)\s+(\d{1,2})/i,
+    /(\d{1,2})\/(\d{1,2})/,
+    /(\d{1,2})-(\d{1,2})/
+  ];
+  
+  let targetDate = null;
+  const paymentYear = new Date(payment.etransfer_date).getFullYear();
+  
+  for (const pattern of datePatterns) {
+    const dateMatch = memo.match(pattern);
+    if (dateMatch) {
+      let month, day;
+      if (pattern.source.includes('march')) {
+        // "March 15" format
+        day = parseInt(dateMatch[1]);
+        month = 3; // March
+      } else {
+        // "3/15" or "15/3" format - assume month/day
+        month = parseInt(dateMatch[1]);
+        day = parseInt(dateMatch[2]);
+      }
+      
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        targetDate = `${paymentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        break;
+      }
+    }
+  }
+  
+  if (targetDate) {
+    console.log('🔍 Looking for skates on date:', targetDate);
+    
+    const skates = await supabase.query('skates', {
+      select: '*',
+      eq: { date: targetDate }
+    });
+    
+    console.log('🔍 Skates found by date:', skates ? skates.length : 'null');
+    
+    if (skates && skates.length > 0) {
+      // Check amount
+      const expectedAmount = skates.reduce((sum, s) => {
+        const cost = typeof s.cost === 'string' ? s.cost.replace('$', '') : s.cost;
+        return sum + parseFloat(cost);
+      }, 0);
 
-  return { skates, confidence, amountMatches };
+      const amountMatches = Math.abs(expectedAmount - payment.amount) < 0.01;
+      const confidence = amountMatches ? 60 : 50; // Lower confidence for date matching
+      
+      console.log('💰 Skate match (by date):', { 
+        skateIds: skates.map(s => s.id),
+        date: targetDate,
+        expectedAmount, 
+        actualAmount: payment.amount, 
+        amountMatches, 
+        confidence 
+      });
+
+      return { skates, confidence, amountMatches };
+    }
+  }
+
+  return { skates: [], confidence: 0 };
 }
 
 // ========== MATCH TO PLAYER ==========
