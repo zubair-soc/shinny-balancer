@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Manager - Shinny of Champions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-start: #f8fafc;
+            --bg-end: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --primary-rgb: 16, 185, 129;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body.dark-mode {
+            --bg-start: #0f172a;
+            --bg-end: #1e293b;
+            --card-bg: #1e293b;
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .back-button {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .test-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .test-banner-title {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .test-banner-text {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--card-border);
+            padding-bottom: 10px;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+        }
+
+        .tab.active {
+            background: rgba(var(--primary-rgb), 0.15);
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+            font-weight: 700;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .payment-card {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+
+        .payment-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .payment-card.auto-matched {
+            border-left: 4px solid var(--success);
+        }
+
+        .payment-card.needs-review {
+            border-left: 4px solid var(--warning);
+        }
+
+        .payment-card.unknown {
+            border-left: 4px solid #64748b;
+        }
+
+        .payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .payment-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .payment-date {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .payment-info {
+            margin-bottom: 16px;
+        }
+
+        .payment-info-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .payment-info-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 100px;
+        }
+
+        .payment-info-value {
+            color: var(--text);
+        }
+
+        .payment-memo {
+            background: rgba(var(--primary-rgb), 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-family: monospace;
+            color: var(--text);
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .confidence-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+
+        .confidence-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .confidence-low {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+        }
+
+        .matched-skates {
+            margin-bottom: 16px;
+        }
+
+        .skate-tag {
+            display: inline-block;
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .player-match {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .player-match-icon {
+            font-size: 20px;
+        }
+
+        .payment-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(var(--primary-rgb), 0.2);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            border: 3px solid rgba(var(--primary-rgb), 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+
+            .payment-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .payment-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>💰 Payment Manager</h1>
+            <div class="header-buttons">
+                <a href="index.html" class="back-button">← Back to Skates</a>
+                <button class="back-button" onclick="checkNewEmails()">🔄 Check Emails</button>
+            </div>
+        </div>
+
+        <!-- Test Mode Banner -->
+        <div class="test-banner">
+            <div class="test-banner-title">🧪 TEST MODE ACTIVE</div>
+            <div class="test-banner-text">
+                Payments are detected and matched, but NOT added to real rosters. Click "Approve" to add to production roster.
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-label">Total Payments</div>
+                <div class="summary-value" id="totalPayments">-</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total Amount</div>
+                <div class="summary-value" id="totalAmount">$0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Auto-Matched</div>
+                <div class="summary-value" id="autoMatched" style="color: var(--success);">-</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Needs Review</div>
+                <div class="summary-value" id="needsReview" style="color: var(--warning);">-</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('auto-matched')">
+                ✅ Auto-Matched
+                <span class="tab-badge" id="autoMatchedBadge">0</span>
+            </button>
+            <button class="tab" onclick="switchTab('needs-review')">
+                🟡 Needs Review
+                <span class="tab-badge" id="needsReviewBadge" style="background: var(--warning);">0</span>
+            </button>
+            <button class="tab" onclick="switchTab('unknown')">
+                ❓ Unknown
+                <span class="tab-badge" id="unknownBadge" style="background: #64748b;">0</span>
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="auto-matched" class="tab-content active">
+            <div id="autoMatchedList"></div>
+        </div>
+
+        <div id="needs-review" class="tab-content">
+            <div id="needsReviewList"></div>
+        </div>
+
+        <div id="unknown" class="tab-content">
+            <div id="unknownList"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase (TEST DATABASE)
+        const supabaseUrl = 'https://vbmsvtcglwxjzpabnnoi.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZibXN2dGNnbHd4anpwYWJubm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4Mzg5OTIsImV4cCI6MjA4ODQxNDk5Mn0.GwKfpNQ3Fv9CCtvodsabDmpryqY0ZOg6asX-WWaC4E4';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let payments = [];
+        let currentTab = 'auto-matched';
+
+        // Load payments on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPayments();
+        });
+
+        // Switch tabs
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.tab').classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Load payments from database
+        async function loadPayments() {
+            showLoading();
+
+            try {
+                // Fetch all test payments
+                const { data: paymentRecords, error } = await supabaseClient
+                    .from('test_payment_records')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Fetch assignments for each payment
+                const { data: assignments } = await supabaseClient
+                    .from('test_payment_assignments')
+                    .select('*, skates(*), players(*)');
+
+                // Fetch logs
+                const { data: logs } = await supabaseClient
+                    .from('test_payment_log')
+                    .select('*');
+
+                // Combine data
+                payments = paymentRecords.map(payment => {
+                    const paymentAssignments = assignments?.filter(a => a.payment_id === payment.id) || [];
+                    const paymentLog = logs?.find(l => l.payment_id === payment.id);
+
+                    return {
+                        ...payment,
+                        assignments: paymentAssignments,
+                        log: paymentLog,
+                        confidence: paymentLog?.confidence_score || 0
+                    };
+                });
+
+                renderPayments();
+                updateSummary();
+
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                showError('Failed to load payments');
+            }
+        }
+
+        // Render payments
+        function renderPayments() {
+            const autoMatched = payments.filter(p => p.confidence >= 80);
+            const needsReview = payments.filter(p => p.confidence >= 40 && p.confidence < 80);
+            const unknown = payments.filter(p => p.confidence < 40);
+
+            // Update badges
+            document.getElementById('autoMatchedBadge').textContent = autoMatched.length;
+            document.getElementById('needsReviewBadge').textContent = needsReview.length;
+            document.getElementById('unknownBadge').textContent = unknown.length;
+
+            // Render each category
+            renderPaymentList('autoMatchedList', autoMatched, 'auto-matched');
+            renderPaymentList('needsReviewList', needsReview, 'needs-review');
+            renderPaymentList('unknownList', unknown, 'unknown');
+        }
+
+        // Render payment list
+        function renderPaymentList(containerId, paymentList, type) {
+            const container = document.getElementById(containerId);
+
+            if (paymentList.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-title">No payments yet</div>
+                        <div>Click "Check Emails" to fetch new payments</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = paymentList.map(payment => `
+                <div class="payment-card ${type}">
+                    <div class="payment-header">
+                        <div>
+                            <div class="payment-amount">$${payment.amount.toFixed(2)}</div>
+                            <div class="payment-date">${new Date(payment.etransfer_date).toLocaleDateString()}</div>
+                        </div>
+                        <span class="confidence-badge confidence-${payment.confidence >= 80 ? 'high' : payment.confidence >= 40 ? 'medium' : 'low'}">
+                            ${payment.confidence}% Match
+                        </span>
+                    </div>
+
+                    <div class="payment-info">
+                        <div class="payment-info-row">
+                            <div class="payment-info-label">From:</div>
+                            <div class="payment-info-value">${payment.sender_name}</div>
+                        </div>
+                        <div class="payment-info-row">
+                            <div class="payment-info-label">Reference:</div>
+                            <div class="payment-info-value">${payment.etransfer_reference}</div>
+                        </div>
+                    </div>
+
+                    ${payment.memo ? `
+                        <div class="payment-memo">
+                            💬 ${payment.memo}
+                        </div>
+                    ` : ''}
+
+                    ${payment.assignments.length > 0 ? `
+                        <div class="matched-skates">
+                            <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">Matched Skates:</div>
+                            ${payment.assignments.map(a => `
+                                <span class="skate-tag">
+                                    Skate ${a.skates.id}: ${a.skates.title}
+                                </span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${payment.assignments[0]?.players ? `
+                        <div class="player-match">
+                            <span class="player-match-icon">👤</span>
+                            <span>${payment.assignments[0].players.name}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="payment-actions">
+                        <button class="btn btn-primary" onclick="approvePayment(${payment.id})">
+                            ✓ Approve & Add to Roster
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewDetails(${payment.id})">
+                            📋 View Details
+                        </button>
+                        <button class="btn btn-danger" onclick="deletePayment(${payment.id})">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update summary
+        function updateSummary() {
+            const total = payments.length;
+            const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+            const autoMatched = payments.filter(p => p.confidence >= 80).length;
+            const needsReview = payments.filter(p => p.confidence >= 40 && p.confidence < 80).length;
+
+            document.getElementById('totalPayments').textContent = total;
+            document.getElementById('totalAmount').textContent = `$${totalAmount.toFixed(2)}`;
+            document.getElementById('autoMatched').textContent = autoMatched;
+            document.getElementById('needsReview').textContent = needsReview;
+        }
+
+        // Check for new emails
+        async function checkNewEmails() {
+            try {
+                const response = await fetch('/api/check-emails');
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Processed ${result.processed} emails`);
+                    loadPayments();
+                } else {
+                    alert('❌ Error checking emails: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Failed to check emails');
+            }
+        }
+
+        // Approve payment (add to real roster)
+        async function approvePayment(paymentId) {
+            if (!confirm('Add this payment to the REAL production roster?')) return;
+
+            alert('🚧 Coming soon! This will add the player to the real skate roster.');
+            // TODO: Implement actual roster addition
+        }
+
+        // View details
+        function viewDetails(paymentId) {
+            const payment = payments.find(p => p.id === paymentId);
+            alert(`Payment Details:\n\n${JSON.stringify(payment, null, 2)}`);
+        }
+
+        // Delete payment
+        async function deletePayment(paymentId) {
+            if (!confirm('Delete this payment record?')) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('test_payment_records')
+                    .delete()
+                    .eq('id', paymentId);
+
+                if (error) throw error;
+
+                alert('✅ Payment deleted');
+                loadPayments();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Failed to delete payment');
+            }
+        }
+
+        // Show loading
+        function showLoading() {
+            ['autoMatchedList', 'needsReviewList', 'unknownList'].forEach(id => {
+                document.getElementById(id).innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Loading payments...</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Show error
+        function showError(message) {
+            ['autoMatchedList', 'needsReviewList', 'unknownList'].forEach(id => {
+                document.getElementById(id).innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-title">${message}</div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
