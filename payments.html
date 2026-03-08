@@ -710,10 +710,27 @@
 
         // Approve payment (add to real roster)
         async function approvePayment(paymentId) {
-            if (!confirm('Add this payment to the REAL production roster?')) return;
+            const payment = payments.find(p => p.id === paymentId);
+            if (!payment) return;
+
+            // Build confirmation message
+            let message = `Add ${payment.sender_name} ($${payment.amount}) to:\n\n`;
+            
+            if (payment.assignments && payment.assignments.length > 0) {
+                payment.assignments.forEach(a => {
+                    message += `• Skate ${a.skates.id}: ${a.skates.title}\n`;
+                });
+                message += `\nThis will update the REAL production roster!`;
+            } else {
+                message = `No skate assignments found for this payment.`;
+                alert(message);
+                return;
+            }
+
+            if (!confirm(message)) return;
 
             alert('🚧 Coming soon! This will add the player to the real skate roster.');
-            // TODO: Implement actual roster addition
+            // TODO: Implement actual roster addition to production DB
         }
 
         // View details
