@@ -546,10 +546,16 @@
 
                 if (error) throw error;
 
-                // Fetch assignments for each payment
+                // Fetch assignments
                 const { data: assignments } = await supabaseClient
                     .from('test_payment_assignments')
-                    .select('*, skates(*), players(*)');
+                    .select('*');
+
+                // Fetch all skates referenced in assignments
+                const skateIds = [...new Set(assignments?.map(a => a.skate_id).filter(Boolean) || [])];
+                const { data: skates } = skateIds.length > 0 
+                    ? await supabaseClient.from('skates').select('*').in('id', skateIds)
+                    : { data: [] };
 
                 // Fetch logs
                 const { data: logs } = await supabaseClient
@@ -558,7 +564,10 @@
 
                 // Combine data
                 payments = paymentRecords.map(payment => {
-                    const paymentAssignments = assignments?.filter(a => a.payment_id === payment.id) || [];
+                    const paymentAssignments = (assignments?.filter(a => a.payment_id === payment.id) || []).map(a => ({
+                        ...a,
+                        skates: skates?.find(s => s.id === a.skate_id) || null
+                    }));
                     const paymentLog = logs?.find(l => l.payment_id === payment.id);
 
                     return {
@@ -568,6 +577,9 @@
                         confidence: paymentLog?.confidence_score || 0
                     };
                 });
+
+                console.log('Loaded payments:', payments.length);
+                console.log('Sample payment with assignments:', payments[0]);
 
                 renderPayments();
                 updateSummary();
