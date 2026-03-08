@@ -405,12 +405,12 @@ async function processPayment(parsed) {
   });
 
   // Create assignments
-  if (skateMatch.skates.length > 0 && playerMatch.player) {
+  if (skateMatch.skates.length > 0) {
     for (const skate of skateMatch.skates) {
       await supabase.insert('test_payment_assignments', {
         payment_id: paymentId,
         skate_id: skate.id,
-        player_id: playerMatch.player.id,
+        player_id: playerMatch.player?.id || null,
         would_add_to_roster: true,
         assignment_type: totalConfidence >= 80 ? 'auto' : 'needs_review',
         notes: `Confidence: ${totalConfidence}%`
