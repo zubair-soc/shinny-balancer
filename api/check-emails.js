@@ -430,6 +430,15 @@ async function processPayment(parsed) {
 // ========== MAIN HANDLER ==========
 module.exports = async function handler(req, res) {
   try {
+    // Verify cron secret if present (for automated runs)
+    const cronSecret = req.headers['x-vercel-cron-secret'] || req.query.secret;
+    const expectedSecret = process.env.CRON_SECRET;
+    
+    // Allow requests from UI (no secret) or valid cron requests
+    if (expectedSecret && cronSecret && cronSecret !== expectedSecret) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
     console.log('🔍 Checking for new emails...');
 
     // Get access token
@@ -443,7 +452,7 @@ module.exports = async function handler(req, res) {
 
     // Process each email
     const debugInfo = [];
-    for (const message of messages.slice(0, 30)) { // Process max 30 at a time
+    for (const message of messages.slice(0, 50)) { // Process max 50 at a time
       try {
         const { body, subject } = await getEmailDetails(message.id, accessToken);
         console.log('📧 Email subject:', subject);
