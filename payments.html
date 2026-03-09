@@ -512,6 +512,11 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZibXN2dGNnbHd4anpwYWJubm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4Mzg5OTIsImV4cCI6MjA4ODQxNDk5Mn0.GwKfpNQ3Fv9CCtvodsabDmpryqY0ZOg6asX-WWaC4E4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Initialize PRODUCTION Supabase client
+        const productionSupabaseUrl = 'https://fqbtfgkwhnfyodinjvcn.supabase.co';
+        const productionSupabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxYnRmZ2t3aG5meW9kaW5qdmNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MzIzODAsImV4cCI6MjA4NjAwODM4MH0.dVank1VxQ4-9EsQ7ekwSRs5Vu9V2rQLgVmN01iBDYHs';
+        const productionSupabaseClient = supabase.createClient(productionSupabaseUrl, productionSupabaseKey);
+
         let payments = [];
         let currentTab = 'auto-matched';
 
@@ -592,8 +597,11 @@
 
         // Render payments
         function renderPayments() {
-            // Sort all payments by date (newest first)
-            const sortedPayments = [...payments].sort((a, b) => 
+            // Filter out processed payments
+            const unprocessedPayments = payments.filter(p => !p.processed_at);
+            
+            // Sort by date (newest first)
+            const sortedPayments = [...unprocessedPayments].sort((a, b) => 
                 new Date(b.created_at || b.etransfer_date) - new Date(a.created_at || a.etransfer_date)
             );
 
@@ -675,9 +683,15 @@
                     ` : ''}
 
                     <div class="payment-actions">
-                        <button class="btn btn-primary" onclick="approvePayment(${payment.id})">
-                            ✓ Approve & Add to Roster
-                        </button>
+                        ${payment.confidence >= 80 ? `
+                            <button class="btn btn-primary" onclick="approvePayment(${payment.id})">
+                                ✓ Approve & Add to Roster
+                            </button>
+                        ` : `
+                            <button class="btn btn-primary" onclick="showManualAssign(${payment.id})">
+                                ✏️ Manual Assign
+                            </button>
+                        `}
                         <button class="btn btn-secondary" onclick="viewDetails(${payment.id})">
                             📋 View Details
                         </button>
@@ -741,8 +755,71 @@
 
             if (!confirm(message)) return;
 
-            alert('🚧 Coming soon! This will add the player to the real skate roster.');
-            // TODO: Implement actual roster addition to production DB
+            try {
+                // Get player info from assignments
+                const assignment = payment.assignments[0]; // Use first assignment for player info
+                
+                if (!assignment.player_id) {
+                    alert('⚠️ No player matched for this payment. Please add manually from the skate roster page.');
+                    return;
+                }
+
+                // Add to production roster for each assigned skate
+                let added = 0;
+                for (const assign of payment.assignments) {
+                    // Check if already on roster
+                    const { data: existing } = await productionSupabaseClient
+                        .from('skate_registrations')
+                        .select('id')
+                        .eq('skate_id', assign.skates.id)
+                        .eq('player_id', assign.player_id)
+                        .single();
+
+                    if (existing) {
+                        console.log(`Player already on Skate ${assign.skates.id}`);
+                        continue;
+                    }
+
+                    // Get current max position
+                    const { data: maxPos } = await productionSupabaseClient
+                        .from('skate_registrations')
+                        .select('position')
+                        .eq('skate_id', assign.skates.id)
+                        .order('position', { ascending: false })
+                        .limit(1);
+
+                    const nextPosition = (maxPos?.[0]?.position || 0) + 1;
+
+                    // Add to roster
+                    const { error } = await productionSupabaseClient
+                        .from('skate_registrations')
+                        .insert({
+                            skate_id: assign.skates.id,
+                            player_id: assign.player_id,
+                            player_name: payment.sender_name,
+                            position: nextPosition,
+                            is_goalie: false,
+                            is_waitlist: false,
+                            registered_at: new Date().toISOString()
+                        });
+
+                    if (error) throw error;
+                    added++;
+                }
+
+                // Mark as processed in test DB
+                await supabaseClient
+                    .from('test_payment_records')
+                    .update({ processed_at: new Date().toISOString(), processed_by: 'admin' })
+                    .eq('id', paymentId);
+
+                alert(`✅ Successfully added to ${added} skate roster(s)!`);
+                loadPayments(); // Refresh
+
+            } catch (error) {
+                console.error('Error approving payment:', error);
+                alert(`❌ Failed to add to roster: ${error.message}`);
+            }
         }
 
         // View details
@@ -771,6 +848,169 @@
             modal.appendChild(content);
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
             document.body.appendChild(modal);
+        }
+
+        // Manual assignment modal
+        async function showManualAssign(paymentId) {
+            const payment = payments.find(p => p.id === paymentId);
+            if (!payment) return;
+
+            // Fetch all players and recent skates
+            const { data: players } = await productionSupabaseClient
+                .from('players')
+                .select('id, name')
+                .order('name');
+
+            const { data: skates } = await productionSupabaseClient
+                .from('skates')
+                .select('id, title, date, cost')
+                .order('date', { ascending: false })
+                .limit(20);
+
+            // Create modal
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
+            
+            const content = document.createElement('div');
+            content.style.cssText = 'background: var(--card-bg); padding: 24px; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow: auto; color: var(--text);';
+            
+            content.innerHTML = `
+                <h3 style="margin: 0 0 20px 0; font-size: 20px;">Manual Assignment</h3>
+                
+                <div style="background: var(--bg-start); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 8px;">Payment Details:</div>
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px; font-size: 14px;">
+                        <div style="color: var(--text-muted);">Amount:</div>
+                        <div>$${payment.amount.toFixed(2)}</div>
+                        <div style="color: var(--text-muted);">From:</div>
+                        <div>${payment.sender_name}</div>
+                        <div style="color: var(--text-muted);">Memo:</div>
+                        <div>${payment.memo || 'None'}</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Select Player:</label>
+                    <select id="manualPlayer" style="width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 6px; background: var(--card-bg); color: var(--text); font-size: 14px;">
+                        <option value="">-- Select Player --</option>
+                        ${players?.map(p => `<option value="${p.id}">${p.name}</option>`).join('') || ''}
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Select Skate:</label>
+                    <select id="manualSkate" style="width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 6px; background: var(--card-bg); color: var(--text); font-size: 14px;">
+                        <option value="">-- Select Skate --</option>
+                        ${skates?.map(s => `
+                            <option value="${s.id}">
+                                Skate ${s.id}: ${s.title} - ${new Date(s.date).toLocaleDateString()} (${s.cost})
+                            </option>
+                        `).join('') || ''}
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-top: 24px;">
+                    <button onclick="submitManualAssignment(${paymentId})" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        ✓ Assign & Add to Roster
+                    </button>
+                    <button onclick="this.closest('[data-modal]').remove()" style="padding: 12px 24px; background: var(--text-muted); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        Cancel
+                    </button>
+                </div>
+            `;
+            
+            modal.setAttribute('data-modal', 'true');
+            modal.appendChild(content);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+        }
+
+        // Submit manual assignment
+        async function submitManualAssignment(paymentId) {
+            const playerId = document.getElementById('manualPlayer').value;
+            const skateId = document.getElementById('manualSkate').value;
+
+            if (!playerId || !skateId) {
+                alert('⚠️ Please select both a player and a skate');
+                return;
+            }
+
+            try {
+                const payment = payments.find(p => p.id === paymentId);
+                const playerSelect = document.getElementById('manualPlayer');
+                const skateSelect = document.getElementById('manualSkate');
+                const playerName = playerSelect.options[playerSelect.selectedIndex].text;
+                const skateTitle = skateSelect.options[skateSelect.selectedIndex].text;
+
+                if (!confirm(`Add ${playerName} to ${skateTitle}?\n\nThis will update the REAL production roster!`)) {
+                    return;
+                }
+
+                // Check if already on roster
+                const { data: existing } = await productionSupabaseClient
+                    .from('skate_registrations')
+                    .select('id')
+                    .eq('skate_id', skateId)
+                    .eq('player_id', playerId)
+                    .single();
+
+                if (existing) {
+                    alert('⚠️ This player is already on this skate roster!');
+                    return;
+                }
+
+                // Get current max position
+                const { data: maxPos } = await productionSupabaseClient
+                    .from('skate_registrations')
+                    .select('position')
+                    .eq('skate_id', skateId)
+                    .order('position', { ascending: false })
+                    .limit(1);
+
+                const nextPosition = (maxPos?.[0]?.position || 0) + 1;
+
+                // Add to roster
+                const { error } = await productionSupabaseClient
+                    .from('skate_registrations')
+                    .insert({
+                        skate_id: skateId,
+                        player_id: playerId,
+                        player_name: playerName,
+                        position: nextPosition,
+                        is_goalie: false,
+                        is_waitlist: false,
+                        registered_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+
+                // Create assignment in test DB
+                await supabaseClient
+                    .from('test_payment_assignments')
+                    .insert({
+                        payment_id: paymentId,
+                        skate_id: skateId,
+                        player_id: playerId,
+                        would_add_to_roster: true,
+                        assignment_type: 'manual',
+                        notes: 'Manually assigned'
+                    });
+
+                // Mark as processed
+                await supabaseClient
+                    .from('test_payment_records')
+                    .update({ processed_at: new Date().toISOString(), processed_by: 'admin' })
+                    .eq('id', paymentId);
+
+                // Close modal and refresh
+                document.querySelector('[data-modal]')?.remove();
+                alert('✅ Successfully added to roster!');
+                loadPayments();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`❌ Failed to add to roster: ${error.message}`);
+            }
         }
 
         // Delete payment
