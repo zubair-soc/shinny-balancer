@@ -324,77 +324,8 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-
-            .header {
-                padding: 20px 16px;
-            }
-
-            .header h1 {
-                font-size: 26px;
-            }
-
-            /* Nav buttons in header wrap and fill width */
-            .header > div[style*="flex"] {
-                flex-wrap: wrap !important;
-            }
-
-            .header-button {
-                flex: 1;
-                min-width: 120px;
-                justify-content: center;
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-
-            /* Setup sections */
-            .setup-section {
-                padding: 16px;
-            }
-
-            /* Form grid stacks to single column */
-            .form-grid {
-                grid-template-columns: 1fr !important;
-            }
-
-            /* Reset any span-2 items so they don't overflow */
-            .form-grid .form-group[style*="grid-column"] {
-                grid-column: span 1 !important;
-            }
-
-            /* Teams side by side -> stacked */
             .teams-container {
                 grid-template-columns: 1fr;
-            }
-
-            .team {
-                padding: 16px;
-            }
-
-            /* Export section */
-            .export-section {
-                padding: 16px;
-            }
-
-            .export-preview {
-                font-size: 12px;
-                padding: 12px;
-            }
-
-            /* Buttons full width on mobile */
-            .export-section .button,
-            .setup-section > .button {
-                width: 100%;
-            }
-
-            .theme-toggle {
-                width: 44px;
-                height: 44px;
-                font-size: 20px;
-                bottom: 16px;
-                left: 16px;
             }
         }
     </style>
@@ -515,12 +446,12 @@
             <h2>3. Paste Players (add 'g' for goalie, a-f or h for friend groups)</h2>
             <div class="form-group">
                 <label>Player Names (one per line)</label>
-                <textarea id="playerInput" placeholder="Player One g&#10;Player Two g&#10;Player Three a&#10;Player Four a&#10;Player Five b&#10;Player Six"></textarea>
+                <textarea id="playerInput" placeholder="Bradley Greening g&#10;Alycia Wood g&#10;John Smith a&#10;Jane Doe a&#10;Bob Wilson b&#10;Mike Jones"></textarea>
             </div>
             <button class="button" onclick="matchPlayers()" style="margin-top: 12px; margin-right: 12px;">
                 Match Players
             </button>
-            <button class="button" onclick="balanceTeams()" style="margin-top: 12px;">
+            <button class="button" onclick="balanceTeams()">
                 Balance Teams
             </button>
             <div id="warningDiv"></div>
@@ -1399,10 +1330,22 @@
         function toggleGoalie(team, index) {
             if (team === 'dark') {
                 darkTeam[index].isGoalie = !darkTeam[index].isGoalie;
+                sortTeam(darkTeam);
             } else {
                 lightTeam[index].isGoalie = !lightTeam[index].isGoalie;
+                sortTeam(lightTeam);
             }
             renderTeams();
+        }
+
+        function sortTeam(team) {
+            team.sort((a, b) => {
+                // Goalies first
+                if (a.isGoalie && !b.isGoalie) return -1;
+                if (!a.isGoalie && b.isGoalie) return 1;
+                // Then by rating (highest first)
+                return (b.rating || 0) - (a.rating || 0);
+            });
         }
 
         function selectPlayer(team, index) {
@@ -1443,6 +1386,10 @@
                     lightTeam[selectedPlayer.index] = darkPlayer;
                     darkTeam[index] = lightPlayer;
                 }
+                
+                // Auto-sort both teams after swap
+                sortTeam(darkTeam);
+                sortTeam(lightTeam);
                 
                 selectedPlayer = null;
                 renderTeams();

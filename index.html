@@ -1915,6 +1915,7 @@
                                         <div class="menu-item" onclick="giveCredit(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">💳 Give Credit</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
+                                        <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔁 Replace Player</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
                                     </div>
                                 </div>
@@ -2116,6 +2117,89 @@
                 await loadRoster(currentSkateId, skate.capacity);
             } catch (error) {
                 console.error('Error deleting player:', error);
+            }
+        }
+
+        // ========== REPLACE PLAYER FUNCTION ==========
+        async function showReplacePlayerModal(registrationId, oldPlayerName) {
+            // Get all players from database
+            const { data: allPlayers } = await supabaseClient
+                .from('players')
+                .select('id, name')
+                .order('name');
+
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
+            
+            const content = document.createElement('div');
+            content.style.cssText = 'background: var(--card-bg); padding: 24px; border-radius: 12px; max-width: 500px; width: 100%; color: var(--text);';
+            
+            content.innerHTML = `
+                <h3 style="margin: 0 0 16px 0; font-size: 18px;">Replace Player</h3>
+                <p style="margin: 0 0 16px 0; color: var(--text-muted);">
+                    Replace <strong>${oldPlayerName}</strong> with:
+                </p>
+                
+                <input type="text" id="replacePlayerSearch" placeholder="Search players..." style="width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 6px; margin-bottom: 12px; background: var(--card-bg); color: var(--text); font-size: 14px;">
+                
+                <div id="replacePlayersList" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 6px; margin-bottom: 16px;">
+                    ${allPlayers?.map(p => `
+                        <div class="replace-player-option" data-player-id="${p.id}" data-player-name="${p.name}" style="padding: 12px; cursor: pointer; border-bottom: 1px solid var(--card-border);" 
+                             onmouseover="this.style.background='var(--bg-start)'" 
+                             onmouseout="this.style.background='transparent'"
+                             onclick="replacePlayer(${registrationId}, ${p.id}, '${p.name.replace(/'/g, "\\'")}')">
+                            ${p.name}
+                        </div>
+                    `).join('') || '<div style="padding: 20px; text-align: center; color: var(--text-muted);">No players found</div>'}
+                </div>
+                
+                <button onclick="this.closest('[data-replace-modal]').remove()" style="width: 100%; padding: 12px; background: var(--text-muted); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    Cancel
+                </button>
+            `;
+            
+            modal.setAttribute('data-replace-modal', 'true');
+            modal.appendChild(content);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+
+            // Add search functionality
+            const searchInput = document.getElementById('replacePlayerSearch');
+            const playersList = document.querySelectorAll('.replace-player-option');
+            
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                playersList.forEach(playerEl => {
+                    const playerName = playerEl.getAttribute('data-player-name').toLowerCase();
+                    playerEl.style.display = playerName.includes(searchTerm) ? 'block' : 'none';
+                });
+            });
+            
+            searchInput.focus();
+        }
+
+        async function replacePlayer(registrationId, newPlayerId, newPlayerName) {
+            try {
+                // Update the registration with new player
+                const { error } = await supabaseClient
+                    .from('skate_registrations')
+                    .update({ 
+                        player_id: newPlayerId,
+                        player_name: newPlayerName,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', registrationId);
+
+                if (error) throw error;
+
+                // Close modal and refresh
+                document.querySelector('[data-replace-modal]')?.remove();
+                const skate = allSkates.find(s => s.id === currentSkateId);
+                await loadRoster(currentSkateId, skate.capacity);
+                
+            } catch (error) {
+                console.error('Error replacing player:', error);
+                alert('Failed to replace player');
             }
         }
 
@@ -2321,8 +2405,8 @@
             if (newRating === null) return; // Cancelled
             
             const rating = parseFloat(newRating);
-            if (isNaN(rating) || rating < 0 || rating > 10) {
-                alert('Please enter a valid rating between 0 and 10');
+            if (isNaN(rating) || rating < 0) {
+                alert('Please enter a valid rating (0 or higher)');
                 return;
             }
             
@@ -2442,38 +2526,88 @@
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
 
-                // Copy to clipboard with fallback
+                // Mobile-friendly copy with multiple fallbacks
                 let copied = false;
                 
-                // Try modern clipboard API
+                // Method 1: Try modern clipboard API (works on HTTPS)
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     try {
                         await navigator.clipboard.writeText(message);
                         copied = true;
+                        console.log('✓ Copied via navigator.clipboard');
                     } catch (e) {
-                        console.log('Modern clipboard failed, trying fallback');
+                        console.log('navigator.clipboard failed:', e.message);
                     }
                 }
                 
-                // Fallback method
-                if (!copied) {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = message;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.select();
+                // Method 2: iOS-specific fallback
+                if (!copied && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                     try {
-                        document.execCommand('copy');
-                        copied = true;
+                        const textArea = document.createElement('textarea');
+                        textArea.value = message;
+                        textArea.contentEditable = true;
+                        textArea.readOnly = false;
+                        textArea.style.position = 'absolute';
+                        textArea.style.left = '-9999px';
+                        textArea.style.fontSize = '12pt'; // Prevent zoom on iOS
+                        document.body.appendChild(textArea);
+                        
+                        // iOS specific selection
+                        const range = document.createRange();
+                        range.selectNodeContents(textArea);
+                        const selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        textArea.setSelectionRange(0, message.length);
+                        
+                        copied = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        if (copied) {
+                            console.log('✓ Copied via iOS fallback');
+                        }
                     } catch (e) {
-                        console.error('Fallback copy failed:', e);
+                        console.log('iOS fallback failed:', e.message);
                     }
-                    document.body.removeChild(textArea);
+                }
+                
+                // Method 3: Standard fallback for other mobile browsers
+                if (!copied) {
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = message;
+                        textArea.style.position = 'fixed';
+                        textArea.style.top = '0';
+                        textArea.style.left = '0';
+                        textArea.style.width = '2em';
+                        textArea.style.height = '2em';
+                        textArea.style.padding = '0';
+                        textArea.style.border = 'none';
+                        textArea.style.outline = 'none';
+                        textArea.style.boxShadow = 'none';
+                        textArea.style.background = 'transparent';
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        
+                        copied = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        if (copied) {
+                            console.log('✓ Copied via standard fallback');
+                        }
+                    } catch (e) {
+                        console.log('Standard fallback failed:', e.message);
+                    }
                 }
                 
                 if (!copied) {
-                    throw new Error('Clipboard copy failed');
+                    // Last resort: Show selectable text modal
+                    const shouldShowText = confirm('Automatic copy failed. Click OK to see the text and copy it manually.');
+                    if (shouldShowText) {
+                        showCopyModal(message);
+                    }
+                    return;
                 }
                 
                 // Show feedback
@@ -2494,6 +2628,40 @@
                 console.error('Error copying for WhatsApp:', error);
                 alert('Failed to copy. Please try again.');
             }
+        }
+
+        // Show copy modal with selectable text
+        function showCopyModal(text) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
+            
+            const content = document.createElement('div');
+            content.style.cssText = 'background: var(--card-bg); padding: 20px; border-radius: 12px; max-width: 500px; width: 100%; color: var(--text);';
+            
+            content.innerHTML = `
+                <h3 style="margin: 0 0 12px 0; font-size: 18px;">Copy This Text</h3>
+                <p style="margin: 0 0 12px 0; color: var(--text-muted); font-size: 14px;">
+                    Tap and hold on the text below, then select "Copy"
+                </p>
+                <textarea readonly id="copyModalText" style="width: 100%; min-height: 300px; padding: 12px; border: 1px solid var(--card-border); border-radius: 8px; font-family: inherit; font-size: 14px; resize: none; background: var(--bg-start); color: var(--text);">${text}</textarea>
+                <button onclick="this.closest('[data-copy-modal]').remove()" style="width: 100%; margin-top: 12px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                    Close
+                </button>
+            `;
+            
+            modal.setAttribute('data-copy-modal', 'true');
+            modal.appendChild(content);
+            modal.onclick = (e) => { 
+                if (e.target === modal) modal.remove(); 
+            };
+            document.body.appendChild(modal);
+            
+            // Auto-select text
+            setTimeout(() => {
+                const textarea = document.getElementById('copyModalText');
+                textarea.focus();
+                textarea.select();
+            }, 100);
         }
 
         // CSV/ICS Import Functions
