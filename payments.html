@@ -600,9 +600,9 @@
             // Filter out processed payments
             const unprocessedPayments = payments.filter(p => !p.processed_at);
             
-            // Sort by etransfer_date (actual date from email body), newest first
+            // Sort by email_received_at (has full timestamp) newest first
             const sortedPayments = [...unprocessedPayments].sort((a, b) => 
-                new Date(b.etransfer_date) - new Date(a.etransfer_date)
+                new Date(b.email_received_at || b.etransfer_date) - new Date(a.email_received_at || a.etransfer_date)
             );
 
             const autoMatched = sortedPayments.filter(p => p.confidence >= 80);
@@ -640,7 +640,7 @@
                     <div class="payment-header">
                         <div>
                             <div class="payment-amount">$${payment.amount.toFixed(2)}</div>
-                            <div class="payment-date">${new Date(payment.etransfer_date).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
+                            <div class="payment-date">${new Date(payment.email_received_at || payment.etransfer_date).toLocaleString("en-CA", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true })}</div>
                         </div>
                         <span class="confidence-badge confidence-${payment.confidence >= 80 ? 'high' : payment.confidence >= 40 ? 'medium' : 'low'}">
                             ${payment.confidence}% Match
