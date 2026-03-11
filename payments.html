@@ -596,13 +596,21 @@
         }
 
         // Render payments
+        function formatPaymentDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            const date = d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+            const time = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
+            return `${date} · ${time}`;
+        }
+
         function renderPayments() {
             // Filter out processed payments
             const unprocessedPayments = payments.filter(p => !p.processed_at);
             
-            // Sort by date (newest first)
+            // Sort by email received time (newest first)
             const sortedPayments = [...unprocessedPayments].sort((a, b) => 
-                new Date(b.created_at || b.etransfer_date) - new Date(a.created_at || a.etransfer_date)
+                new Date(b.email_received_at || b.etransfer_date) - new Date(a.email_received_at || a.etransfer_date)
             );
 
             const autoMatched = sortedPayments.filter(p => p.confidence >= 80);
@@ -640,7 +648,7 @@
                     <div class="payment-header">
                         <div>
                             <div class="payment-amount">$${payment.amount.toFixed(2)}</div>
-                            <div class="payment-date">${new Date(payment.etransfer_date).toLocaleDateString()}</div>
+                            <div class="payment-date">${formatPaymentDate(payment.email_received_at || payment.etransfer_date)}</div>
                         </div>
                         <span class="confidence-badge confidence-${payment.confidence >= 80 ? 'high' : payment.confidence >= 40 ? 'medium' : 'low'}">
                             ${payment.confidence}% Match
