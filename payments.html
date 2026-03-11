@@ -596,21 +596,13 @@
         }
 
         // Render payments
-        function formatPaymentDate(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            const date = d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
-            const time = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
-            return `${date} · ${time}`;
-        }
-
         function renderPayments() {
             // Filter out processed payments
             const unprocessedPayments = payments.filter(p => !p.processed_at);
             
-            // Sort by email received time (newest first)
+            // Sort by etransfer_date (actual date from email body), newest first
             const sortedPayments = [...unprocessedPayments].sort((a, b) => 
-                new Date(b.email_received_at || b.etransfer_date) - new Date(a.email_received_at || a.etransfer_date)
+                new Date(b.etransfer_date) - new Date(a.etransfer_date)
             );
 
             const autoMatched = sortedPayments.filter(p => p.confidence >= 80);
@@ -648,7 +640,7 @@
                     <div class="payment-header">
                         <div>
                             <div class="payment-amount">$${payment.amount.toFixed(2)}</div>
-                            <div class="payment-date">${formatPaymentDate(payment.email_received_at || payment.etransfer_date)}</div>
+                            <div class="payment-date">${new Date(payment.etransfer_date).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</div>
                         </div>
                         <span class="confidence-badge confidence-${payment.confidence >= 80 ? 'high' : payment.confidence >= 40 ? 'medium' : 'low'}">
                             ${payment.confidence}% Match
@@ -753,7 +745,6 @@
             }
 
             const assignment = payment.assignments[0];
-
             if (!assignment.player_id) {
                 alert('⚠️ No player matched for this payment. Please use Manual Assign.');
                 return;
@@ -765,11 +756,10 @@
                 message += `• Skate ${a.skates.id}: ${a.skates.title}\n`;
             });
             message += `\nThis will update the REAL production roster!`;
-
             if (!confirm(message)) return;
 
             try {
-                // Look up the player's actual name from the players table
+                // Look up player proper name from DB
                 const { data: playerRecord } = await productionSupabaseClient
                     .from('players')
                     .select('id, name')
@@ -778,12 +768,11 @@
 
                 const playerName = playerRecord?.name || payment.sender_name;
 
-                // Add to production roster for each assigned skate
                 let added = 0;
                 let alreadyOnRoster = [];
-                
+
                 for (const assign of payment.assignments) {
-                    // Check if already on roster (use maybeSingle to avoid errors on no match)
+                    // Check if already on roster (maybeSingle avoids crash on no match)
                     const { data: existing } = await productionSupabaseClient
                         .from('skate_registrations')
                         .select('id')
@@ -796,7 +785,7 @@
                         continue;
                     }
 
-                    // Get current max position
+                    // Get next position
                     const { data: maxPos } = await productionSupabaseClient
                         .from('skate_registrations')
                         .select('position')
@@ -806,7 +795,6 @@
 
                     const nextPosition = (maxPos?.[0]?.position || 0) + 1;
 
-                    // Add to roster using proper player name from DB
                     const { error } = await productionSupabaseClient
                         .from('skate_registrations')
                         .insert({
@@ -829,12 +817,11 @@
                     .update({ processed_at: new Date().toISOString(), processed_by: 'admin' })
                     .eq('id', paymentId);
 
-                // Build result message
+                // Result message
                 let resultMsg = '';
                 if (added > 0) resultMsg += `✅ Added ${playerName} to ${added} skate roster(s)!\n`;
                 if (alreadyOnRoster.length > 0) {
-                    resultMsg += `ℹ️ Already on roster for: ${alreadyOnRoster.join(', ')}\n`;
-                    resultMsg += `(Looks like an installment payment — marked as received.)`;
+                    resultMsg += `ℹ️ Already on roster: ${alreadyOnRoster.join(', ')}\n(Installment payment — marked as received.)`;
                 }
                 if (!resultMsg) resultMsg = '⚠️ Nothing changed — player was already on all rosters.';
 
@@ -847,7 +834,7 @@
             }
         }
 
-        // View details
+                // View details
         function viewDetails(paymentId) {
             const payment = payments.find(p => p.id === paymentId);
             
