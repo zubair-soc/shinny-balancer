@@ -747,44 +747,52 @@
             const payment = payments.find(p => p.id === paymentId);
             if (!payment) return;
 
-            // Build confirmation message
-            let message = `Add ${payment.sender_name} ($${payment.amount}) to:\n\n`;
-            
-            if (payment.assignments && payment.assignments.length > 0) {
-                payment.assignments.forEach(a => {
-                    message += `• Skate ${a.skates.id}: ${a.skates.title}\n`;
-                });
-                message += `\nThis will update the REAL production roster!`;
-            } else {
-                message = `No skate assignments found for this payment.`;
-                alert(message);
+            if (!payment.assignments || payment.assignments.length === 0) {
+                alert('No skate assignments found for this payment.');
                 return;
             }
+
+            const assignment = payment.assignments[0];
+
+            if (!assignment.player_id) {
+                alert('⚠️ No player matched for this payment. Please use Manual Assign.');
+                return;
+            }
+
+            // Build confirmation message
+            let message = `Add ${payment.sender_name} ($${payment.amount}) to:\n\n`;
+            payment.assignments.forEach(a => {
+                message += `• Skate ${a.skates.id}: ${a.skates.title}\n`;
+            });
+            message += `\nThis will update the REAL production roster!`;
 
             if (!confirm(message)) return;
 
             try {
-                // Get player info from assignments
-                const assignment = payment.assignments[0]; // Use first assignment for player info
-                
-                if (!assignment.player_id) {
-                    alert('⚠️ No player matched for this payment. Please add manually from the skate roster page.');
-                    return;
-                }
+                // Look up the player's actual name from the players table
+                const { data: playerRecord } = await productionSupabaseClient
+                    .from('players')
+                    .select('id, name')
+                    .eq('id', assignment.player_id)
+                    .maybeSingle();
+
+                const playerName = playerRecord?.name || payment.sender_name;
 
                 // Add to production roster for each assigned skate
                 let added = 0;
+                let alreadyOnRoster = [];
+                
                 for (const assign of payment.assignments) {
-                    // Check if already on roster
+                    // Check if already on roster (use maybeSingle to avoid errors on no match)
                     const { data: existing } = await productionSupabaseClient
                         .from('skate_registrations')
                         .select('id')
                         .eq('skate_id', assign.skates.id)
                         .eq('player_id', assign.player_id)
-                        .single();
+                        .maybeSingle();
 
                     if (existing) {
-                        console.log(`Player already on Skate ${assign.skates.id}`);
+                        alreadyOnRoster.push(`Skate ${assign.skates.id}`);
                         continue;
                     }
 
@@ -798,13 +806,13 @@
 
                     const nextPosition = (maxPos?.[0]?.position || 0) + 1;
 
-                    // Add to roster
+                    // Add to roster using proper player name from DB
                     const { error } = await productionSupabaseClient
                         .from('skate_registrations')
                         .insert({
                             skate_id: assign.skates.id,
                             player_id: assign.player_id,
-                            player_name: payment.sender_name,
+                            player_name: playerName,
                             position: nextPosition,
                             is_goalie: false,
                             is_waitlist: false,
@@ -815,14 +823,23 @@
                     added++;
                 }
 
-                // Mark as processed in test DB
+                // Mark as processed
                 await supabaseClient
                     .from('test_payment_records')
                     .update({ processed_at: new Date().toISOString(), processed_by: 'admin' })
                     .eq('id', paymentId);
 
-                alert(`✅ Successfully added to ${added} skate roster(s)!`);
-                loadPayments(); // Refresh
+                // Build result message
+                let resultMsg = '';
+                if (added > 0) resultMsg += `✅ Added ${playerName} to ${added} skate roster(s)!\n`;
+                if (alreadyOnRoster.length > 0) {
+                    resultMsg += `ℹ️ Already on roster for: ${alreadyOnRoster.join(', ')}\n`;
+                    resultMsg += `(Looks like an installment payment — marked as received.)`;
+                }
+                if (!resultMsg) resultMsg = '⚠️ Nothing changed — player was already on all rosters.';
+
+                alert(resultMsg);
+                loadPayments();
 
             } catch (error) {
                 console.error('Error approving payment:', error);
