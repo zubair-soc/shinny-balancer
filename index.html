@@ -892,28 +892,28 @@
 
             <div class="form-group">
                 <label>Location</label>
-                <input type="text" id="skateLocation" list="locationSuggestions" placeholder="Enter or select location" autocomplete="off">
-                <datalist id="locationSuggestions">
-                    <option value="Callingwood">
-                    <option value="Canadian Athletic Club">
-                    <option value="Castledowns">
-                    <option value="Clareview">
-                    <option value="Downtown Community Arena">
-                    <option value="Donnan">
-                    <option value="Grand Trunk Arena">
-                    <option value="Kenilworth">
-                    <option value="Kinsmen">
-                    <option value="Londonderry">
-                    <option value="Meadows Recreation Centre">
-                    <option value="Millenium Place">
-                    <option value="NAIT">
-                    <option value="Rivercree">
-                    <option value="Silent Ice Center">
-                    <option value="Terwillegar Rink">
-                    <option value="Tipton">
-                    <option value="Broadmoor">
-                    <option value="ZerOne W.E.M.">
-                </datalist>
+                <select id="skateLocation">
+                    <option value="">-- Select Location --</option>
+                    <option value="Broadmoor">Broadmoor</option>
+                    <option value="Callingwood">Callingwood</option>
+                    <option value="Canadian Athletic Club">Canadian Athletic Club</option>
+                    <option value="Castledowns">Castledowns</option>
+                    <option value="Clareview">Clareview</option>
+                    <option value="Donnan">Donnan</option>
+                    <option value="Downtown Community Arena">Downtown Community Arena</option>
+                    <option value="Grand Trunk Arena">Grand Trunk Arena</option>
+                    <option value="Kenilworth">Kenilworth</option>
+                    <option value="Kinsmen">Kinsmen</option>
+                    <option value="Londonderry">Londonderry</option>
+                    <option value="Meadows Recreation Centre">Meadows Recreation Centre</option>
+                    <option value="Millenium Place">Millenium Place</option>
+                    <option value="NAIT">NAIT</option>
+                    <option value="Rivercree">Rivercree</option>
+                    <option value="Silent Ice Center">Silent Ice Center</option>
+                    <option value="Terwillegar Rink">Terwillegar Rink</option>
+                    <option value="Tipton">Tipton</option>
+                    <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
+                </select>
             </div>
 
             <div class="modal-buttons">
@@ -1301,7 +1301,8 @@
                 const { data, error } = await supabaseClient
                     .from('skates')
                     .select('*')
-                    .order('date', { ascending: true });
+                    .order('date', { ascending: true })
+                    .order('time_start', { ascending: true });
 
                 if (error) {
                     console.error('Supabase error:', error);
@@ -1580,7 +1581,7 @@
             document.getElementById('skateTier').selectedIndex = 0;
             document.getElementById('skateCost').value = '$25';
             document.getElementById('skateCapacity').value = '24';
-            document.getElementById('skateLocation').value = '';
+            document.getElementById('skateLocation').selectedIndex = 0;
             document.getElementById('customTierInput').style.display = 'none';
             
             // Populate dropdowns
@@ -1713,7 +1714,26 @@
             document.getElementById('skateCapacity').value = skate.capacity || 24;
             
             // Set location
-            document.getElementById('skateLocation').value = skate.location || '';
+            const locationSelect = document.getElementById('skateLocation');
+            const locationValue = skate.location || '';
+            // Try exact match first
+            let matched = false;
+            for (let i = 0; i < locationSelect.options.length; i++) {
+                if (locationSelect.options[i].value === locationValue) {
+                    locationSelect.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+            // Case-insensitive fallback
+            if (!matched) {
+                for (let i = 0; i < locationSelect.options.length; i++) {
+                    if (locationSelect.options[i].value.toLowerCase() === locationValue.toLowerCase()) {
+                        locationSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
 
             document.getElementById('customTierInput').style.display = 'none';
             
