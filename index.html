@@ -453,6 +453,19 @@
             color: var(--text-muted);
         }
 
+        .roster-item.swap-selected {
+            outline: 2px solid var(--primary);
+            background: rgba(var(--primary-rgb), 0.12) !important;
+        }
+
+        .roster-item-name.swappable {
+            cursor: pointer;
+        }
+
+        .roster-item-name.swappable:hover {
+            text-decoration: underline;
+        }
+
         .roster-item-name {
             font-weight: 500;
         }
@@ -879,14 +892,28 @@
 
             <div class="form-group">
                 <label>Location</label>
-                <select id="skateLocation">
-                    <option value="Terwillegar Recreation Centre">Terwillegar Recreation Centre</option>
-                    <option value="Donnan">Donnan</option>
-                    <option value="NAIT">NAIT</option>
-                    <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
-                    <option value="Meadows Recreation Centre">Meadows Recreation Centre</option>
-                    <option value="Rivercree">Rivercree</option>
-                </select>
+                <input type="text" id="skateLocation" list="locationSuggestions" placeholder="Enter or select location" autocomplete="off">
+                <datalist id="locationSuggestions">
+                    <option value="Callingwood">
+                    <option value="Canadian Athletic Club">
+                    <option value="Castledowns">
+                    <option value="Clareview">
+                    <option value="Downtown Community Arena">
+                    <option value="Donnan">
+                    <option value="Grand Trunk Arena">
+                    <option value="Kenilworth">
+                    <option value="Kinsmen">
+                    <option value="Londonderry">
+                    <option value="Meadows Recreation Centre">
+                    <option value="Millenium Place">
+                    <option value="NAIT">
+                    <option value="Rivercree">
+                    <option value="Silent Ice Center">
+                    <option value="Terwillegar Rink">
+                    <option value="Tipton">
+                    <option value="Broadmoor">
+                    <option value="ZerOne W.E.M.">
+                </datalist>
             </div>
 
             <div class="modal-buttons">
@@ -1553,7 +1580,7 @@
             document.getElementById('skateTier').selectedIndex = 0;
             document.getElementById('skateCost').value = '$25';
             document.getElementById('skateCapacity').value = '24';
-            document.getElementById('skateLocation').selectedIndex = 0;
+            document.getElementById('skateLocation').value = '';
             document.getElementById('customTierInput').style.display = 'none';
             
             // Populate dropdowns
@@ -1686,13 +1713,7 @@
             document.getElementById('skateCapacity').value = skate.capacity || 24;
             
             // Set location
-            const locationSelect = document.getElementById('skateLocation');
-            for (let i = 0; i < locationSelect.options.length; i++) {
-                if (locationSelect.options[i].value === skate.location) {
-                    locationSelect.selectedIndex = i;
-                    break;
-                }
-            }
+            document.getElementById('skateLocation').value = skate.location || '';
 
             document.getElementById('customTierInput').style.display = 'none';
             
@@ -1808,7 +1829,10 @@
             `;
 
             await loadRoster(skateId, skate.capacity);
-            document.getElementById('rosterModal').classList.add('active');
+            const modal = document.getElementById('rosterModal');
+            modal.dataset.skateId = skateId;
+            selectedSwapPlayer = null;
+            modal.classList.add('active');
         }
 
         async function loadRoster(skateId, capacity) {
@@ -1899,7 +1923,7 @@
 
                         return `
                             <div class="${classes}">
-                                <span class="roster-item-name">${playerDisplay}${ratingDisplay}${friendTag}</span>
+                                <span class="roster-item-name swappable" data-player-id="${player.id}" data-position="${player.position}" onclick="selectPlayerForSwap(${player.id}, this)">${playerDisplay}${ratingDisplay}${friendTag}</span>
                                 <div class="player-menu">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
@@ -2548,6 +2572,7 @@
 
         // CSV/ICS Import Functions
         let parsedCSVData = [];
+        let selectedSwapPlayer = null;
 
         function showImportModal() {
             document.getElementById('csvFileInput').click();
@@ -2701,18 +2726,22 @@
                         const startTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
 
                         // Calculate end time from duration (e.g., "1:30")
+                        // Default: 90 min, or 120 min if title contains "breakfast"
                         let endTime = startTime;
-                        if (row.Duration) {
-                            const durationParts = row.Duration.split(':');
+                        const titleLower = (row['Title (Optional)'] || '').toLowerCase();
+                        const defaultDurationMins = titleLower.includes('breakfast') ? 120 : 90;
+                        const rawDuration = row.Duration;
+                        let totalDurationMins = defaultDurationMins;
+                        if (rawDuration) {
+                            const durationParts = rawDuration.split(':');
                             const durationHours = parseInt(durationParts[0]) || 0;
                             const durationMins = parseInt(durationParts[1]) || 0;
-                            
-                            const startDate = new Date(`2000-01-01T${startTime}`);
-                            startDate.setHours(startDate.getHours() + durationHours);
-                            startDate.setMinutes(startDate.getMinutes() + durationMins);
-                            
-                            endTime = startDate.toTimeString().slice(0, 5);
+                            totalDurationMins = durationHours * 60 + durationMins;
+                            if (totalDurationMins === 0) totalDurationMins = defaultDurationMins;
                         }
+                        const startDate = new Date(`2000-01-01T${startTime}`);
+                        startDate.setMinutes(startDate.getMinutes() + totalDurationMins);
+                        endTime = startDate.toTimeString().slice(0, 5);
 
                         parsedCSVData.push({
                             title: row['Title (Optional)'] || '',
@@ -2778,6 +2807,47 @@
             }
         }
 
+        function selectPlayerForSwap(playerId, element) {
+            const rosterList = document.getElementById('rosterList');
+            // If clicking the already-selected player, deselect
+            if (selectedSwapPlayer && selectedSwapPlayer.id === playerId) {
+                selectedSwapPlayer.el.closest('.roster-item').classList.remove('swap-selected');
+                selectedSwapPlayer = null;
+                return;
+            }
+            // If a player is already selected, swap them
+            if (selectedSwapPlayer) {
+                swapPlayers(selectedSwapPlayer.id, playerId);
+                selectedSwapPlayer.el.closest('.roster-item').classList.remove('swap-selected');
+                selectedSwapPlayer = null;
+                return;
+            }
+            // First selection
+            selectedSwapPlayer = { id: playerId, el: element };
+            element.closest('.roster-item').classList.add('swap-selected');
+        }
+
+        async function swapPlayers(idA, idB) {
+            // Find positions from current rendered roster
+            const allItems = document.querySelectorAll('#rosterList .roster-item');
+            let posA = null, posB = null;
+            allItems.forEach(item => {
+                const nameEl = item.querySelector('.roster-item-name');
+                if (nameEl && nameEl.dataset.playerId == idA) posA = parseInt(nameEl.dataset.position);
+                if (nameEl && nameEl.dataset.playerId == idB) posB = parseInt(nameEl.dataset.position);
+            });
+            if (posA === null || posB === null) return;
+            try {
+                await supabaseClient.from('skate_registrations').update({ position: posB }).eq('id', idA);
+                await supabaseClient.from('skate_registrations').update({ position: posA }).eq('id', idB);
+                // Reload roster
+                const skateId = document.getElementById('rosterModal').dataset.skateId;
+                await openRosterModal(skateId);
+            } catch (err) {
+                console.error('Swap failed:', err);
+            }
+        }
+
         async function importCSVSkates() {
             try {
                 const { data, error } = await supabaseClient
@@ -2787,9 +2857,10 @@
 
                 if (error) throw error;
 
+                const importedCount = parsedCSVData.length;
                 closeCSVPreviewModal();
                 await loadSkates();
-                alert(`✓ Imported ${parsedCSVData.length} skate(s)!`);
+                alert(`✓ Imported ${importedCount} skate(s)!`);
                 parsedCSVData = [];
             } catch (error) {
                 console.error('Error importing skates:', error);
