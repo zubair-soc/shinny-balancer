@@ -1439,9 +1439,9 @@
             const tier = tierSelect.value === 'custom' ? '' : tierSelect.value;
             
             if (number && tier) {
-                document.getElementById('skateTitle').value = `Skate ${number} ${tier}`;
+                document.getElementById('skateTitle').value = `${number} ${tier}`;
             } else if (number) {
-                document.getElementById('skateTitle').value = `Skate ${number}`;
+                document.getElementById('skateTitle').value = `${number}`;
             } else {
                 document.getElementById('skateTitle').value = '';
             }
@@ -1628,14 +1628,14 @@
             let tier = skate.tier || '';
             
             if (skate.title) {
-                // Try "Skate 238: Breakfast of Champions" format (with colon)
-                let match = skate.title.match(/^Skate\s+(\d+):\s*(.+)$/);
+                // Try "246 Tier 3" format (new format, number first)
+                let match = skate.title.match(/^(\d+)\s+(.+)$/);
                 if (match) {
                     skateNumber = match[1];
                     tier = match[2];
                 } else {
-                    // Try "Skate 238 Breakfast of Champions" format (without colon)
-                    match = skate.title.match(/^Skate\s+(\d+)\s+(.+)$/);
+                    // Try legacy "Skate 238: Breakfast" or "Skate 238 Breakfast" formats
+                    match = skate.title.match(/^Skate\s+(\d+)[:\s]+(.+)$/i);
                     if (match) {
                         skateNumber = match[1];
                         tier = match[2];
@@ -2763,9 +2763,28 @@
                         startDate.setMinutes(startDate.getMinutes() + totalDurationMins);
                         endTime = startDate.toTimeString().slice(0, 5);
 
+                        // Parse title to extract skate number and tier
+                        // Handles formats like "Scrimmage - 246 Tier 3", "Scrimmage - 249 Breakfast of Champions", "Shinny ALL STARS / SKILLS COMP"
+                        const rawTitle = row['Title (Optional)'] || '';
+                        let skateNumber = '';
+                        let tier = '';
+
+                        // Try to extract number and tier: look for a number followed by text
+                        const numberTierMatch = rawTitle.match(/(\d+)\s+(.+)$/);
+                        if (numberTierMatch) {
+                            skateNumber = numberTierMatch[1];
+                            tier = numberTierMatch[2].trim();
+                        } else {
+                            // No number found, treat whole thing as tier/title
+                            tier = rawTitle;
+                        }
+
+                        const title = skateNumber ? `${skateNumber} ${tier}` : tier;
+
                         parsedCSVData.push({
-                            title: row['Title (Optional)'] || '',
-                            tier: row['Title (Optional)'] || '',
+                            title: title,
+                            tier: tier,
+                            skate_number: skateNumber,
                             date: date,
                             time_start: startTime,
                             time_end: endTime,
@@ -2982,8 +3001,8 @@
                 const date = new Date(skate.date + 'T00:00:00');
                 const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 
-                // Extract skate number from title (e.g., "Skate 225 Mixed" -> "225")
-                const skateNumber = skate.title?.match(/Skate\s+(\d+)/)?.[1] || skate.id;
+                // Extract skate number from title (e.g., "246 Tier 3" -> "246" or legacy "Skate 225 Mixed" -> "225")
+                const skateNumber = skate.title?.match(/^(\d+)/)?.[1] || skate.title?.match(/Skate\s+(\d+)/i)?.[1] || skate.id;
                 
                 return `
                     <div class="quick-add-skate-card" data-skate-id="${skate.id}" data-skate-number="${skateNumber}" onclick="toggleSkateSelection(${skate.id})">
