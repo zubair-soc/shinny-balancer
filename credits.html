@@ -732,7 +732,7 @@
                 return;
             }
 
-            const html = Object.entries(byPlayer).map(([playerName, credits]) => {
+            const html = Object.entries(byPlayer).sort(([a], [b]) => a.localeCompare(b)).map(([playerName, credits]) => {
                 const activeCredits = credits.filter(c => c.status === 'active');
                 const totalAvailable = activeCredits.reduce((sum, c) => sum + parseFloat(c.amount), 0);
                 const playerId = credits[0]?.player_id;
