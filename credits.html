@@ -571,8 +571,8 @@
             </div>
 
             <div class="form-group">
-                <label>Reason *</label>
-                <input type="text" id="addReason" placeholder="Paid for full skate without realizing">
+                <label>Reason</label>
+                <input type="text" id="addReason" placeholder="Paid for full skate without realizing (optional)">
             </div>
 
             <div class="modal-buttons">
@@ -755,11 +755,18 @@
                                 <div class="credit-item ${credit.status === 'used' ? 'used' : ''}">
                                     <div class="credit-info">
                                         <div class="credit-reason">
-                                            <strong>$${parseFloat(credit.amount).toFixed(2)}</strong> - ${credit.reason}
+                                            <strong>$${parseFloat(credit.amount).toFixed(2)}</strong>${credit.reason ? ' - ' + credit.reason : ''}
                                         </div>
                                         <div class="credit-meta">
                                             ${new Date(credit.created_at).toLocaleDateString()} 
                                             ${credit.status === 'used' ? `• Used on ${new Date(credit.used_at).toLocaleDateString()}` : ''}
+                                            ${(() => {
+                                                const lastActivity = credit.last_activity_at || credit.created_at;
+                                                const monthsInactive = (new Date() - new Date(lastActivity)) / (1000 * 60 * 60 * 24 * 30);
+                                                if (monthsInactive >= 12) return `• <span style="color:#ef4444;font-weight:600;">⚠️ Inactive 1+ year — donate to food bank</span>`;
+                                                if (monthsInactive >= 11) return `• <span style="color:#f97316;font-weight:600;">⚠️ Expiring soon (${Math.round(monthsInactive)} months inactive)</span>`;
+                                                return `• Last activity: ${new Date(lastActivity).toLocaleDateString()}`;
+                                            })()}
                                         </div>
                                     </div>
                                     ${credit.status === 'active' ? `
@@ -842,21 +849,23 @@
             const amount = document.getElementById('addAmount').value;
             const reason = document.getElementById('addReason').value;
 
-            if (!playerId || !amount || !reason) {
-                alert('Please fill in all required fields');
+            if (!playerId || !amount) {
+                alert('Please fill in player and amount');
                 return;
             }
 
             try {
+                const now = new Date().toISOString();
                 const { error } = await supabaseClient
                     .from('player_credits')
                     .insert({
                         player_id: parseInt(playerId),
                         amount: parseFloat(amount),
-                        reason: reason,
+                        reason: reason || '',
                         status: 'active',
                         created_by: 'Manual',
-                        created_at: new Date().toISOString()
+                        created_at: now,
+                        last_activity_at: now
                     });
 
                 if (error) throw error;
@@ -1018,7 +1027,8 @@
                                 status: 'used',
                                 used_on_skate_id: skateId,
                                 used_at: new Date().toISOString(),
-                                used_by: 'System'
+                                used_by: 'System',
+                                last_activity_at: new Date().toISOString()
                             }
                         });
                     } else {
@@ -1027,7 +1037,8 @@
                         updates.push({
                             id: credit.id,
                             update: {
-                                amount: creditAmount - amountToUse
+                                amount: creditAmount - amountToUse,
+                                last_activity_at: new Date().toISOString()
                             }
                         });
                         
@@ -1111,8 +1122,8 @@
             const amount = document.getElementById('editAmount').value;
             const reason = document.getElementById('editReason').value;
 
-            if (!playerId || !amount || !reason) {
-                alert('Please fill in all fields');
+            if (!playerId || !amount) {
+                alert('Please fill in player and amount');
                 return;
             }
 
@@ -1122,7 +1133,8 @@
                     .update({
                         player_id: parseInt(playerId),
                         amount: parseFloat(amount),
-                        reason: reason
+                        reason: reason || '',
+                        last_activity_at: new Date().toISOString()
                     })
                     .eq('id', editingCreditId);
 
