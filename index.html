@@ -1024,8 +1024,29 @@
     </div>
 
     <!-- Move to Another Skate Modal -->
-    <div id="moveToSkateModal" class="modal">
+    <!-- Replace Player Modal -->
+    <div id="replacePlayerModal" class="modal">
         <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <span>🔁 Replace Player</span>
+                <button class="close-modal" onclick="closeReplacePlayerModal()">×</button>
+            </div>
+            <div style="margin-bottom: 16px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
+                Replacing: <strong id="replacePlayerName" style="color: var(--primary);"></strong>
+            </div>
+            <div class="form-group">
+                <label>New Player Name</label>
+                <input type="text" id="replacePlayerInput" placeholder="Enter new player name..." style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;" oninput="filterReplaceSuggestions(this.value)">
+                <div id="replaceSuggestions" style="max-height: 200px; overflow-y: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 4px; display: none;"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeReplacePlayerModal()">Cancel</button>
+                <button class="button" onclick="confirmReplacePlayer()">Replace</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="moveToSkateModal" class="modal">
             <div class="modal-header">
                 <span>🔄 Move Player to Another Skate</span>
                 <button class="close-modal" onclick="closeMoveToSkateModal()">×</button>
@@ -1258,6 +1279,7 @@
                 else if (e.target.id === 'csvPreviewModal') closeCSVPreviewModal();
                 else if (e.target.id === 'quickAddModal') closeQuickAdd();
                 else if (e.target.id === 'moveToSkateModal') closeMoveToSkateModal();
+                else if (e.target.id === 'replacePlayerModal') closeReplacePlayerModal();
                 else if (e.target.id === 'atAGlanceModal') closeAtAGlance();
             }
         });
@@ -1947,6 +1969,7 @@
                                 <div class="player-menu">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
+                                        <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔁 Replace Player</div>
                                         ${!player.is_goalie ? 
                                             `<div class="menu-item" onclick="toggleGoalie(${player.id}, true); closeMenu(${player.id})">🥅 Mark as Goalie</div>` : 
                                             `<div class="menu-item" onclick="toggleGoalie(${player.id}, false); closeMenu(${player.id})">👤 Remove Goalie</div>`
@@ -2007,6 +2030,13 @@
             
             if (!playerName) {
                 alert('Please enter a player name');
+                return;
+            }
+
+            // Duplicate check
+            const isDup = await checkDuplicate(currentSkateId, playerName);
+            if (isDup) {
+                alert(`⚠️ ${playerName} is already on this skate!`);
                 return;
             }
 
@@ -2111,6 +2141,82 @@
             } catch (error) {
                 console.error('Error toggling paid:', error);
             }
+        }
+
+        let replacingRegistrationId = null;
+
+        function showReplacePlayerModal(registrationId, playerName) {
+            replacingRegistrationId = registrationId;
+            document.getElementById('replacePlayerName').textContent = playerName;
+            document.getElementById('replacePlayerInput').value = '';
+            document.getElementById('replaceSuggestions').style.display = 'none';
+            document.getElementById('replacePlayerModal').classList.add('active');
+            setTimeout(() => document.getElementById('replacePlayerInput').focus(), 100);
+        }
+
+        function closeReplacePlayerModal() {
+            document.getElementById('replacePlayerModal').classList.remove('active');
+            replacingRegistrationId = null;
+        }
+
+        function filterReplaceSuggestions(query) {
+            const box = document.getElementById('replaceSuggestions');
+            if (!query || query.length < 2) { box.style.display = 'none'; return; }
+            const lower = query.toLowerCase();
+            const matches = allPlayers.filter(p => p.name.toLowerCase().includes(lower)).slice(0, 8);
+            if (matches.length === 0) { box.style.display = 'none'; return; }
+            box.innerHTML = matches.map(p => `
+                <div style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border);"
+                    onmousedown="selectReplacePlayer('${p.name.replace(/'/g, "\\'")}')"
+                    onmouseover="this.style.background='rgba(var(--primary-rgb),0.1)'"
+                    onmouseout="this.style.background=''">
+                    ${p.name}
+                </div>`).join('');
+            box.style.display = 'block';
+        }
+
+        function selectReplacePlayer(name) {
+            document.getElementById('replacePlayerInput').value = name;
+            document.getElementById('replaceSuggestions').style.display = 'none';
+        }
+
+        async function confirmReplacePlayer() {
+            const newName = capitalizeName(document.getElementById('replacePlayerInput').value.trim());
+            if (!newName) { alert('Please enter a player name'); return; }
+            if (!replacingRegistrationId) return;
+
+            // Duplicate check
+            const isDup = await checkDuplicate(currentSkateId, newName, replacingRegistrationId);
+            if (isDup) {
+                alert(`⚠️ ${newName} is already on this skate!`);
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('skate_registrations')
+                    .update({ player_name: newName })
+                    .eq('id', replacingRegistrationId);
+                if (error) throw error;
+                closeReplacePlayerModal();
+                const skate = allSkates.find(s => s.id === currentSkateId);
+                await loadRoster(currentSkateId, skate.capacity);
+            } catch (err) {
+                console.error('Replace failed:', err);
+                alert('Failed to replace player');
+            }
+        }
+
+        async function checkDuplicate(skateId, playerName, excludeRegistrationId = null) {
+            const { data } = await supabaseClient
+                .from('skate_registrations')
+                .select('id, player_name')
+                .eq('skate_id', skateId);
+            if (!data) return false;
+            return data.some(r => 
+                r.player_name.toLowerCase() === playerName.toLowerCase() &&
+                r.id !== excludeRegistrationId
+            );
         }
 
         async function moveToWaitlist(registrationId) {
@@ -2867,19 +2973,36 @@
         }
 
         async function swapPlayers(idA, idB) {
-            // Find positions from current rendered roster
+            // Find positions from data attributes, falling back to DOM index
             const allItems = document.querySelectorAll('#rosterList .roster-item');
             let posA = null, posB = null;
-            allItems.forEach(item => {
+            let idxA = null, idxB = null;
+
+            allItems.forEach((item, index) => {
                 const nameEl = item.querySelector('.roster-item-name');
-                if (nameEl && nameEl.dataset.playerId == idA) posA = parseInt(nameEl.dataset.position);
-                if (nameEl && nameEl.dataset.playerId == idB) posB = parseInt(nameEl.dataset.position);
+                if (!nameEl) return;
+                if (nameEl.dataset.playerId == idA) {
+                    posA = parseInt(nameEl.dataset.position) || null;
+                    idxA = index + 1;
+                }
+                if (nameEl.dataset.playerId == idB) {
+                    posB = parseInt(nameEl.dataset.position) || null;
+                    idxB = index + 1;
+                }
             });
-            if (posA === null || posB === null) return;
+
+            // Fall back to DOM index if position not set
+            if (!posA) posA = idxA;
+            if (!posB) posB = idxB;
+
+            if (!posA || !posB) {
+                console.error('Could not find positions for swap', idA, idB);
+                return;
+            }
+
             try {
                 await supabaseClient.from('skate_registrations').update({ position: posB }).eq('id', idA);
                 await supabaseClient.from('skate_registrations').update({ position: posA }).eq('id', idB);
-                // Reload roster
                 const skateId = document.getElementById('rosterModal').dataset.skateId;
                 await openRosterModal(skateId);
             } catch (err) {
@@ -3101,6 +3224,13 @@
 
                 for (const skateId of selectedSkateIds) {
                     try {
+                        // Duplicate check
+                        const isDup = await checkDuplicate(skateId, playerName);
+                        if (isDup) {
+                            console.log(`${playerName} already on skate ${skateId}, skipping`);
+                            continue;
+                        }
+
                         // Get current roster for position
                         const { data: roster } = await supabaseClient
                             .from('skate_registrations')
