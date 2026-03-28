@@ -3004,40 +3004,50 @@
         }
 
         async function swapPlayers(idA, idB) {
-            // Find positions from data attributes, falling back to DOM index
-            const allItems = document.querySelectorAll('#rosterList .roster-item');
-            let posA = null, posB = null;
-            let idxA = null, idxB = null;
-
+            const allItems = Array.from(document.querySelectorAll('#rosterList .roster-item'));
+            
+            // Find DOM indices
+            let idxA = -1, idxB = -1;
             allItems.forEach((item, index) => {
                 const nameEl = item.querySelector('.roster-item-name');
                 if (!nameEl) return;
-                if (nameEl.dataset.playerId == idA) {
-                    posA = parseInt(nameEl.dataset.position) || null;
-                    idxA = index + 1;
-                }
-                if (nameEl.dataset.playerId == idB) {
-                    posB = parseInt(nameEl.dataset.position) || null;
-                    idxB = index + 1;
-                }
+                if (nameEl.dataset.playerId == idA) idxA = index;
+                if (nameEl.dataset.playerId == idB) idxB = index;
             });
 
-            // Fall back to DOM index if position not set
-            if (!posA) posA = idxA;
-            if (!posB) posB = idxB;
+            console.log('Swap:', idA, '(idx', idxA, ') <->', idB, '(idx', idxB, ')');
 
-            if (!posA || !posB) {
-                console.error('Could not find positions for swap', idA, idB);
+            if (idxA === -1 || idxB === -1) {
+                console.error('Could not find players in DOM', idA, idB);
                 return;
             }
 
+            // Assign all players new positions based on current DOM order, then swap A and B
+            const posMap = {};
+            allItems.forEach((item, index) => {
+                const nameEl = item.querySelector('.roster-item-name');
+                if (!nameEl) return;
+                posMap[nameEl.dataset.playerId] = index + 1;
+            });
+
+            // Swap positions of A and B
+            const posA = posMap[idA];
+            const posB = posMap[idB];
+            posMap[idA] = posB;
+            posMap[idB] = posA;
+
             try {
-                await supabaseClient.from('skate_registrations').update({ position: posB }).eq('id', idA);
-                await supabaseClient.from('skate_registrations').update({ position: posA }).eq('id', idB);
+                // Update all positions to avoid conflicts
+                const updates = Object.entries(posMap).map(([pid, pos]) =>
+                    supabaseClient.from('skate_registrations').update({ position: pos }).eq('id', parseInt(pid))
+                );
+                await Promise.all(updates);
+                
                 const skateId = document.getElementById('rosterModal').dataset.skateId;
                 await openRosterModal(skateId);
             } catch (err) {
                 console.error('Swap failed:', err);
+                alert('Swap failed: ' + err.message);
             }
         }
 
