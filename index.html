@@ -1986,17 +1986,17 @@
                         // Show rating if available
                         const rating = player.rating;
                         const ratingDisplay = rating ? 
-                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', ${rating})" title="Click to edit rating">${rating}</span>` : 
-                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', 0)" title="Click to add rating">No rating</span>`;
+                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', ${rating})" title="Click to edit rating">${rating}</span>` : 
+                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', 0)" title="Click to add rating">No rating</span>`;
                         
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
                             `<span style="display: inline-block; background: ${getFriendGroupColor(player.friend_group)}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${player.friend_group}</span>` : '';
 
                         return `
-                            <div class="${classes}">
-                                <span class="roster-item-name swappable" data-player-id="${player.id}" data-position="${player.position}" onclick="selectPlayerForSwap(${player.id}, this)">${playerDisplay}${ratingDisplay}${friendTag}</span>
-                                <div class="player-menu">
+                            <div class="${classes}" onclick="selectPlayerForSwap(${player.id}, this)" style="cursor: pointer;">
+                                <span class="roster-item-name swappable" data-player-id="${player.id}" data-position="${player.position}">${playerDisplay}${ratingDisplay}${friendTag}</span>
+                                <div class="player-menu" onclick="event.stopPropagation()">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
                                         <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔁 Replace Player</div>
@@ -2981,23 +2981,26 @@
         }
 
         function selectPlayerForSwap(playerId, element) {
-            const rosterList = document.getElementById('rosterList');
+            // element could be the div or the span - normalize to the roster-item div
+            const rosterItem = element.classList.contains('roster-item') ? element : element.closest('.roster-item');
+            const nameEl = rosterItem.querySelector('.roster-item-name');
+
             // If clicking the already-selected player, deselect
             if (selectedSwapPlayer && selectedSwapPlayer.id === playerId) {
-                selectedSwapPlayer.el.closest('.roster-item').classList.remove('swap-selected');
+                selectedSwapPlayer.rosterItem.classList.remove('swap-selected');
                 selectedSwapPlayer = null;
                 return;
             }
             // If a player is already selected, swap them
             if (selectedSwapPlayer) {
                 swapPlayers(selectedSwapPlayer.id, playerId);
-                selectedSwapPlayer.el.closest('.roster-item').classList.remove('swap-selected');
+                selectedSwapPlayer.rosterItem.classList.remove('swap-selected');
                 selectedSwapPlayer = null;
                 return;
             }
             // First selection
-            selectedSwapPlayer = { id: playerId, el: element };
-            element.closest('.roster-item').classList.add('swap-selected');
+            selectedSwapPlayer = { id: playerId, rosterItem };
+            rosterItem.classList.add('swap-selected');
         }
 
         async function swapPlayers(idA, idB) {
