@@ -1039,6 +1039,19 @@
                 <input type="text" id="replacePlayerInput" placeholder="Enter new player name..." style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;" oninput="filterReplaceSuggestions(this.value)">
                 <div id="replaceSuggestions" style="max-height: 200px; overflow-y: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 4px; display: none;"></div>
             </div>
+            <div class="form-group">
+                <label>Credit for outgoing player?</label>
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                        <input type="radio" name="replaceCredit" id="replaceCreditNo" value="no" checked>
+                        No credit needed
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                        <input type="radio" name="replaceCredit" id="replaceCreditYes" value="yes">
+                        Give credit (<span id="replaceCreditAmount" style="color: var(--primary); font-weight: 600;"></span>)
+                    </label>
+                </div>
+            </div>
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeReplacePlayerModal()">Cancel</button>
                 <button class="button" onclick="confirmReplacePlayer()">Replace</button>
@@ -1067,6 +1080,22 @@
 
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeMoveToSkateModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Copy Modal -->
+    <div id="manualCopyModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 95vw;">
+            <div class="modal-header">
+                <span>📋 Copy Roster</span>
+                <button class="close-modal" onclick="document.getElementById('manualCopyModal').classList.remove('active')">×</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Select all and copy (Ctrl+A / Cmd+A, then Ctrl+C / Cmd+C)</p>
+            <textarea id="manualCopyText" readonly style="width: 100%; height: 400px; background: var(--card-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 12px; color: var(--text); font-size: 14px; line-height: 1.6; resize: vertical; box-sizing: border-box;"></textarea>
+            <div class="modal-buttons" style="margin-top: 12px;">
+                <button class="button button-secondary" onclick="document.getElementById('manualCopyModal').classList.remove('active')">Close</button>
+                <button class="button" onclick="selectManualCopyText()">Select All</button>
             </div>
         </div>
     </div>
@@ -1280,6 +1309,7 @@
                 else if (e.target.id === 'quickAddModal') closeQuickAdd();
                 else if (e.target.id === 'moveToSkateModal') closeMoveToSkateModal();
                 else if (e.target.id === 'replacePlayerModal') closeReplacePlayerModal();
+                else if (e.target.id === 'manualCopyModal') document.getElementById('manualCopyModal').classList.remove('active');
                 else if (e.target.id === 'atAGlanceModal') closeAtAGlance();
             }
         });
@@ -2144,12 +2174,21 @@
         }
 
         let replacingRegistrationId = null;
+        let replacingPlayerName = null;
 
         function showReplacePlayerModal(registrationId, playerName) {
             replacingRegistrationId = registrationId;
+            replacingPlayerName = playerName;
             document.getElementById('replacePlayerName').textContent = playerName;
             document.getElementById('replacePlayerInput').value = '';
             document.getElementById('replaceSuggestions').style.display = 'none';
+            document.getElementById('replaceCreditNo').checked = true;
+
+            // Show skate cost in the credit option
+            const skate = allSkates.find(s => s.id === currentSkateId);
+            const cost = skate ? skate.cost : '$25';
+            document.getElementById('replaceCreditAmount').textContent = cost;
+
             document.getElementById('replacePlayerModal').classList.add('active');
             setTimeout(() => document.getElementById('replacePlayerInput').focus(), 100);
         }
@@ -2157,6 +2196,7 @@
         function closeReplacePlayerModal() {
             document.getElementById('replacePlayerModal').classList.remove('active');
             replacingRegistrationId = null;
+            replacingPlayerName = null;
         }
 
         function filterReplaceSuggestions(query) {
@@ -2192,15 +2232,46 @@
                 return;
             }
 
+            const giveCredit = document.getElementById('replaceCreditYes').checked;
+            const skate = allSkates.find(s => s.id === currentSkateId);
+
             try {
+                // Replace the player
                 const { error } = await supabaseClient
                     .from('skate_registrations')
                     .update({ player_name: newName })
                     .eq('id', replacingRegistrationId);
                 if (error) throw error;
+
+                // Issue credit if requested
+                if (giveCredit && skate) {
+                    const costNum = parseFloat((skate.cost || '$25').replace('$', '')) || 25;
+
+                    // Look up player ID
+                    const { data: playerData } = await supabaseClient
+                        .from('players')
+                        .select('id')
+                        .ilike('name', replacingPlayerName)
+                        .limit(1);
+
+                    if (playerData && playerData.length > 0) {
+                        const now = new Date().toISOString();
+                        await supabaseClient.from('player_credits').insert({
+                            player_id: playerData[0].id,
+                            amount: costNum,
+                            reason: `Replaced from ${skate.title}`,
+                            status: 'active',
+                            created_by: 'Manual',
+                            created_at: now,
+                            last_activity_at: now
+                        });
+                    } else {
+                        alert(`⚠️ Player replaced but couldn't find "${replacingPlayerName}" in the players database to issue credit. Add manually in Credits Manager.`);
+                    }
+                }
+
                 closeReplacePlayerModal();
-                const skate = allSkates.find(s => s.id === currentSkateId);
-                await loadRoster(currentSkateId, skate.capacity);
+                await loadRoster(currentSkateId, skate?.capacity || 24);
             } catch (err) {
                 console.error('Replace failed:', err);
                 alert('Failed to replace player');
@@ -2471,8 +2542,8 @@
             if (newRating === null) return; // Cancelled
             
             const rating = parseFloat(newRating);
-            if (isNaN(rating) || rating < 0 || rating > 10) {
-                alert('Please enter a valid rating between 0 and 10');
+            if (isNaN(rating) || rating < 0) {
+                alert('Please enter a valid rating (0 or higher)');
                 return;
             }
             
@@ -2551,6 +2622,20 @@
             // It will be cleared when appropriate (after save, or opening different skate)
         }
 
+        function selectManualCopyText() {
+            const ta = document.getElementById('manualCopyText');
+            ta.focus();
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+        }
+
+        function showManualCopyModal(message) {
+            document.getElementById('manualCopyText').value = message;
+            document.getElementById('manualCopyModal').classList.add('active');
+            // Auto-select after modal renders
+            setTimeout(() => selectManualCopyText(), 150);
+        }
+
         async function copyForWhatsApp(event) {
             if (!currentSkateId) return;
             
@@ -2558,7 +2643,6 @@
                 const skate = allSkates.find(s => s.id === currentSkateId);
                 if (!skate) return;
 
-                // Get roster
                 const { data, error } = await supabaseClient
                     .from('skate_registrations')
                     .select('*')
@@ -2568,126 +2652,70 @@
 
                 if (error) throw error;
 
-                // Sort: goalies first, then skaters
                 const sortedRoster = data.sort((a, b) => {
                     if (a.is_goalie && !b.is_goalie) return -1;
                     if (!a.is_goalie && b.is_goalie) return 1;
                     return a.position - b.position;
                 });
 
-                // Format date
                 const date = new Date(skate.date + 'T00:00:00');
                 const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-                // Build WhatsApp message
                 let message = `🏒 ${skate.title}\n`;
                 message += `Date & Time: ${dateStr} · ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}\n`;
                 message += `Cost: ${skate.cost} — payments@shinnyofchampions.com\n`;
                 message += `Location: ${skate.location}\n`;
 
-                // Add players with numbering
                 sortedRoster.forEach((player, index) => {
                     const num = index + 1;
                     const emoji = player.is_goalie ? ' 🥅' : '';
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
 
-                // Mobile-friendly copy with multiple fallbacks
                 let copied = false;
-                
-                // Method 1: Try modern clipboard API (works on HTTPS)
+
+                // Method 1: Modern clipboard API
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     try {
                         await navigator.clipboard.writeText(message);
                         copied = true;
-                        console.log('✓ Copied via navigator.clipboard');
                     } catch (e) {
-                        console.log('navigator.clipboard failed:', e.message);
+                        console.log('clipboard API failed:', e.message);
                     }
                 }
-                
-                // Method 2: iOS-specific fallback
-                if (!copied && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                    try {
-                        const textArea = document.createElement('textarea');
-                        textArea.value = message;
-                        textArea.contentEditable = true;
-                        textArea.readOnly = false;
-                        textArea.style.position = 'absolute';
-                        textArea.style.left = '-9999px';
-                        textArea.style.fontSize = '12pt'; // Prevent zoom on iOS
-                        document.body.appendChild(textArea);
-                        
-                        // iOS specific selection
-                        const range = document.createRange();
-                        range.selectNodeContents(textArea);
-                        const selection = window.getSelection();
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                        textArea.setSelectionRange(0, message.length);
-                        
-                        copied = document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        
-                        if (copied) {
-                            console.log('✓ Copied via iOS fallback');
-                        }
-                    } catch (e) {
-                        console.log('iOS fallback failed:', e.message);
-                    }
-                }
-                
-                // Method 3: Standard fallback for other mobile browsers
+
+                // Method 2: execCommand via hidden textarea
                 if (!copied) {
                     try {
-                        const textArea = document.createElement('textarea');
-                        textArea.value = message;
-                        textArea.style.position = 'fixed';
-                        textArea.style.top = '0';
-                        textArea.style.left = '0';
-                        textArea.style.width = '2em';
-                        textArea.style.height = '2em';
-                        textArea.style.padding = '0';
-                        textArea.style.border = 'none';
-                        textArea.style.outline = 'none';
-                        textArea.style.boxShadow = 'none';
-                        textArea.style.background = 'transparent';
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        
+                        const ta = document.createElement('textarea');
+                        ta.value = message;
+                        ta.setAttribute('readonly', '');
+                        ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:none;outline:none;box-shadow:none;background:transparent;font-size:12pt;';
+                        document.body.appendChild(ta);
+                        ta.focus();
+                        ta.select();
+                        ta.setSelectionRange(0, message.length);
                         copied = document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        
-                        if (copied) {
-                            console.log('✓ Copied via standard fallback');
-                        }
+                        document.body.removeChild(ta);
                     } catch (e) {
-                        console.log('Standard fallback failed:', e.message);
+                        console.log('execCommand failed:', e.message);
                     }
                 }
-                
-                if (!copied) {
-                    // Last resort: Show the text for manual copy
-                    const shouldShowText = confirm('Automatic copy failed. Click OK to see the text and copy it manually.');
-                    if (shouldShowText) {
-                        prompt('Copy this text:', message);
+
+                if (copied) {
+                    const btn = event?.target || event?.currentTarget;
+                    if (btn) {
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '✓ Copied!';
+                        btn.style.background = '#059669';
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.style.background = '#25D366';
+                        }, 2000);
                     }
-                    return;
-                }
-                
-                // Show feedback
-                const btn = event?.target || event?.currentTarget;
-                if (btn) {
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '✓ Copied!';
-                    btn.style.background = '#059669';
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.style.background = '#25D366';
-                    }, 2000);
                 } else {
-                    alert('✓ Copied to clipboard!');
+                    // Manual fallback — show large modal with text pre-selected
+                    showManualCopyModal(message);
                 }
 
             } catch (error) {
