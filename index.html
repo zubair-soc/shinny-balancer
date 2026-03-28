@@ -940,8 +940,9 @@
                     <button class="button" onclick="balanceSkate()">⚖️ Balance This Skate</button>
                 </div>
 
-                <div class="add-player-form">
-                    <input type="text" id="newPlayerName" placeholder="Player name" onkeypress="if(event.key==='Enter') addPlayerToSkate()">
+                <div class="add-player-form" style="position: relative;">
+                    <input type="text" id="newPlayerName" placeholder="Player name" onkeypress="if(event.key==='Enter') addPlayerToSkate()" oninput="filterPlayerSuggestions('newPlayerName', 'newPlayerSuggestions')" autocomplete="off">
+                    <div id="newPlayerSuggestions" style="display:none; position:absolute; top:100%; left:0; right:80px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; max-height:200px; overflow-y:auto; z-index:1000;"></div>
                     <button class="button" onclick="addPlayerToSkate()">Add Player</button>
                 </div>
 
@@ -1001,9 +1002,10 @@
                 <button class="close-modal" onclick="closeQuickAdd()">×</button>
             </div>
 
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group" style="margin-bottom: 20px; position: relative;">
                 <label>Player Name</label>
-                <input type="text" id="quickAddPlayerName" placeholder="Enter player name..." style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 15px; width: 100%;">
+                <input type="text" id="quickAddPlayerName" placeholder="Enter player name..." style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 15px; width: 100%;" oninput="filterPlayerSuggestions('quickAddPlayerName', 'quickAddSuggestions')" autocomplete="off">
+                <div id="quickAddSuggestions" style="display:none; position:absolute; left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; max-height:200px; overflow-y:auto; z-index:1000;"></div>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -1122,6 +1124,7 @@
         
         let supabaseClient;
         let allSkates = [];
+        let allPlayers = [];
         let currentSkateId = null;
         let isEditMode = false; // Track if we're editing or creating
 
@@ -1343,10 +1346,45 @@
             if (typeof window.supabase !== 'undefined') {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 loadSkates();
+                loadAllPlayers();
             } else {
                 alert('Database connection failed. Please refresh.');
             }
         });
+
+        function filterPlayerSuggestions(inputId, suggestionsId) {
+            const input = document.getElementById(inputId);
+            const box = document.getElementById(suggestionsId);
+            const query = input.value.trim().toLowerCase();
+            if (query.length < 1) { box.style.display = 'none'; return; }
+            const matches = allPlayers.filter(p => p.name.toLowerCase().includes(query)).slice(0, 8);
+            if (matches.length === 0) { box.style.display = 'none'; return; }
+            box.innerHTML = matches.map(p => `
+                <div style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border); color: var(--text);"
+                    onmousedown="selectPlayerSuggestion('${inputId}', '${suggestionsId}', '${p.name.replace(/'/g, "\\'")}')"
+                    onmouseover="this.style.background='rgba(var(--primary-rgb),0.1)'"
+                    onmouseout="this.style.background=''">
+                    ${p.name}
+                </div>`).join('');
+            box.style.display = 'block';
+        }
+
+        function selectPlayerSuggestion(inputId, suggestionsId, name) {
+            document.getElementById(inputId).value = name;
+            document.getElementById(suggestionsId).style.display = 'none';
+        }
+
+        async function loadAllPlayers() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('players')
+                    .select('id, name, rating')
+                    .order('name');
+                if (!error && data) allPlayers = data;
+            } catch (e) {
+                console.error('Failed to load players:', e);
+            }
+        }
 
         async function loadSkates() {
             try {
@@ -1909,49 +1947,26 @@
 
         async function loadRoster(skateId, capacity) {
             try {
-                // Get roster
+                // Get roster - only fetch columns we need
                 const { data, error } = await supabaseClient
                     .from('skate_registrations')
-                    .select('*')
+                    .select('id, skate_id, player_name, player_id, is_goalie, is_waitlist, is_paid, position, friend_group')
                     .eq('skate_id', skateId)
                     .order('position');
 
                 if (error) throw error;
 
-                // Get all ratings from players table (team balancer database)
-                const { data: ratings, error: ratingsError } = await supabaseClient
-                    .from('players')
-                    .select('name, rating');
-
-                if (ratingsError) {
-                    console.error('Error loading ratings:', ratingsError);
-                    console.log('Will show roster without ratings');
-                }
-
-                console.log('Loaded ratings:', ratings?.length || 0);
-                if (ratings && ratings.length > 0) {
-                    console.log('Sample rating:', ratings[0]);
-                }
-
-                // Create a map for quick lookup
+                // Build rating map from cached allPlayers (no extra DB call)
                 const ratingMap = {};
-                if (ratings) {
-                    ratings.forEach(r => {
-                        ratingMap[r.name.toLowerCase()] = r.rating;
-                    });
-                }
-
-                console.log('Rating map sample:', Object.keys(ratingMap).slice(0, 5));
+                allPlayers.forEach(p => {
+                    ratingMap[p.name.toLowerCase()] = p.rating;
+                });
 
                 // Add ratings to roster data
-                const dataWithRatings = data.map(player => {
-                    const rating = ratingMap[player.player_name.toLowerCase()];
-                    console.log(`Lookup: "${player.player_name}" → ${rating}`);
-                    return {
-                        ...player,
-                        rating: rating || null
-                    };
-                });
+                const dataWithRatings = data.map(player => ({
+                    ...player,
+                    rating: ratingMap[player.player_name.toLowerCase()] || null
+                }));
 
                 const roster = dataWithRatings.filter(p => !p.is_waitlist);
                 const waitlist = dataWithRatings.filter(p => p.is_waitlist);
@@ -2094,8 +2109,10 @@
                 if (error) throw error;
 
                 document.getElementById('newPlayerName').value = '';
+                document.getElementById('newPlayerSuggestions').style.display = 'none';
                 const skate = allSkates.find(s => s.id === currentSkateId);
                 await loadRoster(currentSkateId, skate.capacity);
+                loadSkates(); // Refresh card counts in background
             } catch (error) {
                 console.error('Error adding player:', error);
                 alert('Failed to add player');
@@ -2335,6 +2352,7 @@
 
                 const skate = allSkates.find(s => s.id === currentSkateId);
                 await loadRoster(currentSkateId, skate.capacity);
+                loadSkates(); // Refresh card counts in background
             } catch (error) {
                 console.error('Error deleting player:', error);
             }
@@ -2588,6 +2606,10 @@
                 }
                 
                 // Reload roster to show updated rating
+                // Also update allPlayers cache so subsequent opens are correct
+                const cachedPlayer = allPlayers.find(p => p.name.toLowerCase() === registration.player_name.toLowerCase());
+                if (cachedPlayer) cachedPlayer.rating = rating;
+                
                 await loadRoster(currentSkateId, allSkates.find(s => s.id === currentSkateId)?.capacity || 24);
                 
             } catch (error) {
