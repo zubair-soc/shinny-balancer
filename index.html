@@ -1352,6 +1352,13 @@
             }
         });
 
+        // Refresh players cache when returning to this page (e.g. after deleting in database.html)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && supabaseClient) {
+                loadAllPlayers();
+            }
+        });
+
         function filterPlayerSuggestions(inputId, suggestionsId) {
             const input = document.getElementById(inputId);
             const box = document.getElementById(suggestionsId);
