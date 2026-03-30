@@ -193,20 +193,24 @@
             font-size: 14px;
         }
 
-        .skate-count.has-players {
-            color: var(--count-text);
+        .skate-count.count-normal {
+            color: var(--primary);
         }
 
-        .skate-count.no-players {
+        .skate-count.count-no-players {
             color: var(--count-zero);
         }
 
-        .count-full {
+        .skate-count.count-almost-full {
+            color: #f59e0b;
+        }
+
+        .skate-count.count-full {
             color: #ef4444;
         }
 
-        .count-ok {
-            color: var(--primary);
+        .skate-count.count-overfull {
+            color: #b91c1c;
         }
 
         .modal {
@@ -1478,17 +1482,18 @@
             // Helper function to render skate cards
             const renderSkateCards = (skates) => {
                 return skates.map(skate => {
-                    const count = skateCounts[skate.id] || 0;
-                    const isFull = count >= skate.capacity;
-                    const countClass = isFull ? 'count-full' : 'count-ok';
                     
                     const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
-                    // Capacity is for skaters only, not including goalies
                     const maxSkaters = skate.capacity;
-                    
-                    // Determine if we have players or not
                     const hasPlayers = goalies > 0 || skaters > 0;
-                    const countColorClass = hasPlayers ? 'has-players' : 'no-players';
+
+                    // Determine count color class
+                    let countColorClass;
+                    if (!hasPlayers) countColorClass = 'count-no-players';
+                    else if (skaters > maxSkaters) countColorClass = 'count-overfull';
+                    else if (skaters === maxSkaters) countColorClass = 'count-full';
+                    else if (skaters >= maxSkaters - 2) countColorClass = 'count-almost-full';
+                    else countColorClass = 'count-normal';
                     
                     return `
                         <div class="skate-card" onclick="openSkate(${skate.id})">
