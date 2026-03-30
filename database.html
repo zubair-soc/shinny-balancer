@@ -564,6 +564,7 @@
                     <td>${player.name}</td>
                     <td class="rating-cell">${player.rating}</td>
                     <td class="actions">
+                        <button class="icon-button" onclick="editName(${player.id}, '${player.name.replace(/'/g, "\\'")}')" title="Edit name">🖊️</button>
                         <button class="icon-button" onclick="editRating(${player.id}, '${player.name.replace(/'/g, "\\'")}', ${player.rating})" title="Edit rating">✏️</button>
                         <button class="icon-button delete" onclick="confirmDelete(${player.id}, '${player.name.replace(/'/g, "\\'")}' )" title="Delete player">🗑️</button>
                     </td>
@@ -660,16 +661,58 @@
             }
         }
 
+        // Edit Name
+        async function editName(id, currentName) {
+            const newName = prompt(`Edit name:`, currentName);
+            if (newName === null) return;
+            const trimmed = newName.trim();
+            if (!trimmed) { alert('Name cannot be empty'); return; }
+            if (trimmed === currentName) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('players')
+                    .update({ name: trimmed })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                const player = allPlayers.find(p => p.id === id);
+                if (player) player.name = trimmed;
+                allPlayers.sort((a, b) => a.name.localeCompare(b.name));
+                filterPlayers(document.getElementById('searchBox').value);
+            } catch (error) {
+                console.error('Error updating name:', error);
+                alert('Failed to update name. Please try again.');
+            }
+        }
+
         // Delete Player
         function confirmDelete(id, name) {
             if (!confirm(`Delete ${name}?\n\nThis cannot be undone.`)) {
                 return;
             }
-            deletePlayer(id);
+            deletePlayer(id, name);
         }
 
-        async function deletePlayer(id) {
+        async function deletePlayer(id, name) {
             try {
+                // Check for active credits first
+                const { data: credits } = await supabaseClient
+                    .from('player_credits')
+                    .select('id, amount, status')
+                    .eq('player_id', id)
+                    .eq('status', 'active');
+
+                if (credits && credits.length > 0) {
+                    const total = credits.reduce((sum, c) => sum + parseFloat(c.amount), 0);
+                    const decision = confirm(`⚠️ ${name} has ${credits.length} active credit(s) totalling $${total.toFixed(2)}.\n\nDelete player AND their credits?\n\nClick OK to delete everything, Cancel to abort.`);
+                    if (!decision) return;
+
+                    // Delete credits first
+                    await supabaseClient.from('player_credits').delete().eq('player_id', id);
+                }
+
                 const { error } = await supabaseClient
                     .from('players')
                     .delete()
