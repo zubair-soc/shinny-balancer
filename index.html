@@ -193,24 +193,12 @@
             font-size: 14px;
         }
 
-        .skate-count.count-normal {
-            color: var(--primary);
+        .skate-count.has-players {
+            color: var(--count-text);
         }
 
-        .skate-count.count-no-players {
+        .skate-count.no-players {
             color: var(--count-zero);
-        }
-
-        .skate-count.count-almost-full {
-            color: #f59e0b;
-        }
-
-        .skate-count.count-full {
-            color: #ef4444;
-        }
-
-        .skate-count.count-overfull {
-            color: #b91c1c;
         }
 
         .modal {
@@ -1486,14 +1474,12 @@
                     const { goalies = 0, skaters = 0 } = goalieSkaterCounts[skate.id] || {};
                     const maxSkaters = skate.capacity;
                     const hasPlayers = goalies > 0 || skaters > 0;
-
-                    // Determine count color class
-                    let countColorClass;
-                    if (!hasPlayers) countColorClass = 'count-no-players';
-                    else if (skaters > maxSkaters) countColorClass = 'count-overfull';
-                    else if (skaters === maxSkaters) countColorClass = 'count-full';
-                    else if (skaters >= maxSkaters - 2) countColorClass = 'count-almost-full';
-                    else countColorClass = 'count-normal';
+                    const countColorClass = hasPlayers ? 'has-players' : 'no-players';
+                    const goalieText = goalies === 0 
+                        ? `<span style="color:#ef4444">${goalies}/2 goalies</span>`
+                        : goalies === 1
+                        ? `<span style="color:#f59e0b">${goalies}/2 goalies</span>`
+                        : `${goalies}/2 goalies`;
                     
                     return `
                         <div class="skate-card" onclick="openSkate(${skate.id})">
@@ -1503,7 +1489,7 @@
                             <div class="skate-detail">💰 ${skate.cost}</div>
                             <div class="skate-detail">📍 ${skate.location}</div>
                             ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
-                            <div class="skate-count ${countColorClass}">${goalies}/2 goalies · ${skaters}/${maxSkaters} skaters</div>
+                            <div class="skate-count ${countColorClass}">${goalieText} · ${skaters}/${maxSkaters} skaters</div>
                         </div>
                     `;
                 }).join('');
