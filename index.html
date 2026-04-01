@@ -929,7 +929,10 @@
             <div class="roster-section">
                 <div class="roster-header">
                     <h3>Roster <span id="rosterCount">(0/24)</span></h3>
-                    <button class="button" onclick="balanceSkate()">⚖️ Balance This Skate</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button id="sortToggleBtn" class="button button-secondary" onclick="toggleRosterSort()" style="font-size: 12px; padding: 6px 12px;">🔤 A–Z</button>
+                        <button class="button" onclick="balanceSkate()">⚖️ Balance This Skate</button>
+                    </div>
                 </div>
 
                 <div class="add-player-form" style="position: relative;">
@@ -1350,6 +1353,18 @@
                 loadAllPlayers();
             }
         });
+
+        let rosterSortAlpha = false;
+
+        function toggleRosterSort() {
+            rosterSortAlpha = !rosterSortAlpha;
+            const btn = document.getElementById('sortToggleBtn');
+            btn.textContent = rosterSortAlpha ? '🔢 Position' : '🔤 A–Z';
+            btn.style.background = rosterSortAlpha ? 'rgba(var(--primary-rgb), 0.15)' : '';
+            btn.style.color = rosterSortAlpha ? 'var(--primary)' : '';
+            const skate = allSkates.find(s => s.id === currentSkateId);
+            loadRoster(currentSkateId, skate?.capacity || 24);
+        }
 
         function filterPlayerSuggestions(inputId, suggestionsId) {
             const input = document.getElementById(inputId);
@@ -1940,6 +1955,9 @@
             const modal = document.getElementById('rosterModal');
             modal.dataset.skateId = skateId;
             selectedSwapPlayer = null;
+            rosterSortAlpha = false;
+            const sortBtn = document.getElementById('sortToggleBtn');
+            if (sortBtn) { sortBtn.textContent = '🔤 A–Z'; sortBtn.style.background = ''; sortBtn.style.color = ''; }
             modal.classList.add('active');
         }
 
@@ -1973,6 +1991,7 @@
                 const sortedRoster = roster.sort((a, b) => {
                     if (a.is_goalie && !b.is_goalie) return -1;
                     if (!a.is_goalie && b.is_goalie) return 1;
+                    if (rosterSortAlpha) return a.player_name.localeCompare(b.player_name);
                     return a.position - b.position;
                 });
 
