@@ -583,6 +583,7 @@
         let darkTeam = [];
         let lightTeam = [];
         let selectedPlayer = null; // For swapping
+        let currentBalancerSkateId = null;
 
         const FRIEND_GROUP_COLORS = {
             'A': '#ef4444', 'B': 'var(--primary-dark)', 'C': '#10b981', 'D': '#f59e0b',
@@ -819,7 +820,7 @@
         }
 
         // Auto-load roster from skates page
-        function autoLoadFromSkates() {
+        async function autoLoadFromSkates() {
             console.log('autoLoadFromSkates called');
             const rosterData = localStorage.getItem('importedRoster');
             const skateDetails = localStorage.getItem('importedSkateDetails');
@@ -861,9 +862,22 @@
             playerInputBox.value = rosterData;
             console.log('Set playerInputBox value to:', playerInputBox.value);
 
+            // Grab skate ID for team persistence
+            const skateId = localStorage.getItem('currentSkateId');
+            if (skateId) {
+                currentBalancerSkateId = parseInt(skateId);
+                localStorage.removeItem('currentSkateId');
+            }
+
             // Clean up localStorage
             localStorage.removeItem('importedRoster');
             localStorage.removeItem('importedSkateDetails');
+
+            // Try to load saved teams for this skate
+            if (currentBalancerSkateId) {
+                const loaded = await loadSavedTeams(currentBalancerSkateId);
+                if (loaded) return; // Skip the alert if we loaded saved teams
+            }
 
             // Scroll to section 3
             playerInputBox.scrollIntoView({ behavior: 'smooth' });
@@ -1066,6 +1080,47 @@
         }
 
         // Balance teams
+        async function saveTeams() {
+            if (!currentBalancerSkateId || !supabaseClient) return;
+            try {
+                await supabaseClient
+                    .from('skate_teams')
+                    .upsert({
+                        skate_id: currentBalancerSkateId,
+                        dark_team: darkTeam,
+                        light_team: lightTeam,
+                        saved_at: new Date().toISOString()
+                    }, { onConflict: 'skate_id' });
+            } catch (err) {
+                console.error('Failed to save teams:', err);
+            }
+        }
+
+        async function loadSavedTeams(skateId) {
+            if (!skateId || !supabaseClient) return false;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('skate_teams')
+                    .select('dark_team, light_team, saved_at')
+                    .eq('skate_id', skateId)
+                    .single();
+
+                if (error || !data) return false;
+
+                const savedAt = new Date(data.saved_at).toLocaleString();
+                const load = confirm(`Saved teams found for this skate (last saved ${savedAt}).\n\nLoad saved teams?`);
+                if (!load) return false;
+
+                darkTeam = data.dark_team || [];
+                lightTeam = data.light_team || [];
+                renderTeams();
+                return true;
+            } catch (err) {
+                console.error('Failed to load saved teams:', err);
+                return false;
+            }
+        }
+
         function balanceTeams() {
             console.log('balanceTeams called');
             console.log('matchedPlayers:', matchedPlayers);
@@ -1209,6 +1264,7 @@
             sortTeams();
             
             renderTeams();
+            saveTeams();
         }
 
         // Render teams
@@ -1390,6 +1446,7 @@
                     player.rating = rating;
                     console.log('Rating updated to:', rating);
                     renderTeams();
+                    saveTeams();
                 } else {
                     alert('Please enter a valid rating between 0 and 20');
                 }
@@ -1403,6 +1460,7 @@
                 lightTeam[index].isGoalie = !lightTeam[index].isGoalie;
             }
             renderTeams();
+            saveTeams();
         }
 
         function selectPlayer(team, index) {
@@ -1446,6 +1504,7 @@
                 
                 selectedPlayer = null;
                 renderTeams();
+                saveTeams();
             }
         }
 
