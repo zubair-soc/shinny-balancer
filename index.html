@@ -2995,7 +2995,7 @@
                                 <div style="font-weight: 600; color: var(--text);">${i + 1}. ${skate.tier || skate.title || 'Untitled'}</div>
                                 <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
                                     📅 ${(() => { const [y,m,d] = skate.date.split('-'); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[parseInt(m)-1]} ${parseInt(d)}, ${y}`; })()}
-                                    • 🕐 ${skate.time_start} - ${skate.time_end}
+                                    • 🕐 ${formatTime(skate.time_start)} - ${formatTime(skate.time_end)}
                                     • 📍 ${skate.location || 'No location'}
                                 </div>
                             </div>
