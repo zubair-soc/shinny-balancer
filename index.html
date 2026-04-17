@@ -2571,31 +2571,17 @@
         }
 
         // ========== EDIT RATING FUNCTION ==========
-        function editRating(registrationId, playerName, currentRating) {
-            // Show custom modal instead of prompt()
-            document.getElementById('ratingModalPlayerName').textContent = playerName;
-            document.getElementById('ratingModalInput').value = currentRating || 0;
-            document.getElementById('ratingModal').classList.add('active');
-            setTimeout(() => {
-                const input = document.getElementById('ratingModalInput');
-                input.focus();
-                input.select();
-            }, 50);
-            window._pendingRatingEdit = { registrationId, playerName };
-        }
-
-        async function saveRatingFromModal() {
-            const { registrationId, playerName } = window._pendingRatingEdit || {};
-            if (!registrationId) return;
-
-            const rating = parseFloat(document.getElementById('ratingModalInput').value);
+        async function editRating(registrationId, playerName, currentRating) {
+            const newRating = prompt(`Edit rating for ${playerName}:`, currentRating || 0);
+            
+            if (newRating === null) return; // Cancelled
+            
+            const rating = parseFloat(newRating);
             if (isNaN(rating) || rating < 0) {
                 alert('Please enter a valid rating (0 or higher)');
                 return;
             }
-
-            closeRatingModal();
-
+            
             try {
                 // Get player_id from registration
                 const { data: registration } = await supabaseClient
@@ -2647,11 +2633,6 @@
                 console.error('Error updating rating:', error);
                 alert('Failed to update rating: ' + error.message);
             }
-        }
-
-        function closeRatingModal() {
-            document.getElementById('ratingModal').classList.remove('active');
-            window._pendingRatingEdit = null;
         }
 
         async function confirmDeleteSkate() {
@@ -3013,7 +2994,7 @@
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: var(--text);">${i + 1}. ${skate.tier || skate.title || 'Untitled'}</div>
                                 <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
-                                    📅 ${new Date(skate.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    📅 ${new Date(skate.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     • 🕐 ${skate.time_start} - ${skate.time_end}
                                     • 📍 ${skate.location || 'No location'}
                                 </div>
@@ -3523,29 +3504,5 @@
         }
 
     </script>
-
-    <!-- Rating Edit Modal -->
-    <div id="ratingModal" class="modal" style="z-index: 2000;">
-        <div class="modal-content" style="max-width: 340px; padding: 28px;">
-            <div class="modal-header">
-                <span>Edit Rating</span>
-                <button class="close-modal" onclick="closeRatingModal()">×</button>
-            </div>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
-                Player: <strong id="ratingModalPlayerName" style="color: var(--text);"></strong>
-            </p>
-            <div class="form-group" style="margin-bottom: 20px;">
-                <label for="ratingModalInput">Rating</label>
-                <input type="number" id="ratingModalInput" min="0" max="20" step="0.5"
-                    style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 16px;"
-                    onkeydown="if(event.key==='Enter') saveRatingFromModal(); if(event.key==='Escape') closeRatingModal();">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="button button-secondary" onclick="closeRatingModal()" style="flex: 1;">Cancel</button>
-                <button class="button" onclick="saveRatingFromModal()" style="flex: 1;">Save</button>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>
