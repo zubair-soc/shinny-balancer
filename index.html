@@ -732,6 +732,29 @@
             background: var(--primary);
             border-color: var(--primary);
         }
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 9999;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -3304,6 +3327,7 @@
             try {
                 const selectedSkateIds = Array.from(selectedSkatesForQuickAdd);
                 let successCount = 0;
+                const addedSkateNumbers = [];
 
                 for (const skateId of selectedSkateIds) {
                     try {
@@ -3336,7 +3360,11 @@
                                 is_paid: true
                             });
 
-                        if (!error) successCount++;
+                        if (!error) {
+                            successCount++;
+                            const skate = allSkates.find(s => s.id === skateId);
+                            if (skate) addedSkateNumbers.push(skate.skate_number || skate.title);
+                        }
                     } catch (error) {
                         console.error(`Error adding to skate ${skateId}:`, error);
                     }
@@ -3371,6 +3399,9 @@
                     });
                     updateSelectedSkatesCount();
                     
+                    // Show toast
+                    showToast(`✓ ${playerName} added to ${addedSkateNumbers.join(', ')}`);
+
                     // Reload skates in background
                     await loadSkates();
                 }
@@ -3378,6 +3409,21 @@
             } catch (error) {
                 console.error('Error in quickAddPlayer:', error);
             }
+        }
+
+        // ========== TOAST ==========
+        let toastTimer;
+        function showToast(message) {
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            clearTimeout(toastTimer);
+            toast.classList.add('show');
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         // ========== AT A GLANCE FUNCTIONS ==========
