@@ -732,7 +732,6 @@
             background: var(--primary);
             border-color: var(--primary);
         }
-        /* Toast notification */
         #toast {
             position: fixed;
             bottom: 32px;
@@ -2149,6 +2148,17 @@
 
                 if (error) throw error;
 
+                // Ensure player exists in players table
+                const { data: existingPlayer } = await supabaseClient
+                    .from('players')
+                    .select('id')
+                    .ilike('name', playerName)
+                    .maybeSingle();
+                if (!existingPlayer) {
+                    await supabaseClient.from('players').insert({ name: playerName });
+                    allPlayers.push({ name: playerName, rating: null });
+                }
+
                 document.getElementById('newPlayerName').value = '';
                 document.getElementById('newPlayerSuggestions').style.display = 'none';
                 const skate = allSkates.find(s => s.id === currentSkateId);
@@ -2326,6 +2336,37 @@
                     } else {
                         alert(`⚠️ Player replaced but couldn't find "${replacingPlayerName}" in the players database to issue credit. Add manually in Credits Manager.`);
                     }
+                }
+
+                // Also update saved teams if they exist
+                const { data: savedTeams } = await supabaseClient
+                    .from('skate_teams')
+                    .select('id, dark_team, light_team')
+                    .eq('skate_id', currentSkateId)
+                    .maybeSingle();
+
+                if (savedTeams) {
+                    const updateTeam = (team) => team.map(p =>
+                        p.name === replacingPlayerName ? { ...p, name: newName } : p
+                    );
+                    await supabaseClient
+                        .from('skate_teams')
+                        .update({
+                            dark_team: updateTeam(savedTeams.dark_team || []),
+                            light_team: updateTeam(savedTeams.light_team || [])
+                        })
+                        .eq('id', savedTeams.id);
+                }
+
+                // Ensure new player exists in players table
+                const { data: existingNewPlayer } = await supabaseClient
+                    .from('players')
+                    .select('id')
+                    .ilike('name', newName)
+                    .maybeSingle();
+                if (!existingNewPlayer) {
+                    await supabaseClient.from('players').insert({ name: newName });
+                    allPlayers.push({ name: newName, rating: null });
                 }
 
                 closeReplacePlayerModal();
@@ -2595,17 +2636,30 @@
         }
 
         // ========== EDIT RATING FUNCTION ==========
-        async function editRating(registrationId, playerName, currentRating) {
-            const newRating = prompt(`Edit rating for ${playerName}:`, currentRating || 0);
-            
-            if (newRating === null) return; // Cancelled
-            
-            const rating = parseFloat(newRating);
+        function editRating(registrationId, playerName, currentRating) {
+            document.getElementById('ratingModalPlayerName').textContent = playerName;
+            document.getElementById('ratingModalInput').value = currentRating || 0;
+            document.getElementById('ratingModal').classList.add('active');
+            setTimeout(() => {
+                const input = document.getElementById('ratingModalInput');
+                input.focus();
+                input.select();
+            }, 50);
+            window._pendingRatingEdit = { registrationId, playerName };
+        }
+
+        async function saveRatingFromModal() {
+            const { registrationId, playerName } = window._pendingRatingEdit || {};
+            if (!registrationId) return;
+
+            const rating = parseFloat(document.getElementById('ratingModalInput').value);
             if (isNaN(rating) || rating < 0) {
                 alert('Please enter a valid rating (0 or higher)');
                 return;
             }
-            
+
+            closeRatingModal();
+
             try {
                 // Get player_id from registration
                 const { data: registration } = await supabaseClient
@@ -2657,6 +2711,11 @@
                 console.error('Error updating rating:', error);
                 alert('Failed to update rating: ' + error.message);
             }
+        }
+
+        function closeRatingModal() {
+            document.getElementById('ratingModal').classList.remove('active');
+            window._pendingRatingEdit = null;
         }
 
         async function confirmDeleteSkate() {
@@ -3551,5 +3610,28 @@
         }
 
     </script>
+    <!-- Rating Edit Modal -->
+    <div id="ratingModal" class="modal" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 340px; padding: 28px;">
+            <div class="modal-header">
+                <span>Edit Rating</span>
+                <button class="close-modal" onclick="closeRatingModal()">×</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
+                Player: <strong id="ratingModalPlayerName" style="color: var(--text);"></strong>
+            </p>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="ratingModalInput">Rating</label>
+                <input type="number" id="ratingModalInput" min="0" max="20" step="0.5"
+                    style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 16px;"
+                    onkeydown="if(event.key==='Enter') saveRatingFromModal(); if(event.key==='Escape') closeRatingModal();">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="button button-secondary" onclick="closeRatingModal()" style="flex: 1;">Cancel</button>
+                <button class="button" onclick="saveRatingFromModal()" style="flex: 1;">Save</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
