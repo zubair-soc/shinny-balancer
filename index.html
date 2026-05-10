@@ -923,6 +923,8 @@
                     <option value="Millenium Place">Millenium Place</option>
                     <option value="Millwoods">Millwoods</option>
                     <option value="NAIT">NAIT</option>
+                    <option value="NAIT - Parking: Honk App (GARENT2526)">NAIT - Parking: Honk App (GARENT2526)</option>
+                    <option value="Heavy Metal Place">Heavy Metal Place</option>
                     <option value="Rivercree">Rivercree</option>
                     <option value="Silent Ice Center">Silent Ice Center</option>
                     <option value="Terwillegar Rink">Terwillegar Rink</option>
@@ -982,6 +984,44 @@
                 </div>
 
                 <div id="waitlistList" class="roster-list"></div>
+            </div>
+
+            <!-- Teams Section -->
+            <div class="roster-section" id="teamsSection" style="display:none;">
+                <div class="roster-header" onclick="toggleTeamsSection()" style="cursor: pointer; user-select: none;">
+                    <h3>⚔️ Teams</h3>
+                    <span id="teamsSectionToggle" style="color: var(--text-muted); font-size: 13px;">▼ Show</span>
+                </div>
+                <div id="teamsContent" style="display:none;">
+                    <!-- Tug of war bar -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 600;">
+                            <span style="color: #1a1a2e;">⬛ Dark</span>
+                            <span style="color: var(--text-muted);" id="tugVoteCount">No votes yet</span>
+                            <span style="color: #888;">⬜ Light</span>
+                        </div>
+                        <div style="height: 28px; background: #ddd; border-radius: 14px; overflow: hidden; position: relative;">
+                            <div id="tugBar" style="height: 100%; background: #1a1a2e; width: 50%; transition: width 0.4s ease; border-radius: 14px;"></div>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 11px; font-weight: 700; color: white; text-shadow: 0 0 4px rgba(0,0,0,0.8); pointer-events: none;" id="tugLabel">50 / 50</div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button onclick="castVote('dark')" style="flex:1; padding: 10px; background: #1a1a2e; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">⬛ Dark Stronger</button>
+                            <button onclick="castVote('light')" style="flex:1; padding: 10px; background: #f0f0f0; color: #333; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">⬜ Light Stronger</button>
+                        </div>
+                    </div>
+
+                    <!-- Team lists with nudge buttons -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">⬛ Dark</h4>
+                            <div id="teamsModalDark"></div>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">⬜ Light</h4>
+                            <div id="teamsModalLight"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="modal-buttons">
@@ -1085,20 +1125,13 @@
                 <span>🔄 Move Player to Another Skate</span>
                 <button class="close-modal" onclick="closeMoveToSkateModal()">×</button>
             </div>
-
             <div style="margin-bottom: 20px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
                 <strong id="movePlayerName" style="color: var(--primary);"></strong>
             </div>
-
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
-                    Select Destination Skate:
-                </label>
-                <div id="moveToSkatesList" style="max-height: 300px; overflow-y: auto;">
-                    <!-- Skates will be loaded here -->
-                </div>
+                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted);">Select Destination Skate:</label>
+                <div id="moveToSkatesList" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
-
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeMoveToSkateModal()">Cancel</button>
             </div>
@@ -1983,6 +2016,7 @@
             const sortBtn = document.getElementById('sortToggleBtn');
             if (sortBtn) { sortBtn.textContent = '🔤 A–Z'; sortBtn.style.background = ''; sortBtn.style.color = ''; }
             modal.classList.add('active');
+            loadTeamsForSkate(skateId);
         }
 
         async function loadRoster(skateId, capacity) {
@@ -2151,15 +2185,11 @@
 
                 // Ensure player exists in players table
                 const { data: existingPlayer } = await supabaseClient
-                    .from('players')
-                    .select('id')
-                    .ilike('name', playerName)
-                    .maybeSingle();
+                    .from('players').select('id').ilike('name', playerName).maybeSingle();
                 if (!existingPlayer) {
                     await supabaseClient.from('players').insert({ name: playerName });
                     allPlayers.push({ name: playerName, rating: null });
                 }
-
                 document.getElementById('newPlayerName').value = '';
                 document.getElementById('newPlayerSuggestions').style.display = 'none';
                 const skate = allSkates.find(s => s.id === currentSkateId);
@@ -2339,37 +2369,23 @@
                     }
                 }
 
-                // Also update saved teams if they exist
+                // Update saved teams if they exist
                 const { data: savedTeams } = await supabaseClient
-                    .from('skate_teams')
-                    .select('id, dark_team, light_team')
-                    .eq('skate_id', currentSkateId)
-                    .maybeSingle();
-
+                    .from('skate_teams').select('id, dark_team, light_team').eq('skate_id', currentSkateId).maybeSingle();
                 if (savedTeams) {
-                    const updateTeam = (team) => team.map(p =>
-                        p.name === replacingPlayerName ? { ...p, name: newName } : p
-                    );
-                    await supabaseClient
-                        .from('skate_teams')
-                        .update({
-                            dark_team: updateTeam(savedTeams.dark_team || []),
-                            light_team: updateTeam(savedTeams.light_team || [])
-                        })
-                        .eq('id', savedTeams.id);
+                    const updateTeam = (team) => team.map(p => p.name === replacingPlayerName ? { ...p, name: newName } : p);
+                    await supabaseClient.from('skate_teams').update({
+                        dark_team: updateTeam(savedTeams.dark_team || []),
+                        light_team: updateTeam(savedTeams.light_team || [])
+                    }).eq('id', savedTeams.id);
                 }
-
-                // Ensure new player exists in players table
+                // Ensure new player in DB
                 const { data: existingNewPlayer } = await supabaseClient
-                    .from('players')
-                    .select('id')
-                    .ilike('name', newName)
-                    .maybeSingle();
+                    .from('players').select('id').ilike('name', newName).maybeSingle();
                 if (!existingNewPlayer) {
                     await supabaseClient.from('players').insert({ name: newName });
                     allPlayers.push({ name: newName, rating: null });
                 }
-
                 closeReplacePlayerModal();
                 await loadRoster(currentSkateId, skate?.capacity || 24);
             } catch (err) {
@@ -2652,15 +2668,12 @@
         async function saveRatingFromModal() {
             const { registrationId, playerName } = window._pendingRatingEdit || {};
             if (!registrationId) return;
-
             const rating = parseFloat(document.getElementById('ratingModalInput').value);
             if (isNaN(rating) || rating < 0) {
                 alert('Please enter a valid rating (0 or higher)');
                 return;
             }
-
             closeRatingModal();
-
             try {
                 // Get player_id from registration
                 const { data: registration } = await supabaseClient
@@ -3387,7 +3400,6 @@
             try {
                 const selectedSkateIds = Array.from(selectedSkatesForQuickAdd);
                 let successCount = 0;
-                const addedSkateNumbers = [];
 
                 for (const skateId of selectedSkateIds) {
                     try {
@@ -3420,11 +3432,7 @@
                                 is_paid: true
                             });
 
-                        if (!error) {
-                            successCount++;
-                            const skate = allSkates.find(s => s.id === skateId);
-                            if (skate) addedSkateNumbers.push(skate.skate_number || skate.title);
-                        }
+                        if (!error) successCount++;
                     } catch (error) {
                         console.error(`Error adding to skate ${skateId}:`, error);
                     }
@@ -3459,9 +3467,6 @@
                     });
                     updateSelectedSkatesCount();
                     
-                    // Show toast
-                    showToast(`✓ ${playerName} added to ${addedSkateNumbers.join(', ')}`);
-
                     // Reload skates in background
                     await loadSkates();
                 }
@@ -3484,6 +3489,140 @@
             clearTimeout(toastTimer);
             toast.classList.add('show');
             toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ========== TEAMS + NUDGE + TUG OF WAR ==========
+        let currentSkateVote = null;
+
+        function toggleTeamsSection() {
+            const content = document.getElementById('teamsContent');
+            const toggle = document.getElementById('teamsSectionToggle');
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            toggle.textContent = isHidden ? '▲ Hide' : '▼ Show';
+        }
+
+        async function loadTeamsForSkate(skateId) {
+            const section = document.getElementById('teamsSection');
+            try {
+                const { data: teams } = await supabaseClient
+                    .from('skate_teams')
+                    .select('dark_team, light_team')
+                    .eq('skate_id', skateId)
+                    .maybeSingle();
+
+                if (!teams) { section.style.display = 'none'; return; }
+
+                section.style.display = 'block';
+                renderTeamsList('teamsModalDark', teams.dark_team || [], skateId);
+                renderTeamsList('teamsModalLight', teams.light_team || [], skateId);
+
+                // Load vote
+                const { data: vote } = await supabaseClient
+                    .from('skate_votes')
+                    .select('dark_votes, light_votes')
+                    .eq('skate_id', skateId)
+                    .maybeSingle();
+
+                currentSkateVote = vote;
+                updateTugBar(vote);
+
+            } catch (err) {
+                console.error('Error loading teams:', err);
+                section.style.display = 'none';
+            }
+        }
+
+        function renderTeamsList(containerId, players, skateId) {
+            const container = document.getElementById(containerId);
+            if (!players.length) { container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No players</p>'; return; }
+            container.innerHTML = players.filter(p => !p.isGoalie).map(p => `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:6px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:13px;">
+                    <a href="balancer.html?player=${encodeURIComponent(p.name)}" style="color:var(--text); text-decoration:none; flex:1;" title="View profile">${p.name}</a>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <span style="color:var(--text-muted); font-size:11px; margin-right:4px;">${p.rating_v2 !== undefined && p.rating_v2 !== null ? p.rating_v2 : (p.rating || '—')}</span>
+                        <button onclick="nudgePlayer('${p.name.replace(/'/g,"\'")}', ${skateId}, 'up')" style="background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.4); color:#22c55e; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▲</button>
+                        <button onclick="nudgePlayer('${p.name.replace(/'/g,"\'")}', ${skateId}, 'down')" style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▼</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function nudgePlayer(playerName, skateId, direction) {
+            try {
+                const { data: player } = await supabaseClient
+                    .from('players')
+                    .select('id, rating_v2')
+                    .ilike('name', playerName)
+                    .maybeSingle();
+
+                if (!player) { showToast('Player not found in database'); return; }
+
+                const nudgeAmount = direction === 'up' ? 1 : -1;
+                const newRating = Math.min(100, Math.max(0, (player.rating_v2 || 50) + nudgeAmount));
+
+                await supabaseClient.from('rating_nudges').insert({
+                    player_id: player.id,
+                    skate_id: skateId,
+                    direction,
+                    source: 'manual',
+                    nudge_amount: 1
+                });
+
+                await supabaseClient.from('players').update({ rating_v2: newRating }).eq('id', player.id);
+
+                showToast(`${playerName} ${direction === 'up' ? '▲' : '▼'} → ${newRating}`);
+                await loadTeamsForSkate(skateId);
+
+            } catch (err) {
+                console.error('Nudge failed:', err);
+                showToast('Nudge failed');
+            }
+        }
+
+        async function castVote(team) {
+            const skateId = parseInt(document.getElementById('rosterModal').dataset.skateId);
+            if (!skateId) return;
+
+            try {
+                if (currentSkateVote) {
+                    const update = team === 'dark'
+                        ? { dark_votes: (currentSkateVote.dark_votes || 0) + 1, last_updated: new Date().toISOString() }
+                        : { light_votes: (currentSkateVote.light_votes || 0) + 1, last_updated: new Date().toISOString() };
+                    await supabaseClient.from('skate_votes').update(update).eq('skate_id', skateId);
+                } else {
+                    await supabaseClient.from('skate_votes').insert({
+                        skate_id: skateId,
+                        dark_votes: team === 'dark' ? 1 : 0,
+                        light_votes: team === 'light' ? 1 : 0
+                    });
+                }
+                await loadTeamsForSkate(skateId);
+            } catch (err) {
+                console.error('Vote failed:', err);
+            }
+        }
+
+        function updateTugBar(vote) {
+            const bar = document.getElementById('tugBar');
+            const label = document.getElementById('tugLabel');
+            const count = document.getElementById('tugVoteCount');
+            if (!bar || !label) return;
+
+            const dark = vote ? (vote.dark_votes || 0) : 0;
+            const light = vote ? (vote.light_votes || 0) : 0;
+            const total = dark + light;
+
+            if (total === 0) {
+                bar.style.width = '50%';
+                label.textContent = '—';
+                count.textContent = 'No votes yet';
+            } else {
+                const pct = Math.round((dark / total) * 100);
+                bar.style.width = pct + '%';
+                label.textContent = `${pct}% / ${100 - pct}%`;
+                count.textContent = `${total} vote${total !== 1 ? 's' : ''}`;
+            }
         }
 
         // ========== AT A GLANCE FUNCTIONS ==========
@@ -3611,7 +3750,6 @@
         }
 
     </script>
-    <!-- Rating Edit Modal -->
     <div id="ratingModal" class="modal" style="z-index: 2000;">
         <div class="modal-content" style="max-width: 340px; padding: 28px;">
             <div class="modal-header">
@@ -3633,6 +3771,5 @@
             </div>
         </div>
     </div>
-
 </body>
 </html>
