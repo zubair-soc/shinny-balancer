@@ -750,7 +750,48 @@
         }
 
         // ========== V2 RATING / PILLAR PROFILE ==========
-        function openPlayerProfile(id) {
+        const SKILLS_SCHEMA = {
+            skating: {
+                label: 'Skating', weight: 35, color: '#3b82f6',
+                skills: ['balance','strides','direction_change','pivots','zone_entry','off_wall','corners','punch_turns','mohawks','backwards_basic','backwards_crossovers'],
+                labels: ['Balance','Strides','Direction Change','Pivots','Zone Entry','Off the Wall','Corners','Punch Turns','Mohawks','Backwards Basic','Backwards Crossovers']
+            },
+            puck: {
+                label: 'Puck Skills', weight: 25, color: '#10b981',
+                skills: ['shooting','passing','stickhandling','receiving','protection'],
+                labels: ['Shooting','Passing','Stickhandling','Receiving','Puck Protection']
+            },
+            iq: {
+                label: 'Hockey IQ', weight: 20, color: '#8b5cf6',
+                skills: ['positioning','reads_anticipation','defensive_awareness','offensive_awareness','transition'],
+                labels: ['Positioning','Reads & Anticipation','Defensive Awareness','Offensive Awareness','Transition Play']
+            },
+            compete: {
+                label: 'Competitiveness', weight: 10, color: '#f59e0b',
+                skills: ['level','battle_wins','effort','resilience'],
+                labels: ['Compete Level','Battle Wins','Effort','Resilience']
+            },
+            readiness: {
+                label: 'Game Readiness', weight: 10, color: '#ef4444',
+                skills: ['conditioning','consistency','coachability','mental_focus'],
+                labels: ['Conditioning','Consistency','Coachability','Mental Focus']
+            }
+        };
+
+        function calcComposite(skills) {
+            if (!skills) return null;
+            let total = 0, weightSum = 0;
+            for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
+                const vals = def.skills.map(s => skills[`${cat}_${s}`]).filter(v => v !== null && v !== undefined);
+                if (vals.length === 0) continue;
+                const catAvg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                total += catAvg * (def.weight / 100);
+                weightSum += def.weight / 100;
+            }
+            return weightSum > 0 ? Math.round((total / weightSum) * 10) / 10 : null;
+        }
+
+        async function openPlayerProfile(id) {
             const player = allPlayers.find(p => p.id === id);
             if (!player) return;
 
@@ -773,8 +814,41 @@
             if (lowerPillar) document.getElementById('profileLowerPillar').value = lowerPillar.id;
             if (upperPillar) document.getElementById('profileUpperPillar').value = upperPillar.id;
 
+            // Load skills
+            const { data: skills } = await supabaseClient
+                .from('player_skills')
+                .select('*')
+                .eq('player_id', id)
+                .maybeSingle();
+
+            renderSkillsForm(skills);
+
             document.getElementById('playerProfileModal').dataset.playerId = id;
             document.getElementById('playerProfileModal').classList.add('active');
+        }
+
+        function renderSkillsForm(skills) {
+            const container = document.getElementById('skillsContainer');
+            container.innerHTML = Object.entries(SKILLS_SCHEMA).map(([cat, def]) => `
+                <div style="margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <span style="font-size: 13px; font-weight: 700; color: ${def.color}; text-transform: uppercase; letter-spacing: 0.5px;">${def.label}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">${def.weight}%</span>
+                        <div style="flex: 1; height: 1px; background: var(--card-border);"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        ${def.skills.map((s, i) => {
+                            const key = `${cat}_${s}`;
+                            const val = skills ? (skills[key] !== null && skills[key] !== undefined ? skills[key] : '') : '';
+                            return `<div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="flex: 1; font-size: 12px; color: var(--text-muted);">${def.labels[i]}</label>
+                                <input type="number" id="skill_${key}" min="0" max="100" step="1" value="${val}" placeholder="—"
+                                    style="width: 60px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 13px; text-align: center;">
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
         }
 
         async function savePlayerProfile() {
@@ -782,19 +856,36 @@
             const player = allPlayers.find(p => p.id === id);
             if (!player) return;
 
-            const rating_v2Raw = document.getElementById('profileV2Rating').value;
-            const rating_v2 = rating_v2Raw !== '' ? parseFloat(rating_v2Raw) : null;
+            // Collect all skill values
+            const skillsData = { player_id: id, updated_at: new Date().toISOString() };
+            for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
+                for (const s of def.skills) {
+                    const key = `${cat}_${s}`;
+                    const el = document.getElementById(`skill_${key}`);
+                    skillsData[key] = el && el.value !== '' ? parseFloat(el.value) : null;
+                }
+            }
+
+            // Calculate composite from skills if skills exist, else use manual v2
+            const composite = calcComposite(skillsData);
+            const manualV2Raw = document.getElementById('profileV2Rating').value;
+            const rating_v2 = composite !== null ? composite : (manualV2Raw !== '' ? parseFloat(manualV2Raw) : null);
+
             const is_pillar = document.getElementById('profileIsPillar').checked;
             const lower_pillar_id = document.getElementById('profileLowerPillar').value || null;
             const upper_pillar_id = document.getElementById('profileUpperPillar').value || null;
             const rating_v2_anchored = rating_v2 !== null;
 
             try {
+                // Save player fields
                 const { error } = await supabaseClient
                     .from('players')
                     .update({ rating_v2, is_pillar, lower_pillar_id, upper_pillar_id, rating_v2_anchored })
                     .eq('id', id);
                 if (error) throw error;
+
+                // Upsert skills
+                await supabaseClient.from('player_skills').upsert(skillsData, { onConflict: 'player_id' });
 
                 player.rating_v2 = rating_v2;
                 player.is_pillar = is_pillar;
@@ -840,18 +931,25 @@
         initTheme();
     </script>
     <!-- Player Profile Modal -->
-    <div id="playerProfileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:var(--card-bg); border-radius:16px; border:1px solid var(--card-border); padding:28px; width:100%; max-width:460px; margin:16px; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div id="playerProfileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:flex-start; justify-content:center; overflow-y:auto; padding:20px 16px;">
+        <div style="background:var(--card-bg); border-radius:16px; border:1px solid var(--card-border); padding:28px; width:100%; max-width:600px; margin:0 auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            
+            <!-- Header -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <span style="font-size:18px; font-weight:700; color:var(--text);">⭐ Player Profile</span>
                 <button onclick="closePillarModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted);">×</button>
             </div>
 
-            <div style="margin-bottom:20px; padding:12px 16px; background:rgba(var(--primary-rgb),0.1); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+            <!-- Player name + ratings -->
+            <div style="margin-bottom:20px; padding:12px 16px; background:rgba(var(--primary-rgb),0.1); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <strong id="profileName" style="color:var(--primary); font-size:16px;"></strong>
-                <span style="font-size:12px; color:var(--text-muted);">v1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
+                <div style="display:flex; gap:16px; font-size:12px; color:var(--text-muted);">
+                    <span>v1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
+                    <span id="profileAnchored" style="color:var(--primary);"></span>
+                </div>
             </div>
 
+            <!-- Pillar toggle -->
             <div style="margin-bottom:16px;">
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; color:var(--text);">
                     <input type="checkbox" id="profileIsPillar" style="width:16px; height:16px; flex-shrink:0;">
@@ -859,25 +957,36 @@
                 </label>
             </div>
 
+            <!-- Manual V2 override -->
             <div style="margin-bottom:16px;">
-                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">
-                    V2 Rating (0–100) <span id="profileAnchored" style="font-size:11px; color:var(--primary); margin-left:8px;"></span>
-                </label>
-                <input type="number" id="profileV2Rating" min="0" max="100" step="0.5" placeholder="e.g. 72"
+                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">V2 Rating Override (0–100) <span style="font-size:11px; font-weight:400;">— auto-calculated from skills if filled in</span></label>
+                <input type="number" id="profileV2Rating" min="0" max="100" step="0.5" placeholder="Auto from skills"
                     style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:16px;">
             </div>
 
-            <div style="margin-bottom:16px;">
-                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Lower Pillar (best player they're worse than)</label>
-                <select id="profileLowerPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px;"></select>
+            <!-- Pillars -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Lower Pillar (worse than)</label>
+                    <select id="profileLowerPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:13px;"></select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Upper Pillar (better than)</label>
+                    <select id="profileUpperPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:13px;"></select>
+                </div>
             </div>
 
-            <div style="margin-bottom:24px;">
-                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Upper Pillar (worst player they're better than)</label>
-                <select id="profileUpperPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px;"></select>
+            <!-- Divider -->
+            <div style="border-top:1px solid var(--card-border); margin-bottom:20px; padding-top:20px;">
+                <p style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px;">Skills Breakdown</p>
+                <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–100. Composite v2 is auto-calculated from weights.</p>
             </div>
 
-            <div style="display:flex; gap:10px;">
+            <!-- Skills form -->
+            <div id="skillsContainer"></div>
+
+            <!-- Buttons -->
+            <div style="display:flex; gap:10px; margin-top:24px; position:sticky; bottom:0; background:var(--card-bg); padding-top:16px; border-top:1px solid var(--card-border);">
                 <button onclick="closePillarModal()" style="flex:1; padding:12px; background:var(--card-border); border:1px solid var(--card-border); border-radius:8px; cursor:pointer; font-size:14px; color:var(--text);">Cancel</button>
                 <button onclick="savePlayerProfile()" style="flex:1; padding:12px; background:var(--primary); border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Save</button>
             </div>
