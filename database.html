@@ -792,7 +792,8 @@
             for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
                 const vals = def.skills.map(s => skills[`${cat}_${s}`]).filter(v => v !== null && v !== undefined);
                 if (vals.length === 0) continue;
-                const catAvg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                // Skills are 0-10, scale to 0-100 for composite
+                const catAvg = (vals.reduce((a, b) => a + b, 0) / vals.length) * 10;
                 total += catAvg * (def.weight / 100);
                 weightSum += def.weight / 100;
             }
@@ -850,7 +851,7 @@
                             const val = skills ? (skills[key] !== null && skills[key] !== undefined ? skills[key] : '') : '';
                             return `<div style="display: flex; align-items: center; gap: 8px;">
                                 <label style="flex: 1; font-size: 12px; color: var(--text-muted);">${def.labels[i]}</label>
-                                <input type="number" id="skill_${key}" min="0" max="100" step="1" value="${val}" placeholder="—"
+                                <input type="number" id="skill_${key}" min="0" max="10" step="0.5" value="${val}" placeholder="—"
                                     style="width: 60px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 13px; text-align: center;">
                             </div>`;
                         }).join('')}
@@ -864,13 +865,13 @@
             const player = allPlayers.find(p => p.id === id);
             if (!player) return;
 
-            // Collect all skill values
+            // Collect all skill values (clamped 0-10)
             const skillsData = { player_id: id, updated_at: new Date().toISOString() };
             for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
                 for (const s of def.skills) {
                     const key = `${cat}_${s}`;
                     const el = document.getElementById(`skill_${key}`);
-                    skillsData[key] = el && el.value !== '' ? parseFloat(el.value) : null;
+                    skillsData[key] = el && el.value !== '' ? Math.min(10, Math.max(0, parseFloat(el.value))) : null;
                 }
             }
 
@@ -893,7 +894,10 @@
                 if (error) throw error;
 
                 // Upsert skills
-                await supabaseClient.from('player_skills').upsert(skillsData, { onConflict: 'player_id' });
+                const { error: skillsError } = await supabaseClient
+                    .from('player_skills')
+                    .upsert(skillsData, { onConflict: 'player_id' });
+                if (skillsError) throw skillsError;
 
                 player.rating_v2 = rating_v2;
                 player.is_pillar = is_pillar;
@@ -901,11 +905,18 @@
                 player.upper_pillar_id = upper_pillar_id;
                 player.rating_v2_anchored = rating_v2_anchored;
 
-                closePillarModal();
                 filterPlayers(document.getElementById('searchBox').value);
+                // Show saved confirmation without closing
+                const saveBtn = document.querySelector('#playerProfileModal button[onclick="savePlayerProfile()"]');
+                if (saveBtn) {
+                    const orig = saveBtn.textContent;
+                    saveBtn.textContent = '✓ Saved';
+                    saveBtn.style.background = '#22c55e';
+                    setTimeout(() => { saveBtn.textContent = orig; saveBtn.style.background = ''; }, 2000);
+                }
             } catch (err) {
                 console.error('Save failed:', err);
-                alert('Failed to save player profile');
+                alert('Failed to save player profile: ' + (err.message || JSON.stringify(err)));
             }
         }
 
@@ -987,7 +998,7 @@
             <!-- Divider -->
             <div style="border-top:1px solid var(--card-border); margin-bottom:20px; padding-top:20px;">
                 <p style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px;">Skills Breakdown</p>
-                <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–100. Composite v2 is auto-calculated from weights.</p>
+                <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–10. Composite v2 (0–100) is auto-calculated from category weights.</p>
             </div>
 
             <!-- Skills form -->
