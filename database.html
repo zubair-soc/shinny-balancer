@@ -419,6 +419,7 @@
 
         <div class="toolbar">
             <input type="text" id="searchBox" class="search-box" placeholder="Search players...">
+            <button id="pillarFilterBtn" onclick="togglePillarFilter()" style="padding:8px 14px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#f59e0b; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;">⭐ Pillars</button>
             <button class="button" onclick="showAddModal()">+ Add Player</button>
             <button class="button button-secondary" onclick="exportCSV()">Export CSV</button>
             <div class="stats">
@@ -514,13 +515,11 @@
 
         function filterPlayers(searchTerm) {
             const term = searchTerm.toLowerCase().trim();
-            if (!term) {
-                filteredPlayers = [...allPlayers];
-            } else {
-                filteredPlayers = allPlayers.filter(p => 
-                    p.name.toLowerCase().includes(term)
-                );
-            }
+            filteredPlayers = allPlayers.filter(p => {
+                const matchesSearch = !term || p.name.toLowerCase().includes(term);
+                const matchesPillar = !pillarFilterActive || p.is_pillar;
+                return matchesSearch && matchesPillar;
+            });
             // Re-apply current sort
             filteredPlayers.sort((a, b) => {
                 let aVal = a[sortColumn] ?? (sortDirection === 'asc' ? Infinity : -Infinity);
@@ -757,6 +756,17 @@
             URL.revokeObjectURL(url);
         }
 
+        // ========== PILLAR FILTER ==========
+        let pillarFilterActive = false;
+
+        function togglePillarFilter() {
+            pillarFilterActive = !pillarFilterActive;
+            const btn = document.getElementById('pillarFilterBtn');
+            btn.style.background = pillarFilterActive ? 'rgba(245,158,11,0.4)' : 'rgba(245,158,11,0.15)';
+            btn.textContent = pillarFilterActive ? '⭐ Pillars ×' : '⭐ Pillars';
+            filterPlayers(document.getElementById('searchBox').value);
+        }
+
         // ========== V2 RATING / PILLAR PROFILE ==========
         const SKILLS_SCHEMA = {
             skating: {
@@ -781,8 +791,8 @@
             },
             readiness: {
                 label: 'Game Readiness', weight: 10, color: '#ef4444',
-                skills: ['conditioning','consistency','coachability','mental_focus'],
-                labels: ['Conditioning','Consistency','Coachability','Mental Focus']
+                skills: ['conditioning','consistency'],
+                labels: ['Conditioning','Consistency']
             }
         };
 
