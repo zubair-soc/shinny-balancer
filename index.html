@@ -2103,6 +2103,7 @@
                                         <div class="menu-item" onclick="giveCredit(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">💳 Give Credit</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
+                                        <div class="menu-item" onclick="window.open('database.html?player=${encodeURIComponent(player.player_name)}', '_blank'); closeMenu(${player.id})">📊 View in Database</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
                                     </div>
                                 </div>

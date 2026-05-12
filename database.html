@@ -851,6 +851,13 @@
             if (lowerPillar) document.getElementById('profileLowerPillar').value = lowerPillar.id;
             if (upperPillar) document.getElementById('profileUpperPillar').value = upperPillar.id;
 
+            // Hook pillar selects to auto-calculate midpoint
+            document.getElementById('profileLowerPillar').onchange = recalcFromPillars;
+            document.getElementById('profileUpperPillar').onchange = recalcFromPillars;
+
+            // Auto-calc on open if pillars already set and no manual v2 override
+            if (lowerPillar && upperPillar) setTimeout(recalcFromPillars, 100);
+
             // Load skills
             const { data: skills } = await supabaseClient
                 .from('player_skills')
@@ -898,6 +905,34 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function recalcFromPillars() {
+            const lowerId = document.getElementById('profileLowerPillar').value;
+            const upperId = document.getElementById('profileUpperPillar').value;
+            if (!lowerId || !upperId) return;
+
+            const lower = allPlayers.find(p => p.id == lowerId);
+            const upper = allPlayers.find(p => p.id == upperId);
+            if (!lower || !upper) return;
+
+            const lowerV2 = lower.rating_v2 || 0;
+            const upperV2 = upper.rating_v2 || 0;
+            const midpoint = Math.round(((lowerV2 + upperV2) / 2) * 10) / 10;
+
+            // Set v2 override field
+            document.getElementById('profileV2Rating').value = midpoint;
+
+            // Pre-fill all skills proportionally (midpoint/10 on 0-10 scale)
+            const skillVal = Math.round((midpoint / 10) * 10) / 10;
+            for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
+                for (const s of def.skills) {
+                    const el = document.getElementById(`skill_${cat}_${s}`);
+                    if (el && (!el.value || el.value === '')) {
+                        el.value = Math.min(10, skillVal);
+                    }
+                }
+            }
         }
 
         async function savePlayerProfile() {
