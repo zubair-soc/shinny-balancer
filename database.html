@@ -506,6 +506,7 @@
                 filteredPlayers = [...allPlayers];
                 renderTable();
                 updateStats();
+                checkDeepLink();
             } catch (error) {
                 console.error('Error loading players:', error);
                 document.getElementById('playerTableBody').innerHTML = 
@@ -756,6 +757,23 @@
             URL.revokeObjectURL(url);
         }
 
+        // ========== DEEP LINK FROM ROSTER ==========
+        function checkDeepLink() {
+            const params = new URLSearchParams(window.location.search);
+            const playerName = params.get('player');
+            if (!playerName) return;
+
+            // Search for the player
+            document.getElementById('searchBox').value = playerName;
+            filterPlayers(playerName);
+
+            // Find and open their profile
+            const player = allPlayers.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+            if (player) {
+                setTimeout(() => openPlayerProfile(player.id), 300);
+            }
+        }
+
         // ========== PILLAR FILTER ==========
         let pillarFilterActive = false;
 
@@ -840,7 +858,19 @@
                 .eq('player_id', id)
                 .maybeSingle();
 
-            renderSkillsForm(skills);
+            // If no skills but player has a v2 rating, prefill inputs proportionally
+            if (!skills && player.rating_v2) {
+                const prefillVal = Math.round((player.rating_v2 / 10) * 10) / 10;
+                const prefilled = {};
+                for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
+                    for (const s of def.skills) {
+                        prefilled[`${cat}_${s}`] = Math.min(10, prefillVal);
+                    }
+                }
+                renderSkillsForm(prefilled);
+            } else {
+                renderSkillsForm(skills);
+            }
 
             document.getElementById('playerProfileModal').dataset.playerId = id;
             document.getElementById('playerProfileModal').classList.add('active');
@@ -888,7 +918,23 @@
             // Calculate composite from skills if skills exist, else use manual v2
             const composite = calcComposite(skillsData);
             const manualV2Raw = document.getElementById('profileV2Rating').value;
-            const rating_v2 = composite !== null ? composite : (manualV2Raw !== '' ? parseFloat(manualV2Raw) : null);
+            const manualV2 = manualV2Raw !== '' ? parseFloat(manualV2Raw) : null;
+            const rating_v2 = composite !== null ? composite : manualV2;
+
+            // If manual v2 set but no skills filled in yet, auto-distribute across all skills
+            // skill value = (v2 / 100) * 10 = v2 / 10
+            const hasSkills = composite !== null;
+            if (!hasSkills && manualV2 !== null) {
+                const skillVal = Math.round((manualV2 / 10) * 10) / 10;
+                for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
+                    for (const s of def.skills) {
+                        const key = `${cat}_${s}`;
+                        if (skillsData[key] === null) {
+                            skillsData[key] = Math.min(10, skillVal);
+                        }
+                    }
+                }
+            }
 
             const is_pillar = document.getElementById('profileIsPillar').checked;
             const lower_pillar_id = document.getElementById('profileLowerPillar').value || null;
