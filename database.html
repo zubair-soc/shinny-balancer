@@ -802,8 +802,8 @@
             for (const [cat, def] of Object.entries(SKILLS_SCHEMA)) {
                 const vals = def.skills.map(s => skills[`${cat}_${s}`]).filter(v => v !== null && v !== undefined);
                 if (vals.length === 0) continue;
-                // Skills are 0-10, scale to 0-100 for composite
-                const catAvg = (vals.reduce((a, b) => a + b, 0) / vals.length) * 10;
+                // Skills are 0-100, same scale as composite
+                const catAvg = vals.reduce((a, b) => a + b, 0) / vals.length;
                 total += catAvg * (def.weight / 100);
                 weightSum += def.weight / 100;
             }
@@ -861,7 +861,7 @@
                             const val = skills ? (skills[key] !== null && skills[key] !== undefined ? skills[key] : '') : '';
                             return `<div style="display: flex; align-items: center; gap: 8px;">
                                 <label style="flex: 1; font-size: 12px; color: var(--text-muted);">${def.labels[i]}</label>
-                                <input type="number" id="skill_${key}" min="0" max="10" step="0.5" value="${val}" placeholder="—"
+                                <input type="number" id="skill_${key}" min="0" max="100" step="1" value="${val}" placeholder="—"
                                     style="width: 60px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 8px; color: var(--text); font-size: 13px; text-align: center;">
                             </div>`;
                         }).join('')}
@@ -881,7 +881,7 @@
                 for (const s of def.skills) {
                     const key = `${cat}_${s}`;
                     const el = document.getElementById(`skill_${key}`);
-                    skillsData[key] = el && el.value !== '' ? Math.min(10, Math.max(0, parseFloat(el.value))) : null;
+                    skillsData[key] = el && el.value !== '' ? Math.min(100, Math.max(0, parseFloat(el.value))) : null;
                 }
             }
 
@@ -1008,7 +1008,7 @@
             <!-- Divider -->
             <div style="border-top:1px solid var(--card-border); margin-bottom:20px; padding-top:20px;">
                 <p style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px;">Skills Breakdown</p>
-                <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–10. Composite v2 (0–100) is auto-calculated from category weights.</p>
+                <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–100. Composite v2 is auto-calculated from category weights.</p>
             </div>
 
             <!-- Skills form -->

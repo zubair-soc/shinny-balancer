@@ -3588,13 +3588,13 @@
                     .from('player_skills').select('*').eq('player_id', player.id).maybeSingle();
 
                 if (skills) {
-                    // Skills are 0-10, composite is 0-100
-                    // 1 composite point = 0.1 skill points, spread across 29 skills
-                    const skillNudge = Math.round(((nudgeAmount * 0.1) / NUDGE_SKILLS.length) * 1000) / 1000;
+                    // Skills are 0-100, same scale as composite
+                    // 1 composite point spread equally across all skills
+                    const skillNudge = Math.round((nudgeAmount / NUDGE_SKILLS.length) * 100) / 100;
                     const updates = {};
                     for (const key of NUDGE_SKILLS) {
-                        const current = skills[key] !== null && skills[key] !== undefined ? skills[key] : 5;
-                        updates[key] = Math.min(10, Math.max(0, Math.round((current + skillNudge) * 100) / 100));
+                        const current = skills[key] !== null && skills[key] !== undefined ? skills[key] : 50;
+                        updates[key] = Math.min(100, Math.max(0, Math.round((current + skillNudge) * 100) / 100));
                     }
                     updates.updated_at = new Date().toISOString();
                     await supabaseClient.from('player_skills').update(updates).eq('player_id', player.id);
