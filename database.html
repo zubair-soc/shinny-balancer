@@ -435,6 +435,7 @@
                         <th onclick="sortTable('name')">Name ↕</th>
                         <th onclick="sortTable('rating')">Rating ↕</th>
                         <th onclick="sortTable('rating_v2')">V2 ↕</th>
+                        <th onclick="sortTable('rating_v2b')">V2B ↕</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -497,7 +498,7 @@
             try {
                 const { data, error } = await supabaseClient
                     .from('players')
-                    .select('id, name, rating, rating_v2, rating_v2_anchored, is_pillar, lower_pillar_id, upper_pillar_id')
+                    .select('id, name, rating, rating_v2, rating_v2b, rating_v2_anchored, is_pillar, lower_pillar_id, upper_pillar_id')
                     .order('name');
 
                 if (error) throw error;
@@ -564,7 +565,7 @@
             const tbody = document.getElementById('playerTableBody');
             
             if (filteredPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
                 return;
             }
 
@@ -574,6 +575,7 @@
                     <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
                     <td class="rating-cell">${player.rating ?? '—'}</td>
                     <td class="rating-cell" style="color: #8b5cf6;">${player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '—'}</td>
+                    <td class="rating-cell" style="color: #10b981;">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
                     <td class="actions">
                         <button class="icon-button" onclick="editName(${player.id}, '${player.name.replace(/'/g, "\'")}')" title="Edit name">🖊️</button>
                         <button class="icon-button" onclick="editRating(${player.id}, '${player.name.replace(/'/g, "\'")}', ${player.rating})" title="Edit rating">✏️</button>
@@ -786,6 +788,32 @@
         }
 
         // ========== V2 RATING / PILLAR PROFILE ==========
+        const SIMPLE_RUBRIC = {
+            skating:        { label: 'Skating',        weight: 35, color: '#3b82f6',
+                desc: ['Struggles to move/play safely', 'Can skate but movement limits gameplay', 'Functional movement for shinny pace', 'Strong mobility and recovery', 'Skating consistently impacts play'] },
+            puck_skills:    { label: 'Puck Skills',    weight: 25, color: '#10b981',
+                desc: ['Frequently loses puck', 'Limited puck control under pressure', 'Functional puck play', 'Strong execution during gameplay', 'Creates offense consistently'] },
+            hockey_iq:      { label: 'Hockey IQ',      weight: 20, color: '#8b5cf6',
+                desc: ['Frequently lost or out of position', 'Limited awareness of game flow', 'Understands basic positioning', 'Strong support and positioning', 'Anticipates and controls play'] },
+            competitiveness:{ label: 'Competitiveness', weight: 10, color: '#f59e0b',
+                desc: ['Frequently disengaged', 'Inconsistent effort', 'Competes reasonably consistently', 'Strong consistent engagement', 'Drives play through effort level'] },
+            game_readiness: { label: 'Game Readiness', weight: 10, color: '#ef4444',
+                desc: ['Frequently overwhelmed', 'Struggles processing game pace', 'Can participate independently', 'Comfortable and confident', 'Thrives in fast-paced gameplay'] }
+        };
+
+        function calcCompositeSimple(skills) {
+            if (!skills) return null;
+            let total = 0, weightSum = 0;
+            for (const [key, def] of Object.entries(SIMPLE_RUBRIC)) {
+                const val = skills[key];
+                if (val === null || val === undefined) continue;
+                // Skills 0-5, scale to 0-100
+                total += (val / 5) * 100 * (def.weight / 100);
+                weightSum += def.weight / 100;
+            }
+            return weightSum > 0 ? Math.round((total / weightSum) * 10) / 10 : null;
+        }
+
         const SKILLS_SCHEMA = {
             skating: {
                 label: 'Skating', weight: 35, color: '#3b82f6',
@@ -858,7 +886,7 @@
             // Auto-calc on open if pillars already set and no manual v2 override
             if (lowerPillar && upperPillar) setTimeout(recalcFromPillars, 100);
 
-            // Load skills
+            // Load detailed skills
             const { data: skills } = await supabaseClient
                 .from('player_skills')
                 .select('*')
@@ -878,6 +906,14 @@
             } else {
                 renderSkillsForm(skills);
             }
+
+            // Load simple rubric skills
+            const { data: simpleSkills } = await supabaseClient
+                .from('player_skills_simple')
+                .select('*')
+                .eq('player_id', id)
+                .maybeSingle();
+            renderSimpleRubricForm(simpleSkills);
 
             document.getElementById('playerProfileModal').dataset.playerId = id;
             document.getElementById('playerProfileModal').classList.add('active');
@@ -905,6 +941,42 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function renderSimpleRubricForm(skills) {
+            const container = document.getElementById('simpleRubricContainer');
+            if (!container) return;
+            container.innerHTML = Object.entries(SIMPLE_RUBRIC).map(([key, def]) => {
+                const val = skills ? (skills[key] !== null && skills[key] !== undefined ? skills[key] : '') : '';
+                return `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 13px; font-weight: 700; color: ${def.color}; text-transform: uppercase; letter-spacing: 0.5px;">${def.label}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">${def.weight}%</span>
+                        <div style="flex: 1; height: 1px; background: var(--card-border);"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="number" id="simple_${key}" min="0" max="5" step="0.5" value="${val}" placeholder="—"
+                            oninput="updateSimpleComposite()"
+                            style="width: 70px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 14px; text-align: center;">
+                        <div style="flex: 1;">
+                            ${def.desc.map((d, i) => `<div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;"><span style="color: ${def.color}; font-weight: 600;">${i+1}</span> — ${d}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            updateSimpleComposite();
+        }
+
+        function updateSimpleComposite() {
+            const skills = {};
+            for (const key of Object.keys(SIMPLE_RUBRIC)) {
+                const el = document.getElementById(`simple_${key}`);
+                skills[key] = el && el.value !== '' ? parseFloat(el.value) : null;
+            }
+            const composite = calcCompositeSimple(skills);
+            const el = document.getElementById('profileV2bComposite');
+            if (el) el.textContent = composite !== null ? `→ V2B: ${composite}` : '';
         }
 
         function recalcFromPillars() {
@@ -984,13 +1056,29 @@
                     .eq('id', id);
                 if (error) throw error;
 
-                // Upsert skills
+                // Upsert detailed skills
                 const { error: skillsError } = await supabaseClient
                     .from('player_skills')
                     .upsert(skillsData, { onConflict: 'player_id' });
                 if (skillsError) throw skillsError;
 
+                // Collect and upsert simple rubric skills
+                const simpleData = { player_id: id, updated_at: new Date().toISOString() };
+                for (const key of Object.keys(SIMPLE_RUBRIC)) {
+                    const el = document.getElementById(`simple_${key}`);
+                    simpleData[key] = el && el.value !== '' ? Math.min(5, Math.max(0, parseFloat(el.value))) : null;
+                }
+                const rating_v2b = calcCompositeSimple(simpleData);
+                const { error: simpleError } = await supabaseClient
+                    .from('player_skills_simple')
+                    .upsert(simpleData, { onConflict: 'player_id' });
+                if (simpleError) throw simpleError;
+
+                // Update v2b on players table
+                await supabaseClient.from('players').update({ rating_v2b }).eq('id', id);
+
                 player.rating_v2 = rating_v2;
+                player.rating_v2b = rating_v2b;
                 player.is_pillar = is_pillar;
                 player.lower_pillar_id = lower_pillar_id;
                 player.upper_pillar_id = upper_pillar_id;
@@ -1092,8 +1180,18 @@
                 <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–10. Composite v2 (0–100) is auto-calculated from category weights.</p>
             </div>
 
-            <!-- Skills form -->
+            <!-- Detailed skills form -->
             <div id="skillsContainer"></div>
+
+            <!-- Simple Rubric Section -->
+            <div style="border-top:1px solid var(--card-border); margin: 24px 0 20px; padding-top:20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                    <p style="font-size:13px; font-weight:700; color:var(--text); margin:0;">Simple Rubric (V2B)</p>
+                    <span id="profileV2bComposite" style="font-size:12px; color:#10b981; font-weight:600;"></span>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Rate each category 0–5 using the descriptions as a guide.</p>
+                <div id="simpleRubricContainer"></div>
+            </div>
 
             <!-- Buttons -->
             <div style="display:flex; gap:10px; margin-top:24px; position:sticky; bottom:0; background:var(--card-bg); padding-top:16px; border-top:1px solid var(--card-border);">
