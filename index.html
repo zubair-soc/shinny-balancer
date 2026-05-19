@@ -1672,6 +1672,10 @@
                 durationEl.value = '60';
             } else if (tier === 'Stick n Puck') {
                 costEl.value = '$20';
+                durationEl.value = '90';
+            } else if (tier && tier !== 'custom') {
+                costEl.value = '$25';
+                durationEl.value = '90';
             }
         }
 
