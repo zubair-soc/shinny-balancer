@@ -828,6 +828,7 @@
                         <option value="3v3">3v3</option>
                         <option value="Breakfast of Champions">Breakfast of Champions</option>
                         <option value="Skills Development">Skills Development</option>
+                        <option value="Stick n Puck">Stick n Puck</option>
                         <option value="Ladies Elite Shinny - McAlpine">Ladies Elite Shinny - McAlpine</option>
                         <option value="custom">+ Add Custom Tier</option>
                     </select>
@@ -1656,6 +1657,21 @@
             } else {
                 document.getElementById('customTierInput').style.display = 'none';
                 updateSkateTitle();
+            }
+
+            // Auto-set price and duration based on tier
+            const tier = select.value;
+            const costEl = document.getElementById('skateCost');
+            const durationEl = document.getElementById('skateDuration');
+
+            if (tier === 'Breakfast of Champions') {
+                costEl.value = '$30';
+                durationEl.value = '120';
+            } else if (tier === '3v3') {
+                costEl.value = '$20';
+                durationEl.value = '60';
+            } else if (tier === 'Stick n Puck') {
+                costEl.value = '$20';
             }
         }
 
