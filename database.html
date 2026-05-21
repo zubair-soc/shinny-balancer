@@ -433,9 +433,13 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
-                        <th onclick="sortTable('rating')">Rating ↕</th>
-                        <th onclick="sortTable('rating_v2')">V2 ↕</th>
-                        <th onclick="sortTable('rating_v2b')">V2B ↕</th>
+                        <th>
+                            <select id="ratingColumnSelect" onchange="renderTable()" style="background:transparent; border:none; font-size:12px; font-weight:700; cursor:pointer; color:inherit; text-transform:uppercase; letter-spacing:0.05em;">
+                                <option value="rating">Rating ↕</option>
+                                <option value="rating_v2">V2 ↕</option>
+                                <option value="rating_v2b">V2B ↕</option>
+                            </select>
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -563,19 +567,102 @@
 
         function renderTable() {
             const tbody = document.getElementById('playerTableBody');
+            if (!tbody) return;
+
+            if (filteredPlayers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
+                return;
+            }
+
+            const ratingCol = document.getElementById('ratingColumnSelect')?.value || 'rating';
+            const ratingColors = { rating: 'var(--primary)', rating_v2: '#8b5cf6', rating_v2b: '#10b981' };
+
+            tbody.innerHTML = filteredPlayers.map(player => {
+                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
+                return `
+                <tr>
+                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
+                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
+                    <td class="actions">
+                        <div style="position:relative; display:inline-block;">
+                            <button class="icon-button" onclick="toggleDbMenu(${player.id})" title="Actions">⋯</button>
+                            <div id="dbmenu-${player.id}" style="display:none; position:absolute; right:0; top:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.2); z-index:100; min-width:160px; overflow:hidden;">
+                                <div onclick="editName(${player.id}, '${player.name.replace(/'/g, "\'")}'); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">🖊️ Edit Name</div>
+                                <div onclick="editRating(${player.id}, '${player.name.replace(/'/g, "\'")}', ${player.rating}); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">✏️ Edit Rating</div>
+                                <div onclick="openPlayerProfile(${player.id}); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#f59e0b;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">⭐ V2 Profile</div>
+                                <div onclick="confirmDelete(${player.id}, '${player.name.replace(/'/g, "\'")}'); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#ef4444;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">🗑️ Delete</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+                function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            filteredPlayers.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                if (column === 'name') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (sortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('playerTableBody');
             
             if (filteredPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
                 return;
             }
 
 
-            tbody.innerHTML = filteredPlayers.map(player => `
+            const ratingCol = document.getElementById('ratingColumnSelect')?.value || 'rating';
+            const ratingColors = { rating: 'var(--primary)', rating_v2: '#8b5cf6', rating_v2b: '#10b981' };
+            tbody.innerHTML = filteredPlayers.map(player => {
+                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
+                return `
                 <tr>
                     <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
-                    <td class="rating-cell">${player.rating ?? '—'}</td>
-                    <td class="rating-cell" style="color: #8b5cf6;">${player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '—'}</td>
-                    <td class="rating-cell" style="color: #10b981;">${player.rating_v2b !== null && player.rating_v2b !== undefined ? `${player.rating_v2b} (${Math.round((player.rating_v2b / 5) * 100)})` : '—'}</td>
+                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
+                    <td class="actions">`;
+            }).join('') + filteredPlayers.map(player => '').join('');
+
+            // Rebuild properly
+            tbody.innerHTML = filteredPlayers.map(player => {
+                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
+                return `<tr>
+                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
+                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
+                    <td class="actions">`;
+            // dummy to remove
+            }).join('placeholder');
+            
+            // Actually do it cleanly
+            tbody.innerHTML = '';
+            filteredPlayers.forEach(player => {
+                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
+                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
                     <td class="actions">
                         <button class="icon-button" onclick="editName(${player.id}, '${player.name.replace(/'/g, "\'")}')" title="Edit name">🖊️</button>
                         <button class="icon-button" onclick="editRating(${player.id}, '${player.name.replace(/'/g, "\'")}', ${player.rating})" title="Edit rating">✏️</button>
@@ -775,6 +862,30 @@
                 setTimeout(() => openPlayerProfile(player.id), 300);
             }
         }
+
+        // ========== DB ACTION MENU ==========
+        let openDbMenuId = null;
+
+        function toggleDbMenu(id) {
+            if (openDbMenuId && openDbMenuId !== id) closeDbMenu(openDbMenuId);
+            const menu = document.getElementById(`dbmenu-${id}`);
+            if (!menu) return;
+            const isOpen = menu.style.display === 'block';
+            menu.style.display = isOpen ? 'none' : 'block';
+            openDbMenuId = isOpen ? null : id;
+        }
+
+        function closeDbMenu(id) {
+            const menu = document.getElementById(`dbmenu-${id}`);
+            if (menu) menu.style.display = 'none';
+            openDbMenuId = null;
+        }
+
+        document.addEventListener('click', (e) => {
+            if (openDbMenuId && !e.target.closest(`#dbmenu-${openDbMenuId}`) && !e.target.closest('.icon-button')) {
+                closeDbMenu(openDbMenuId);
+            }
+        });
 
         // ========== PILLAR FILTER ==========
         let pillarFilterActive = false;
