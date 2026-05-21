@@ -807,8 +807,7 @@
             for (const [key, def] of Object.entries(SIMPLE_RUBRIC)) {
                 const val = skills[key];
                 if (val === null || val === undefined) continue;
-                // Skills 0-5, scale to 0-100
-                total += (val / 5) * 100 * (def.weight / 100);
+                total += val * (def.weight / 100);
                 weightSum += def.weight / 100;
             }
             return weightSum > 0 ? Math.round((total / weightSum) * 10) / 10 : null;
