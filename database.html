@@ -575,7 +575,7 @@
                     <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
                     <td class="rating-cell">${player.rating ?? '—'}</td>
                     <td class="rating-cell" style="color: #8b5cf6;">${player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '—'}</td>
-                    <td class="rating-cell" style="color: #10b981;">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
+                    <td class="rating-cell" style="color: #10b981;">${player.rating_v2b !== null && player.rating_v2b !== undefined ? `${player.rating_v2b} (${Math.round((player.rating_v2b / 5) * 100)})` : '—'}</td>
                     <td class="actions">
                         <button class="icon-button" onclick="editName(${player.id}, '${player.name.replace(/'/g, "\'")}')" title="Edit name">🖊️</button>
                         <button class="icon-button" onclick="editRating(${player.id}, '${player.name.replace(/'/g, "\'")}', ${player.rating})" title="Edit rating">✏️</button>
@@ -975,7 +975,12 @@
             }
             const composite = calcCompositeSimple(skills);
             const el = document.getElementById('profileV2bComposite');
-            if (el) el.textContent = composite !== null ? `→ V2B: ${composite}` : '';
+            if (el && composite !== null) {
+                const outOf100 = Math.round((composite / 5) * 100);
+                el.textContent = `→ V2B: ${composite} (${outOf100})`;
+            } else if (el) {
+                el.textContent = '';
+            }
         }
 
         function recalcFromPillars() {
