@@ -585,7 +585,7 @@
                         <div style="display:flex; gap:4px; flex-wrap:wrap;">
                             <button class="icon-button" onclick="editName(${player.id}, '${safeName}')" title="Edit name">🖊️</button>
                             <button class="icon-button" onclick="editRating(${player.id}, '${safeName}', ${player.rating})" title="Edit rating">✏️</button>
-                            <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="V2 Profile" style="display:none; color:#f59e0b;">⭐</button>
+                            <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="Rate Player" style="color:#10b981;">📊</button>
                             <button class="icon-button delete" onclick="confirmDelete(${player.id}, '${safeName}')" title="Delete">🗑️</button>
                         </div>
                     </td>
@@ -1401,6 +1401,7 @@
                             <option value="">— Select Rater —</option>
                             <option value="Zubair">Zubair</option>
                             <option value="Sam">Sam</option>
+                            <option value="Cherish">Cherish</option>
                         </select>
                     </div>
                 </div>
