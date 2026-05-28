@@ -583,12 +583,12 @@
                     <td class="rating-cell" style="color:#10b981">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
                     <td class="actions">
                         <div style="position:relative; display:inline-block;">
-                            <button class="icon-button" onclick="toggleDbMenu(${player.id})" title="Actions">⋯</button>
-                            <div id="dbmenu-${player.id}" style="display:none; position:absolute; right:0; top:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.2); z-index:100; min-width:160px; overflow:hidden;">
-                                <div onclick="editName(${player.id}, '${safeName}')" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">🖊️ Edit Name</div>
-                                <div onclick="editRating(${player.id}, '${safeName}', ${player.rating})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">✏️ Edit Rating</div>
-                                <div onclick="openPlayerProfile(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#f59e0b;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">⭐ V2 Profile</div>
-                                <div onclick="confirmDelete(${player.id}, '${safeName}')" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#ef4444;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">🗑️ Delete</div>
+                            <button class="icon-button" onclick="toggleDbMenu(event, ${player.id})" title="Actions">⋯</button>
+                            <div id="dbmenu-${player.id}" style="display:none; position:fixed; background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:9999; min-width:160px; overflow:hidden;">
+                                <div onclick="editName(${player.id}, '${safeName}'); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">🖊️ Edit Name</div>
+                                <div onclick="editRating(${player.id}, '${safeName}', ${player.rating}); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">✏️ Edit Rating</div>
+                                <div onclick="openPlayerProfile(${player.id}); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#f59e0b;" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">⭐ V2 Profile</div>
+                                <div onclick="confirmDelete(${player.id}, '${safeName}'); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#ef4444;" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">🗑️ Delete</div>
                             </div>
                         </div>
                     </td>
@@ -816,13 +816,22 @@
         // ========== DB ACTION MENU ==========
         let openDbMenuId = null;
 
-        function toggleDbMenu(id) {
+        function toggleDbMenu(event, id) {
             if (openDbMenuId && openDbMenuId !== id) closeDbMenu(openDbMenuId);
             const menu = document.getElementById(`dbmenu-${id}`);
             if (!menu) return;
             const isOpen = menu.style.display === 'block';
-            menu.style.display = isOpen ? 'none' : 'block';
-            openDbMenuId = isOpen ? null : id;
+            if (isOpen) { closeDbMenu(id); return; }
+
+            // Position menu relative to button using fixed coords
+            const btn = event.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            menu.style.display = 'block';
+            const menuWidth = 160;
+            const left = Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8);
+            menu.style.top = (rect.bottom + 4) + 'px';
+            menu.style.left = Math.max(8, left) + 'px';
+            openDbMenuId = id;
         }
 
         function closeDbMenu(id) {
