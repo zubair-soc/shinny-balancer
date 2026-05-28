@@ -971,7 +971,8 @@
             document.getElementById('profileV1Rating').textContent = player.rating ?? '—';
             document.getElementById('profileV2Rating').value = player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '';
             document.getElementById('profileIsPillar').checked = player.is_pillar || false;
-            document.getElementById('profileAnchored').textContent = player.rating_v2_anchored ? '✓ Anchored' : 'Not anchored';
+            document.getElementById('profileAnchored').textContent = '';
+            document.getElementById('profileV2bDisplay').textContent = player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—';
 
             const pillarOptions = '<option value="">— None —</option>' + pillars.map(p =>
                 `<option value="${p.id}">${p.name} (${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '?'})</option>`
@@ -1012,6 +1013,14 @@
                 renderSkillsForm(skills);
             }
 
+            // Load draft from player_skills_simple
+            const { data: draft } = await supabaseClient
+                .from('player_skills_simple')
+                .select('*')
+                .eq('player_id', id)
+                .maybeSingle();
+            renderSimpleRubricForm(draft);
+
             // Load v2b ratings history
             const { data: v2bHistory } = await supabaseClient
                 .from('v2b_ratings')
@@ -1019,7 +1028,6 @@
                 .eq('player_id', id)
                 .order('created_at', { ascending: false })
                 .limit(10);
-            renderSimpleRubricForm(v2bHistory && v2bHistory.length > 0 ? v2bHistory[0] : null);
             renderV2bHistory(v2bHistory || []);
 
             document.getElementById('playerProfileModal').dataset.playerId = id;
@@ -1091,6 +1099,34 @@
         function toggleRubricInfo(id) {
             const el = document.getElementById(id);
             if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function saveDraftV2b() {
+            const id = parseInt(document.getElementById('playerProfileModal').dataset.playerId);
+
+            const skills = {};
+            for (const key of Object.keys(SIMPLE_RUBRIC)) {
+                const el = document.getElementById(`simple_${key}`);
+                skills[key] = el && el.value !== '' ? Math.min(5, Math.max(1, parseFloat(el.value))) : null;
+            }
+            const composite = calcCompositeSimple(skills);
+
+            try {
+                // Save to player_skills_simple as draft
+                await supabaseClient.from('player_skills_simple')
+                    .upsert({ player_id: id, ...skills, updated_at: new Date().toISOString() }, { onConflict: 'player_id' });
+
+                const btn = document.querySelector('#playerProfileModal button[onclick="saveDraftV2b()"]');
+                if (btn) {
+                    const orig = btn.textContent;
+                    btn.textContent = '✓ Saved';
+                    btn.style.background = '#22c55e';
+                    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+                }
+            } catch (err) {
+                console.error('Save draft failed:', err);
+                alert('Failed to save: ' + (err.message || err));
+            }
         }
 
         async function submitV2bRating() {
@@ -1376,7 +1412,8 @@
                 <strong id="profileName" style="color:var(--primary); font-size:16px;"></strong>
                 <div style="display:flex; gap:16px; font-size:12px; color:var(--text-muted);">
                     <span>v1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
-                    <span id="profileAnchored" style="color:var(--primary);"></span>
+                    <span id="profileAnchored" style="display:none;"></span>
+                    <span>v2b: <strong id="profileV2bDisplay" style="color:#10b981;">—</strong></span>
                 </div>
             </div>
 
@@ -1417,9 +1454,10 @@
                 </div>
             </div>
 
-            <!-- Close button -->
+            <!-- Buttons -->
             <div style="display:flex; gap:10px; margin-top:24px; position:sticky; bottom:0; background:var(--card-bg); padding-top:16px; border-top:1px solid var(--card-border);">
                 <button onclick="closePillarModal()" style="flex:1; padding:12px; background:var(--card-border); border:1px solid var(--card-border); border-radius:8px; cursor:pointer; font-size:14px; color:var(--text);">Close</button>
+                <button onclick="saveDraftV2b()" style="flex:1; padding:12px; background:var(--primary); border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Save Draft</button>
             </div>
         </div>
     </div>
