@@ -823,14 +823,23 @@
             const isOpen = menu.style.display === 'block';
             if (isOpen) { closeDbMenu(id); return; }
 
-            // Position menu relative to button using fixed coords
             const btn = event.currentTarget;
             const rect = btn.getBoundingClientRect();
-            menu.style.display = 'block';
             const menuWidth = 160;
-            const left = Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8);
-            menu.style.top = (rect.bottom + 4) + 'px';
-            menu.style.left = Math.max(8, left) + 'px';
+            const menuHeight = 160; // approximate
+
+            // Horizontal: align to right of button, clamp to viewport
+            const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+
+            // Vertical: open upward if not enough space below
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const top = spaceBelow < menuHeight + 8
+                ? Math.max(8, rect.top - menuHeight - 4)
+                : rect.bottom + 4;
+
+            menu.style.display = 'block';
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
             openDbMenuId = id;
         }
 
