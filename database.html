@@ -438,13 +438,8 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
-                        <th>
-                            <select id="ratingColumnSelect" onchange="renderTable()" style="background:transparent; border:none; font-size:12px; font-weight:700; cursor:pointer; color:inherit; text-transform:uppercase; letter-spacing:0.05em;">
-                                <option value="rating">Rating ↕</option>
-                                <option value="rating_v2">V2 ↕</option>
-                                <option value="rating_v2b">V2B ↕</option>
-                            </select>
-                        </th>
+                        <th onclick="sortTable('rating')" style="cursor:pointer;">V1 ↕</th>
+                        <th onclick="sortTable('rating_v2b')" style="cursor:pointer;">V2B ↕</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -575,20 +570,17 @@
             if (!tbody) return;
 
             if (filteredPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
                 return;
             }
 
-            const ratingCol = document.getElementById('ratingColumnSelect')?.value || 'rating';
-            const ratingColors = { rating: 'var(--primary)', rating_v2: '#8b5cf6', rating_v2b: '#10b981' };
-
             tbody.innerHTML = filteredPlayers.map(player => {
-                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
                 const safeName = player.name.replace(/'/g, '&#39;');
                 return `
                 <tr>
                     <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
-                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
+                    <td class="rating-cell" style="color:var(--primary)">${player.rating ?? '—'}</td>
+                    <td class="rating-cell" style="color:#10b981">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
                     <td class="actions">
                         <div style="position:relative; display:inline-block;">
                             <button class="icon-button" onclick="toggleDbMenu(${player.id})" title="Actions">⋯</button>
@@ -1295,14 +1287,8 @@
                 </div>
             </div>
 
-            <!-- Divider -->
-            <div style="border-top:1px solid var(--card-border); margin-bottom:20px; padding-top:20px;">
-                <p style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px;">Skills Breakdown</p>
-                <p style="font-size:12px; color:var(--text-muted);">Rate each skill 0–10. Composite v2 (0–100) is auto-calculated from category weights.</p>
-            </div>
-
-            <!-- Detailed skills form -->
-            <div id="skillsContainer"></div>
+            <!-- Detailed skills form (hidden) -->
+            <div id="skillsContainer" style="display:none;"></div>
 
             <!-- Simple Rubric Section -->
             <div style="border-top:1px solid var(--card-border); margin: 24px 0 20px; padding-top:20px;">
