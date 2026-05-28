@@ -631,54 +631,6 @@
             renderTable();
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('playerTableBody');
-            
-            if (filteredPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
-                return;
-            }
-
-
-            const ratingCol = document.getElementById('ratingColumnSelect')?.value || 'rating';
-            const ratingColors = { rating: 'var(--primary)', rating_v2: '#8b5cf6', rating_v2b: '#10b981' };
-            tbody.innerHTML = filteredPlayers.map(player => {
-                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
-                return `
-                <tr>
-                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
-                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
-                    <td class="actions">`;
-            }).join('') + filteredPlayers.map(player => '').join('');
-
-            // Rebuild properly
-            tbody.innerHTML = filteredPlayers.map(player => {
-                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
-                return `<tr>
-                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
-                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
-                    <td class="actions">`;
-            // dummy to remove
-            }).join('placeholder');
-            
-            // Actually do it cleanly
-            tbody.innerHTML = '';
-            filteredPlayers.forEach(player => {
-                const ratingVal = player[ratingCol] !== null && player[ratingCol] !== undefined ? player[ratingCol] : '—';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
-                    <td class="rating-cell" style="color:${ratingColors[ratingCol]}">${ratingVal}</td>
-                    <td class="actions">
-                        <button class="icon-button" onclick="editName(${player.id}, '${player.name.replace(/'/g, "\'")}')" title="Edit name">🖊️</button>
-                        <button class="icon-button" onclick="editRating(${player.id}, '${player.name.replace(/'/g, "\'")}', ${player.rating})" title="Edit rating">✏️</button>
-                        <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="V2 rating & pillar" style="color: #f59e0b;">⭐</button>
-                        <button class="icon-button delete" onclick="confirmDelete(${player.id}, '${player.name.replace(/'/g, "\'")}' )" title="Delete player">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
         function updateStats() {
             document.getElementById('playerCount').textContent = `${allPlayers.length} players`;
             const filtered = document.getElementById('filteredCount');
