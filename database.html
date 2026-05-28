@@ -520,7 +520,7 @@
             } catch (error) {
                 console.error('Error loading players:', error);
                 document.getElementById('playerTableBody').innerHTML = 
-                    '<tr><td colspan="3" class="empty-state"><h3>Failed to load players</h3><p>Please refresh the page</p></td></tr>';
+                    `<tr><td colspan="3" class="empty-state"><h3>Failed to load players</h3><p>${error.message || 'Please refresh the page'}</p></td></tr>`;
             }
         }
 
