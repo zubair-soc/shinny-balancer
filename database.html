@@ -424,7 +424,7 @@
 
         <div class="toolbar">
             <input type="text" id="searchBox" class="search-box" placeholder="Search players...">
-            <button id="pillarFilterBtn" onclick="togglePillarFilter()" style="padding:8px 14px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#f59e0b; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;">⭐ Pillars</button>
+            <button id="pillarFilterBtn" onclick="togglePillarFilter()" style="display:none; padding:8px 14px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#f59e0b; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;">⭐ Pillars</button>
             <button class="button" onclick="showAddModal()">+ Add Player</button>
             <button class="button button-secondary" onclick="exportCSV()">Export CSV</button>
             <div class="stats">
@@ -578,18 +578,15 @@
                 const safeName = player.name.replace(/'/g, '&#39;');
                 return `
                 <tr>
-                    <td>${player.name} ${player.is_pillar ? '<span style="color:#f59e0b; font-size:12px;" title="Pillar player">⭐</span>' : ''}</td>
+                    <td>${player.name} ${player.is_pillar ? '' : ''}</td>
                     <td class="rating-cell" style="color:var(--primary)">${player.rating ?? '—'}</td>
                     <td class="rating-cell" style="color:#10b981">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
                     <td class="actions">
-                        <div style="position:relative; display:inline-block;">
-                            <button class="icon-button" onclick="toggleDbMenu(event, ${player.id})" title="Actions">⋯</button>
-                            <div id="dbmenu-${player.id}" style="display:none; position:fixed; background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:9999; min-width:160px; overflow:hidden;">
-                                <div onclick="editName(${player.id}, '${safeName}'); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">🖊️ Edit Name</div>
-                                <div onclick="editRating(${player.id}, '${safeName}', ${player.rating}); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:var(--text);" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">✏️ Edit Rating</div>
-                                <div onclick="openPlayerProfile(${player.id}); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#f59e0b;" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">⭐ V2 Profile</div>
-                                <div onclick="confirmDelete(${player.id}, '${safeName}'); closeDbMenu(${player.id})" style="padding:10px 16px; cursor:pointer; font-size:14px; color:#ef4444;" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background=''">🗑️ Delete</div>
-                            </div>
+                        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                            <button class="icon-button" onclick="editName(${player.id}, '${safeName}')" title="Edit name">🖊️</button>
+                            <button class="icon-button" onclick="editRating(${player.id}, '${safeName}', ${player.rating})" title="Edit rating">✏️</button>
+                            <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="V2 Profile" style="display:none; color:#f59e0b;">⭐</button>
+                            <button class="icon-button delete" onclick="confirmDelete(${player.id}, '${safeName}')" title="Delete">🗑️</button>
                         </div>
                     </td>
                 </tr>`;
@@ -1015,13 +1012,15 @@
                 renderSkillsForm(skills);
             }
 
-            // Load simple rubric skills
-            const { data: simpleSkills } = await supabaseClient
-                .from('player_skills_simple')
+            // Load v2b ratings history
+            const { data: v2bHistory } = await supabaseClient
+                .from('v2b_ratings')
                 .select('*')
                 .eq('player_id', id)
-                .maybeSingle();
-            renderSimpleRubricForm(simpleSkills);
+                .order('created_at', { ascending: false })
+                .limit(10);
+            renderSimpleRubricForm(v2bHistory && v2bHistory.length > 0 ? v2bHistory[0] : null);
+            renderV2bHistory(v2bHistory || []);
 
             document.getElementById('playerProfileModal').dataset.playerId = id;
             document.getElementById('playerProfileModal').classList.add('active');
@@ -1092,6 +1091,109 @@
         function toggleRubricInfo(id) {
             const el = document.getElementById(id);
             if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function submitV2bRating() {
+            const id = parseInt(document.getElementById('playerProfileModal').dataset.playerId);
+            const rater = document.getElementById('v2bRater').value;
+            if (!rater) { alert('Please select a rater'); return; }
+
+            const skills = {};
+            for (const key of Object.keys(SIMPLE_RUBRIC)) {
+                const el = document.getElementById(`simple_${key}`);
+                skills[key] = el && el.value !== '' ? Math.min(5, Math.max(1, parseFloat(el.value))) : null;
+            }
+            const composite = calcCompositeSimple(skills);
+            if (!composite) { alert('Please fill in at least one category'); return; }
+
+            const btn = document.getElementById('submitV2bBtn');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            try {
+                // Insert new rating entry
+                await supabaseClient.from('v2b_ratings').insert({
+                    player_id: id,
+                    rater,
+                    ...skills,
+                    composite
+                });
+
+                // Recalculate average from 3 most recent
+                const { data: recent } = await supabaseClient
+                    .from('v2b_ratings')
+                    .select('composite')
+                    .eq('player_id', id)
+                    .order('created_at', { ascending: false })
+                    .limit(3);
+
+                const avg = recent && recent.length > 0
+                    ? Math.round((recent.reduce((s, r) => s + r.composite, 0) / recent.length) * 10) / 10
+                    : composite;
+
+                // Update player's rating_v2b
+                await supabaseClient.from('players').update({ rating_v2b: avg }).eq('id', id);
+
+                // Update local
+                const player = allPlayers.find(p => p.id === id);
+                if (player) player.rating_v2b = avg;
+
+                // Reload history
+                const { data: v2bHistory } = await supabaseClient
+                    .from('v2b_ratings')
+                    .select('*')
+                    .eq('player_id', id)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                renderV2bHistory(v2bHistory || []);
+                filterPlayers(document.getElementById('searchBox').value);
+
+                btn.textContent = '✓ Submitted';
+                btn.style.background = '#22c55e';
+                setTimeout(() => {
+                    btn.textContent = 'Submit Rating';
+                    btn.style.background = '';
+                    btn.disabled = false;
+                }, 2000);
+
+            } catch (err) {
+                console.error('Submit failed:', err);
+                alert('Failed to submit: ' + (err.message || err));
+                btn.textContent = 'Submit Rating';
+                btn.disabled = false;
+            }
+        }
+
+        function renderV2bHistory(history) {
+            const container = document.getElementById('v2bHistory');
+            if (!container) return;
+            if (!history.length) {
+                container.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No ratings yet.</p>';
+                return;
+            }
+
+            // Show top 3 used for average, rest grayed out
+            container.innerHTML = history.map((entry, i) => {
+                const date = new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const isActive = i < 3;
+                return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:8px; margin-bottom:6px; background:${isActive ? 'rgba(16,185,129,0.08)' : 'rgba(128,128,128,0.05)'}; border:1px solid ${isActive ? 'rgba(16,185,129,0.2)' : 'rgba(128,128,128,0.1)'}; opacity:${isActive ? '1' : '0.5'};">
+                    <div>
+                        <span style="font-size:13px; font-weight:600; color:var(--text);">${entry.rater}</span>
+                        <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">${date}</span>
+                        ${i === 0 ? '<span style="font-size:10px; color:#10b981; margin-left:6px;">latest</span>' : ''}
+                        ${i >= 3 ? '<span style="font-size:10px; color:var(--text-muted); margin-left:6px;">not counted</span>' : ''}
+                    </div>
+                    <span style="font-size:14px; font-weight:700; color:${isActive ? '#10b981' : 'var(--text-muted)'};">${entry.composite}</span>
+                </div>`;
+            }).join('');
+
+            // Show average
+            const active = history.slice(0, 3);
+            const avg = Math.round((active.reduce((s, r) => s + r.composite, 0) / active.length) * 10) / 10;
+            container.innerHTML += `<div style="margin-top:10px; padding:8px 12px; border-radius:8px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; font-weight:700; color:#10b981;">Average (${active.length} rating${active.length !== 1 ? 's' : ''})</span>
+                <span style="font-size:16px; font-weight:800; color:#10b981;">${avg}</span>
+            </div>`;
         }
 
         function updateSimpleComposite() {
@@ -1265,7 +1367,7 @@
             
             <!-- Header -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <span style="font-size:18px; font-weight:700; color:var(--text);">⭐ Player Profile</span>
+                <span style="font-size:18px; font-weight:700; color:var(--text);">📊 Player Rating</span>
                 <button onclick="closePillarModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted);">×</button>
             </div>
 
@@ -1278,31 +1380,12 @@
                 </div>
             </div>
 
-            <!-- Pillar toggle -->
-            <div style="margin-bottom:16px;">
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px; color:var(--text);">
-                    <input type="checkbox" id="profileIsPillar" style="width:16px; height:16px; flex-shrink:0;">
-                    Mark as Pillar Player ⭐
-                </label>
-            </div>
-
-            <!-- Manual V2 override -->
-            <div style="margin-bottom:16px;">
-                <label style="display:block; font-size:13px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">V2 Rating Override (0–100) <span style="font-size:11px; font-weight:400;">— auto-calculated from skills if filled in</span></label>
-                <input type="number" id="profileV2Rating" min="0" max="100" step="0.5" placeholder="Auto from skills"
-                    style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:16px;">
-            </div>
-
-            <!-- Pillars -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Lower Pillar (worse than)</label>
-                    <select id="profileLowerPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:13px;"></select>
-                </div>
-                <div>
-                    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Upper Pillar (better than)</label>
-                    <select id="profileUpperPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:13px;"></select>
-                </div>
+            <!-- Pillar toggle (hidden) -->
+            <div style="display:none;">
+                <input type="checkbox" id="profileIsPillar">
+                <input type="number" id="profileV2Rating">
+                <select id="profileLowerPillar"></select>
+                <select id="profileUpperPillar"></select>
             </div>
 
             <!-- Detailed skills form (hidden) -->
@@ -1310,18 +1393,32 @@
 
             <!-- Simple Rubric Section -->
             <div style="border-top:1px solid var(--card-border); margin: 24px 0 20px; padding-top:20px;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                    <p style="font-size:13px; font-weight:700; color:var(--text); margin:0;">Simple Rubric (V2B)</p>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                    <p style="font-size:13px; font-weight:700; color:var(--text); margin:0;">V2B Rating</p>
                     <span id="profileV2bComposite" style="font-size:12px; color:#10b981; font-weight:600;"></span>
+                    <div style="margin-left:auto;">
+                        <select id="v2bRater" style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 10px; color:var(--text); font-size:13px;">
+                            <option value="">— Select Rater —</option>
+                            <option value="Zubair">Zubair</option>
+                            <option value="Sam">Sam</option>
+                        </select>
+                    </div>
                 </div>
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Rate each category 0–5 using the descriptions as a guide.</p>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Rate each category 1–5 using the descriptions as a guide.</p>
                 <div id="simpleRubricContainer"></div>
+
+                <button id="submitV2bBtn" onclick="submitV2bRating()" style="width:100%; margin-top:16px; padding:12px; background:#10b981; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Submit Rating</button>
+
+                <!-- Rating history -->
+                <div style="margin-top:20px;">
+                    <p style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Rating History</p>
+                    <div id="v2bHistory"></div>
+                </div>
             </div>
 
-            <!-- Buttons -->
+            <!-- Close button -->
             <div style="display:flex; gap:10px; margin-top:24px; position:sticky; bottom:0; background:var(--card-bg); padding-top:16px; border-top:1px solid var(--card-border);">
-                <button onclick="closePillarModal()" style="flex:1; padding:12px; background:var(--card-border); border:1px solid var(--card-border); border-radius:8px; cursor:pointer; font-size:14px; color:var(--text);">Cancel</button>
-                <button onclick="savePlayerProfile()" style="flex:1; padding:12px; background:var(--primary); border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Save</button>
+                <button onclick="closePillarModal()" style="flex:1; padding:12px; background:var(--card-border); border:1px solid var(--card-border); border-radius:8px; cursor:pointer; font-size:14px; color:var(--text);">Close</button>
             </div>
         </div>
     </div>
