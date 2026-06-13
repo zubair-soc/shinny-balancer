@@ -1517,13 +1517,19 @@
 
             // Get registration counts for ALL skates in ONE BULK QUERY (fast!)
             const skateIds = allSkates.map(s => s.id);
-            const { data: allRegs, error: regsError } = await supabaseClient
-                .from('skate_registrations')
-                .select('skate_id, is_goalie, is_waitlist')
-                .in('skate_id', skateIds)
-                .eq('is_waitlist', false)
-                .limit(10000);
-            console.log('allRegs:', allRegs?.length, 'error:', regsError, 'sample skateId:', allRegs?.[0]?.skate_id, 'skateIds sample:', skateIds.slice(0,3));
+            // Fetch registrations for all current skates
+            let allRegs = [];
+            const chunkSize = 10;
+            for (let i = 0; i < skateIds.length; i += chunkSize) {
+                const chunk = skateIds.slice(i, i + chunkSize);
+                const { data: chunkRegs } = await supabaseClient
+                    .from('skate_registrations')
+                    .select('skate_id, is_goalie, is_waitlist')
+                    .in('skate_id', chunk)
+                    .eq('is_waitlist', false)
+                    .limit(2000);
+                if (chunkRegs) allRegs = allRegs.concat(chunkRegs);
+            }
             
             // Group counts by skate
             const skateCounts = {};
