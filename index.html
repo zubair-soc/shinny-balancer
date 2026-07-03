@@ -968,6 +968,20 @@
                             style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--primary); font-size: 14px; font-weight: 600;">
                     </div>
                 </div>
+
+                <!-- P&L -->
+                <div class="form-row" style="margin-top: 8px;">
+                    <div class="form-group">
+                        <label>Revenue <span style="font-size:11px; color:var(--text-muted);">(skaters × cost)</span></label>
+                        <input type="text" id="skateRevenue" readonly placeholder="—"
+                            style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: #10b981; font-size: 14px; font-weight: 600;">
+                    </div>
+                    <div class="form-group">
+                        <label>Profit / Loss</label>
+                        <input type="text" id="skateProfit" readonly placeholder="—"
+                            style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-weight: 600;">
+                    </div>
+                </div>
             </div>
 
             <div class="modal-buttons">
@@ -1939,7 +1953,9 @@
             document.getElementById('skateIceCost').value = skate.ice_cost || '';
             document.getElementById('skateRefCost').value = skate.ref_cost || '';
             document.getElementById('skateOtherCost').value = skate.other_cost || '';
-            updateTotalCost();
+            // Get current skater count for P&L
+            const counts = goalieSkaterCounts[skate.id] || { skaters: 0 };
+            updateTotalCost(counts.skaters);
             
             // Set location
             const locationSelect = document.getElementById('skateLocation');
@@ -2037,12 +2053,12 @@
                         .select();
 
                     if (error) throw error;
+                    if (!data || data.length === 0) throw new Error('No rows updated — skate ID mismatch');
                     console.log('Update successful:', data);
 
-                    isEditMode = false; // Reset after successful update
+                    isEditMode = false;
                     await loadSkates();
                     closeSkateModal();
-                    // Reopen the roster modal with updated skate
                     await openSkate(currentSkateId);
                 } else {
                     console.log('Creating new skate');
@@ -3659,13 +3675,29 @@
             }
         }
 
-        function updateTotalCost() {
+        function updateTotalCost(skaterCount) {
             const ice = parseFloat(document.getElementById('skateIceCost')?.value) || 0;
             const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0;
             const other = parseFloat(document.getElementById('skateOtherCost')?.value) || 0;
             const total = ice + ref + other;
-            const el = document.getElementById('skateTotalCost');
-            if (el) el.value = total > 0 ? `$${total.toFixed(2)}` : '—';
+            const totalEl = document.getElementById('skateTotalCost');
+            if (totalEl) totalEl.value = total > 0 ? `$${total.toFixed(2)}` : '—';
+
+            // P&L
+            const costStr = document.getElementById('skateCost')?.value || '';
+            const costPerPlayer = parseFloat(costStr.replace('$', '')) || 0;
+            const skaters = skaterCount !== undefined ? skaterCount :
+                (currentSkateId ? (allSkates.find(s => s.id === currentSkateId)?.skater_count || 0) : 0);
+            const revenue = costPerPlayer * skaters;
+            const profit = revenue - total;
+
+            const revEl = document.getElementById('skateRevenue');
+            const profEl = document.getElementById('skateProfit');
+            if (revEl) revEl.value = revenue > 0 ? `$${revenue.toFixed(2)}` : '—';
+            if (profEl) {
+                profEl.value = total > 0 || revenue > 0 ? `${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}` : '—';
+                profEl.style.color = profit >= 0 ? '#10b981' : '#ef4444';
+            }
         }
 
         // ========== TOAST ==========
