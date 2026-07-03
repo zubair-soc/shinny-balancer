@@ -849,7 +849,7 @@
             <div class="form-group">
                 <label>Date</label>
                 <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
-                    <select id="skateMonth" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
+                    <select id="skateMonth" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                         <option value="">Month</option>
                         <option value="1">January</option>
                         <option value="2">February</option>
@@ -864,10 +864,10 @@
                         <option value="11">November</option>
                         <option value="12">December</option>
                     </select>
-                    <select id="skateDay" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
+                    <select id="skateDay" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                         <option value="">Day</option>
                     </select>
-                    <select id="skateYear" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
+                    <select id="skateYear" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
                         <option value="">Year</option>
                     </select>
                 </div>
@@ -876,13 +876,13 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Start Time</label>
-                    <select id="skateStartTime" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
+                    <select id="skateStartTime" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
                         <option value="">Select time</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Duration</label>
-                    <select id="skateDuration" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
+                    <select id="skateDuration" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;" onchange="calcIceCost()">
                         <option value="">Select duration</option>
                         <option value="60">1:00</option>
                         <option value="75">1:15</option>
@@ -908,7 +908,7 @@
 
             <div class="form-group">
                 <label>Location</label>
-                <select id="skateLocation">
+                <select id="skateLocation" onchange="calcIceCost()">
                     <option value="">-- Select Location --</option>
                     <option value="Broadmoor">Broadmoor</option>
                     <option value="Callingwood">Callingwood</option>
@@ -933,6 +933,41 @@
                     <option value="Tipton">Tipton</option>
                     <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
                 </select>
+            </div>
+
+            <!-- Ice Cost Section -->
+            <div style="border-top: 1px solid var(--card-border); margin-top: 20px; padding-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <label style="font-weight: 600; font-size: 14px; color: var(--text);">💰 Financials</label>
+                    <span id="iceCostLabel" style="font-size: 12px; color: var(--text-muted);"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ice Cost</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="skateIceCost" placeholder="Auto-calculated" step="0.01" min="0"
+                                style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                            <button type="button" onclick="calcIceCost()" title="Recalculate" style="padding: 10px 12px; background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 8px; cursor: pointer; color: var(--primary); white-space: nowrap; font-size: 13px;">↻ Auto</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ref Cost</label>
+                        <input type="number" id="skateRefCost" placeholder="e.g. 50" step="0.01" min="0" oninput="updateTotalCost()"
+                            style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Other Cost</label>
+                        <input type="number" id="skateOtherCost" placeholder="e.g. 20" step="0.01" min="0" oninput="updateTotalCost()"
+                            style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Cost</label>
+                        <input type="text" id="skateTotalCost" readonly placeholder="—"
+                            style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--primary); font-size: 14px; font-weight: 600;">
+                    </div>
+                </div>
             </div>
 
             <div class="modal-buttons">
@@ -1517,19 +1552,11 @@
 
             // Get registration counts for ALL skates in ONE BULK QUERY (fast!)
             const skateIds = allSkates.map(s => s.id);
-            // Fetch registrations for all current skates
-            let allRegs = [];
-            const chunkSize = 10;
-            for (let i = 0; i < skateIds.length; i += chunkSize) {
-                const chunk = skateIds.slice(i, i + chunkSize);
-                const { data: chunkRegs } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('skate_id, is_goalie, is_waitlist')
-                    .in('skate_id', chunk)
-                    .eq('is_waitlist', false)
-                    .limit(2000);
-                if (chunkRegs) allRegs = allRegs.concat(chunkRegs);
-            }
+            const { data: allRegs } = await supabaseClient
+                .from('skate_registrations')
+                .select('skate_id, is_goalie, is_waitlist')
+                .in('skate_id', skateIds)
+                .eq('is_waitlist', false);
             
             // Group counts by skate
             const skateCounts = {};
@@ -1902,6 +1929,10 @@
 
             document.getElementById('skateCost').value = skate.cost || '$25';
             document.getElementById('skateCapacity').value = skate.capacity || 24;
+            document.getElementById('skateIceCost').value = skate.ice_cost || '';
+            document.getElementById('skateRefCost').value = skate.ref_cost || '';
+            document.getElementById('skateOtherCost').value = skate.other_cost || '';
+            updateTotalCost();
             
             // Set location
             const locationSelect = document.getElementById('skateLocation');
@@ -1968,6 +1999,10 @@
             // Build date string (YYYY-MM-DD)
             const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
+            const ice_cost = parseFloat(document.getElementById('skateIceCost').value) || null;
+            const ref_cost = parseFloat(document.getElementById('skateRefCost').value) || null;
+            const other_cost = parseFloat(document.getElementById('skateOtherCost').value) || null;
+
             const skateData = {
                 title,
                 date,
@@ -1976,7 +2011,10 @@
                 time_end: timeEnd,
                 cost,
                 capacity,
-                location
+                location,
+                ice_cost,
+                ref_cost,
+                other_cost
             };
 
             try {
@@ -3505,6 +3543,122 @@
             } catch (error) {
                 console.error('Error in quickAddPlayer:', error);
             }
+        }
+
+        // ========== ICE COST CALCULATOR ==========
+        const COE_RINKS = [
+            'bill hunter arena','callingwood','callingwood twin arena','castle downs','castle downs twin arena',
+            'clareview','clareview arena','confederation arena','crestwood arena','donnan','donnan arena',
+            'downtown community arena','george s hughes southside arena','glengarry arena','grand trunk arena',
+            'kenilworth','kenilworth arena','kinsmen','kinsmen twin arena','londonderry','londonderry arena',
+            'michael cameron arena','mill woods twin arena','millwoods','meadows recreation centre',
+            'the meadows twin arena','russ barnes arena','terwillegar','terwillegar quad arena',
+            'terwillegar rink','tipton','tipton arena','westwood arena','wîhkwêntôwin (oliver) arena'
+        ];
+
+        function getRinkGroup(location) {
+            if (!location) return null;
+            const loc = location.toLowerCase();
+            if (loc.includes('nait')) return 'NAIT';
+            if (loc.includes('rivercree')) return 'Rivercree';
+            if (COE_RINKS.some(r => loc.includes(r) || r.includes(loc.split(' ')[0]))) return 'CoE';
+            return null;
+        }
+
+        function getSeason(date) {
+            if (!date) return null;
+            const d = new Date(date + 'T12:00:00');
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            // Summer: Mar 30 – Aug 30
+            const afterMar30 = month > 3 || (month === 3 && day >= 30);
+            const beforeAug31 = month < 8 || (month === 8 && day <= 30);
+            return (afterMar30 && beforeAug31) ? 'summer' : 'winter';
+        }
+
+        function getDayType(date) {
+            if (!date) return null;
+            const d = new Date(date + 'T12:00:00');
+            const dow = d.getDay(); // 0=Sun, 6=Sat
+            return (dow === 0 || dow === 6) ? 'weekend' : 'weekday';
+        }
+
+        function getTimeMinutes(timeStr) {
+            if (!timeStr) return null;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function calcIceCost() {
+            const location = document.getElementById('skateLocation')?.value;
+            const month = document.getElementById('skateMonth')?.value;
+            const day = document.getElementById('skateDay')?.value;
+            const year = document.getElementById('skateYear')?.value;
+            const date = (month && day && year)
+                ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+                : null;
+            const timeStartRaw = document.getElementById('skateStartTime')?.value;
+            const timeStart = timeStartRaw; // e.g. "21:00"
+            const duration = parseInt(document.getElementById('skateDuration')?.value);
+
+            const rinkGroup = getRinkGroup(location);
+            const iceCostEl = document.getElementById('skateIceCost');
+            const labelEl = document.getElementById('iceCostLabel');
+            const totalEl = document.getElementById('skateTotalCost');
+
+            // Update total whenever any cost field changes
+            updateTotalCost();
+
+            if (!rinkGroup || !date || !timeStart || !duration) {
+                if (labelEl) labelEl.textContent = rinkGroup ? '— fill in date, time & duration to auto-calc' : '— no rate data for this rink';
+                return;
+            }
+
+            const season = getSeason(date);
+            const dayType = getDayType(date);
+            const startMins = getTimeMinutes(timeStart);
+            const hours = duration / 60;
+
+            let rate = null;
+            let slotLabel = '';
+
+            if (rinkGroup === 'NAIT') {
+                rate = 230;
+                slotLabel = 'NAIT standard rate';
+            } else if (rinkGroup === 'Rivercree') {
+                rate = 144;
+                slotLabel = 'Rivercree AM rate';
+            } else if (rinkGroup === 'CoE') {
+                if (season === 'summer') {
+                    // High priority: weekday 6pm+, or weekend Apr-May
+                    const isHighPriority = (dayType === 'weekday' && startMins >= 18 * 60) ||
+                                           (dayType === 'weekend');
+                    rate = isHighPriority ? 265 : 201;
+                    slotLabel = `CoE ${season} ${isHighPriority ? 'High Priority' : 'Low Priority'}`;
+                } else {
+                    // Winter: Prime weekday 4-11pm, weekend 8am-11pm
+                    const isPrime = (dayType === 'weekday' && startMins >= 16 * 60 && startMins < 23 * 60) ||
+                                    (dayType === 'weekend' && startMins >= 8 * 60 && startMins < 23 * 60);
+                    rate = isPrime ? 342 : 203;
+                    slotLabel = `CoE ${season} ${isPrime ? 'Prime Time' : 'Non-Prime'}`;
+                }
+            }
+
+            if (rate !== null) {
+                const iceCost = Math.round(rate * hours * 100) / 100;
+                if (iceCostEl) iceCostEl.value = iceCost;
+                if (labelEl) labelEl.textContent = `${slotLabel} · $${rate}/hr × ${hours}hr = $${iceCost}`;
+                updateTotalCost();
+            }
+        }
+
+        function updateTotalCost() {
+            const ice = parseFloat(document.getElementById('skateIceCost')?.value) || 0;
+            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0;
+            const other = parseFloat(document.getElementById('skateOtherCost')?.value) || 0;
+            const total = ice + ref + other;
+            const el = document.getElementById('skateTotalCost');
+            if (el) el.value = total > 0 ? `$${total.toFixed(2)}` : '—';
         }
 
         // ========== TOAST ==========
