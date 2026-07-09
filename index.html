@@ -1231,6 +1231,7 @@
         let allPlayers = [];
         let currentSkateId = null;
         let isEditMode = false; // Track if we're editing or creating
+        let goalieSkaterCounts = {}; // Global so accessible in edit modal
 
         // Format time to 12hr with AM/PM (e.g., "19:45" -> "7:45PM")
         function formatTime(time24) {
@@ -1581,7 +1582,7 @@
             
             // Group counts by skate
             const skateCounts = {};
-            const goalieSkaterCounts = {};
+            goalieSkaterCounts = {};
             allSkates.forEach(skate => {
                 skateCounts[skate.id] = 0;
                 goalieSkaterCounts[skate.id] = { goalies: 0, skaters: 0 };
@@ -2052,8 +2053,8 @@
                         .eq('id', currentSkateId)
                         .select();
 
-                    if (error) throw error;
-                    if (!data || data.length === 0) throw new Error('No rows updated — skate ID mismatch');
+                    if (error) throw new Error(`Supabase error: ${error.message} (${error.code})`);
+                    if (!data || data.length === 0) throw new Error(`No rows updated — skate ID ${currentSkateId} not found`);
                     console.log('Update successful:', data);
 
                     isEditMode = false;
