@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financials — BH Hockey</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: rgba(0,0,0,0.08);
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-rgb: 16, 185, 129;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --red: #ef4444;
+            --green: #10b981;
+            --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: rgba(255,255,255,0.08);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 20px; font-weight: 700; color: var(--text); }
+        .back-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px; border-radius: 8px;
+            background: rgba(var(--primary-rgb), 0.08);
+            border: 1px solid rgba(var(--primary-rgb), 0.2);
+            color: var(--primary); font-size: 13px; font-weight: 600;
+            text-decoration: none; cursor: pointer;
+        }
+        .back-btn:hover { background: rgba(var(--primary-rgb), 0.15); }
+
+        /* Month nav */
+        .month-nav {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .month-nav button {
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            color: var(--text); font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .month-nav button:hover { border-color: var(--primary); color: var(--primary); }
+        .month-label {
+            font-size: 15px; font-weight: 700; color: var(--text);
+            min-width: 130px; text-align: center;
+        }
+
+        /* Main */
+        .main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+        /* Summary cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .summary-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: var(--shadow);
+        }
+        .summary-card .label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px;
+        }
+        .summary-card .value {
+            font-size: 22px; font-weight: 800; color: var(--text);
+        }
+        .summary-card .sub {
+            font-size: 12px; color: var(--text-muted); margin-top: 2px;
+        }
+        .summary-card.profit .value { color: var(--green); }
+        .summary-card.loss .value { color: var(--red); }
+
+        /* Table */
+        .table-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .table-header h2 { font-size: 15px; font-weight: 700; }
+        .table-wrapper { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            padding: 10px 16px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--text-muted);
+            border-bottom: 1px solid var(--card-border);
+            text-align: left; white-space: nowrap;
+        }
+        thead th.num { text-align: right; }
+
+        tbody tr { border-bottom: 1px solid var(--card-border); transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(var(--primary-rgb), 0.03); }
+
+        td {
+            padding: 12px 16px;
+            font-size: 13px; color: var(--text);
+            white-space: nowrap;
+        }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        td.muted { color: var(--text-muted); }
+
+        .skate-name { font-weight: 600; }
+        .skate-tier {
+            display: inline-block; font-size: 11px; padding: 2px 8px;
+            border-radius: 20px; background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary); font-weight: 600; margin-left: 6px;
+        }
+
+        .profit-cell { font-weight: 700; }
+        .profit-cell.pos { color: var(--green); }
+        .profit-cell.neg { color: var(--red); }
+        .profit-cell.zero { color: var(--text-muted); }
+
+        /* Totals row */
+        .totals-row td {
+            font-weight: 700; font-size: 13px;
+            background: rgba(var(--primary-rgb), 0.05);
+            border-top: 2px solid rgba(var(--primary-rgb), 0.2);
+        }
+
+        /* Empty state */
+        .empty {
+            padding: 60px 20px; text-align: center; color: var(--text-muted);
+        }
+        .empty h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
+
+        /* Loading */
+        .loading { padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+        /* No data badges */
+        .no-data { color: var(--text-muted); font-style: italic; }
+
+        /* Theme toggle */
+        .theme-btn {
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            color: var(--text); font-size: 16px; cursor: pointer;
+        }
+        .theme-btn:hover { border-color: var(--primary); }
+
+        @media (max-width: 640px) {
+            .header { padding: 12px 16px; }
+            .main { padding: 16px 12px; }
+            td, thead th { padding: 10px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <a class="back-btn" href="index.html">← Skate Manager</a>
+        <span class="header-title">💰 Financials</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+        <div class="month-nav">
+            <button onclick="changeMonth(-1)">‹</button>
+            <span class="month-label" id="monthLabel">—</span>
+            <button onclick="changeMonth(1)">›</button>
+        </div>
+        <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    </div>
+</div>
+
+<div class="main">
+    <!-- Summary cards -->
+    <div class="summary-grid" id="summaryGrid">
+        <div class="summary-card"><div class="label">Skates</div><div class="value" id="sumSkates">—</div></div>
+        <div class="summary-card"><div class="label">Total Revenue</div><div class="value" id="sumRevenue">—</div></div>
+        <div class="summary-card"><div class="label">Ice Costs</div><div class="value" id="sumIce">—</div></div>
+        <div class="summary-card"><div class="label">Ref Costs</div><div class="value" id="sumRef">—</div></div>
+        <div class="summary-card"><div class="label">Other Costs</div><div class="value" id="sumOther">—</div></div>
+        <div class="summary-card" id="sumProfitCard"><div class="label">Net Profit/Loss</div><div class="value" id="sumProfit">—</div></div>
+    </div>
+
+    <!-- Skates table -->
+    <div class="table-card">
+        <div class="table-header">
+            <h2>Skates This Month</h2>
+            <span id="skateCount" style="font-size:13px; color:var(--text-muted);"></span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Skate</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th class="num">Skaters</th>
+                        <th class="num">Revenue</th>
+                        <th class="num">Ice</th>
+                        <th class="num">Ref</th>
+                        <th class="num">Other</th>
+                        <th class="num">Total Cost</th>
+                        <th class="num">P&L</th>
+                    </tr>
+                </thead>
+                <tbody id="skateTableBody">
+                    <tr><td colspan="10" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===== SUPABASE =====
+    const SUPABASE_URL = 'https://qmqhpcbhvlpdhjccmzoa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcWhwY2JodmxwZGhqY2Mtem9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTUwNTIsImV4cCI6MjA1NTE3MTA1Mn0.WkzFBpG4fwqzCX-i7BGCqLSQqOz2mAJJEQiKxXKFPWM';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ===== STATE =====
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth(); // 0-indexed
+
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+
+    // ===== THEME =====
+    function toggleTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+        document.querySelector('.theme-btn').textContent = isDark ? '🌙' : '☀️';
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    }
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.querySelector('.theme-btn').textContent = '☀️';
+    }
+
+    // ===== NAVIGATION =====
+    function changeMonth(dir) {
+        currentMonth += dir;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        loadFinancials();
+    }
+
+    function updateMonthLabel() {
+        document.getElementById('monthLabel').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+    }
+
+    // ===== HELPERS =====
+    function fmt(val) {
+        if (val === null || val === undefined) return '<span class="no-data">—</span>';
+        return `$${parseFloat(val).toFixed(2)}`;
+    }
+    function fmtPL(val) {
+        if (val === null || val === undefined) return '<span class="no-data">—</span>';
+        const n = parseFloat(val);
+        const cls = n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero';
+        const sign = n > 0 ? '+' : '';
+        return `<span class="profit-cell ${cls}">${sign}$${Math.abs(n).toFixed(2)}</span>`;
+    }
+    function formatDate(dateStr) {
+        const [y, m, d] = dateStr.split('-');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const date = new Date(dateStr + 'T12:00:00');
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        return `${days[date.getDay()]}, ${months[parseInt(m)-1]} ${parseInt(d)}`;
+    }
+    function formatTime(t) {
+        if (!t) return '';
+        const [h, m] = t.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2,'0')}${ampm}`;
+    }
+
+    // ===== LOAD DATA =====
+    async function loadFinancials() {
+        updateMonthLabel();
+        document.getElementById('skateTableBody').innerHTML = '<tr><td colspan="10" class="loading">Loading...</td></tr>';
+
+        // Date range for month
+        const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-01`;
+        const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${lastDay}`;
+
+        // Fetch skates for the month
+        const { data: skates, error } = await supabase
+            .from('skates')
+            .select('id, title, date, time_start, time_end, location, tier, cost, capacity, ice_cost, ref_cost, other_cost')
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('date', { ascending: true });
+
+        if (error) {
+            document.getElementById('skateTableBody').innerHTML = `<tr><td colspan="10" class="loading">Error: ${error.message}</td></tr>`;
+            return;
+        }
+
+        if (!skates || skates.length === 0) {
+            document.getElementById('skateTableBody').innerHTML = '<tr><td colspan="10" class="empty"><h3>No skates this month</h3></td></tr>';
+            updateSummary([]);
+            return;
+        }
+
+        // Fetch registrations for these skates in chunks
+        const skateIds = skates.map(s => s.id);
+        let allRegs = [];
+        const chunkSize = 10;
+        for (let i = 0; i < skateIds.length; i += chunkSize) {
+            const chunk = skateIds.slice(i, i + chunkSize);
+            const { data: regs } = await supabase
+                .from('skate_registrations')
+                .select('skate_id, is_goalie, is_waitlist')
+                .in('skate_id', chunk)
+                .eq('is_waitlist', false)
+                .limit(2000);
+            if (regs) allRegs = allRegs.concat(regs);
+        }
+
+        // Count skaters per skate
+        const counts = {};
+        allRegs.forEach(r => {
+            if (!counts[r.skate_id]) counts[r.skate_id] = { skaters: 0, goalies: 0 };
+            if (r.is_goalie) counts[r.skate_id].goalies++;
+            else counts[r.skate_id].skaters++;
+        });
+
+        // Build rows
+        const rows = skates.map(skate => {
+            const c = counts[skate.id] || { skaters: 0, goalies: 0 };
+            const costPerPlayer = parseFloat((skate.cost || '$0').replace('$','')) || 0;
+            const revenue = costPerPlayer * c.skaters;
+            const ice = skate.ice_cost || 0;
+            const ref = skate.ref_cost || 0;
+            const other = skate.other_cost || 0;
+            const totalCost = ice + ref + other;
+            const pl = totalCost > 0 || revenue > 0 ? revenue - totalCost : null;
+            return { skate, c, revenue, ice, ref, other, totalCost, pl };
+        });
+
+        renderTable(rows);
+        updateSummary(rows);
+    }
+
+    function renderTable(rows) {
+        const tbody = document.getElementById('skateTableBody');
+        document.getElementById('skateCount').textContent = `${rows.length} skate${rows.length !== 1 ? 's' : ''}`;
+
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="empty"><h3>No skates this month</h3></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rows.map(({ skate, c, revenue, ice, ref, other, totalCost, pl }) => {
+            const titleParts = skate.title || '';
+            return `<tr>
+                <td>
+                    <span class="skate-name">${titleParts}</span>
+                    ${skate.tier ? `<span class="skate-tier">${skate.tier}</span>` : ''}
+                </td>
+                <td class="muted">${formatDate(skate.date)}</td>
+                <td class="muted">${skate.location || '—'}</td>
+                <td class="num">${c.skaters}${c.goalies > 0 ? ` <span style="color:var(--text-muted); font-size:11px;">+${c.goalies}G</span>` : ''}</td>
+                <td class="num">${revenue > 0 ? fmt(revenue) : '<span class="no-data">—</span>'}</td>
+                <td class="num">${ice > 0 ? fmt(ice) : '<span class="no-data">—</span>'}</td>
+                <td class="num">${ref > 0 ? fmt(ref) : '<span class="no-data">—</span>'}</td>
+                <td class="num">${other > 0 ? fmt(other) : '<span class="no-data">—</span>'}</td>
+                <td class="num">${totalCost > 0 ? fmt(totalCost) : '<span class="no-data">—</span>'}</td>
+                <td class="num">${fmtPL(pl)}</td>
+            </tr>`;
+        }).join('');
+
+        // Totals row
+        const totRev = rows.reduce((s, r) => s + r.revenue, 0);
+        const totIce = rows.reduce((s, r) => s + r.ice, 0);
+        const totRef = rows.reduce((s, r) => s + r.ref, 0);
+        const totOther = rows.reduce((s, r) => s + r.other, 0);
+        const totCost = rows.reduce((s, r) => s + r.totalCost, 0);
+        const totPL = totRev - totCost;
+        const totSkaters = rows.reduce((s, r) => s + r.c.skaters, 0);
+
+        tbody.innerHTML += `<tr class="totals-row">
+            <td colspan="3" style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Monthly Totals</td>
+            <td class="num">${totSkaters}</td>
+            <td class="num" style="color:var(--green);">${fmt(totRev)}</td>
+            <td class="num">${fmt(totIce)}</td>
+            <td class="num">${fmt(totRef)}</td>
+            <td class="num">${fmt(totOther)}</td>
+            <td class="num">${fmt(totCost)}</td>
+            <td class="num">${fmtPL(totPL)}</td>
+        </tr>`;
+    }
+
+    function updateSummary(rows) {
+        const totRev = rows.reduce((s, r) => s + r.revenue, 0);
+        const totIce = rows.reduce((s, r) => s + r.ice, 0);
+        const totRef = rows.reduce((s, r) => s + r.ref, 0);
+        const totOther = rows.reduce((s, r) => s + r.other, 0);
+        const totCost = rows.reduce((s, r) => s + r.totalCost, 0);
+        const totPL = totRev - totCost;
+
+        document.getElementById('sumSkates').textContent = rows.length;
+        document.getElementById('sumRevenue').textContent = `$${totRev.toFixed(0)}`;
+        document.getElementById('sumIce').textContent = `$${totIce.toFixed(0)}`;
+        document.getElementById('sumRef').textContent = `$${totRef.toFixed(0)}`;
+        document.getElementById('sumOther').textContent = `$${totOther.toFixed(0)}`;
+        document.getElementById('sumProfit').textContent = `${totPL >= 0 ? '+' : ''}$${totPL.toFixed(0)}`;
+
+        const card = document.getElementById('sumProfitCard');
+        card.className = 'summary-card ' + (totPL > 0 ? 'profit' : totPL < 0 ? 'loss' : '');
+    }
+
+    // ===== INIT =====
+    loadFinancials();
+</script>
+</body>
+</html>
