@@ -203,7 +203,22 @@
     <div style="display:flex; align-items:center; gap:12px;">
         <div class="month-nav">
             <button onclick="changeMonth(-1)">‹</button>
-            <span class="month-label" id="monthLabel">—</span>
+            <select id="monthSelect" onchange="onMonthYearChange()" style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 10px; color:var(--text); font-size:14px; font-weight:600; cursor:pointer;">
+                <option value="0">January</option>
+                <option value="1">February</option>
+                <option value="2">March</option>
+                <option value="3">April</option>
+                <option value="4">May</option>
+                <option value="5">June</option>
+                <option value="6">July</option>
+                <option value="7">August</option>
+                <option value="8">September</option>
+                <option value="9">October</option>
+                <option value="10">November</option>
+                <option value="11">December</option>
+            </select>
+            <select id="yearSelect" onchange="onMonthYearChange()" style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 10px; color:var(--text); font-size:14px; font-weight:600; cursor:pointer;">
+            </select>
             <button onclick="changeMonth(1)">›</button>
         </div>
         <button class="theme-btn" onclick="toggleTheme()">🌙</button>
@@ -277,15 +292,40 @@
     }
 
     // ===== NAVIGATION =====
+    function populateYearSelect() {
+        const sel = document.getElementById('yearSelect');
+        const thisYear = new Date().getFullYear();
+        sel.innerHTML = '';
+        for (let y = thisYear - 3; y <= thisYear + 1; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            sel.appendChild(opt);
+        }
+    }
+
+    function updateSelectors() {
+        document.getElementById('monthSelect').value = currentMonth;
+        document.getElementById('yearSelect').value = currentYear;
+    }
+
+    function onMonthYearChange() {
+        currentMonth = parseInt(document.getElementById('monthSelect').value);
+        currentYear = parseInt(document.getElementById('yearSelect').value);
+        loadFinancials();
+    }
+
     function changeMonth(dir) {
         currentMonth += dir;
         if (currentMonth > 11) { currentMonth = 0; currentYear++; }
         if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        updateSelectors();
         loadFinancials();
     }
 
     function updateMonthLabel() {
-        document.getElementById('monthLabel').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+        updateSelectors();
     }
 
     // ===== HELPERS =====
@@ -455,6 +495,8 @@
     }
 
     // ===== INIT =====
+    populateYearSelect();
+    updateSelectors();
     loadFinancials();
 </script>
 </body>
