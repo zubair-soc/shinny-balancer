@@ -882,7 +882,7 @@
                 </div>
                 <div class="form-group">
                     <label>Duration</label>
-                    <select id="skateDuration" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;" onchange="calcIceCost()">
+                    <select id="skateDuration" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
                         <option value="">Select duration</option>
                         <option value="60">1:00</option>
                         <option value="75">1:15</option>
@@ -935,7 +935,7 @@
                 </select>
             </div>
 
-            <!-- Ice Cost Section -->
+            <!-- Financials Section -->
             <div style="border-top: 1px solid var(--card-border); margin-top: 20px; padding-top: 20px;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                     <label style="font-weight: 600; font-size: 14px; color: var(--text);">💰 Financials</label>
@@ -945,9 +945,9 @@
                     <div class="form-group">
                         <label>Ice Cost</label>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            <input type="number" id="skateIceCost" placeholder="Auto-calculated" step="0.01" min="0"
+                            <input type="number" id="skateIceCost" placeholder="Auto-calculated" step="0.01" min="0" oninput="updateTotalCost()"
                                 style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
-                            <button type="button" onclick="calcIceCost()" title="Recalculate" style="padding: 10px 12px; background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 8px; cursor: pointer; color: var(--primary); white-space: nowrap; font-size: 13px;">↻ Auto</button>
+                            <button type="button" onclick="calcIceCost()" title="Recalculate" style="padding: 10px 12px; background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 8px; cursor: pointer; color: var(--primary); font-size: 13px;">↻</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -968,9 +968,7 @@
                             style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--primary); font-size: 14px; font-weight: 600;">
                     </div>
                 </div>
-
-                <!-- P&L -->
-                <div class="form-row" style="margin-top: 8px;">
+                <div class="form-row">
                     <div class="form-group">
                         <label>Revenue <span style="font-size:11px; color:var(--text-muted);">(skaters × cost)</span></label>
                         <input type="text" id="skateRevenue" readonly placeholder="—"
@@ -1231,7 +1229,7 @@
         let allPlayers = [];
         let currentSkateId = null;
         let isEditMode = false; // Track if we're editing or creating
-        let goalieSkaterCounts = {}; // Global so accessible in edit modal
+        let goalieSkaterCounts = {};
 
         // Format time to 12hr with AM/PM (e.g., "19:45" -> "7:45PM")
         function formatTime(time24) {
@@ -1819,6 +1817,13 @@
             document.getElementById('skateTitle').value = '';
             document.getElementById('skateTier').selectedIndex = 0;
             document.getElementById('skateCost').value = '$25';
+            document.getElementById('skateIceCost').value = '';
+            document.getElementById('skateRefCost').value = '';
+            document.getElementById('skateOtherCost').value = '';
+            document.getElementById('skateTotalCost').value = '';
+            document.getElementById('skateRevenue').value = '';
+            document.getElementById('skateProfit').value = '';
+            document.getElementById('iceCostLabel').textContent = '';
             document.getElementById('skateCapacity').value = '24';
             document.getElementById('skateLocation').selectedIndex = 0;
             document.getElementById('customTierInput').style.display = 'none';
@@ -1954,9 +1959,7 @@
             document.getElementById('skateIceCost').value = skate.ice_cost || '';
             document.getElementById('skateRefCost').value = skate.ref_cost || '';
             document.getElementById('skateOtherCost').value = skate.other_cost || '';
-            // Get current skater count for P&L
-            const counts = goalieSkaterCounts[skate.id] || { skaters: 0 };
-            updateTotalCost(counts.skaters);
+            updateTotalCost(goalieSkaterCounts[skate.id]?.skaters || 0);
             
             // Set location
             const locationSelect = document.getElementById('skateLocation');
@@ -2053,13 +2056,14 @@
                         .eq('id', currentSkateId)
                         .select();
 
-                    if (error) throw new Error(`Supabase error: ${error.message} (${error.code})`);
-                    if (!data || data.length === 0) throw new Error(`No rows updated — skate ID ${currentSkateId} not found`);
+                    if (error) throw new Error(`Save failed: ${error.message} (${error.code})`);
+                    if (!data || data.length === 0) throw new Error(`No rows updated — skate ID ${currentSkateId} not found. Make sure ice_cost/ref_cost/other_cost columns exist in Supabase.`);
                     console.log('Update successful:', data);
 
-                    isEditMode = false;
+                    isEditMode = false; // Reset after successful update
                     await loadSkates();
                     closeSkateModal();
+                    // Reopen the roster modal with updated skate
                     await openSkate(currentSkateId);
                 } else {
                     console.log('Creating new skate');
@@ -3569,138 +3573,6 @@
             }
         }
 
-        // ========== ICE COST CALCULATOR ==========
-        const COE_RINKS = [
-            'bill hunter arena','callingwood','callingwood twin arena','castle downs','castle downs twin arena',
-            'clareview','clareview arena','confederation arena','crestwood arena','donnan','donnan arena',
-            'downtown community arena','george s hughes southside arena','glengarry arena','grand trunk arena',
-            'kenilworth','kenilworth arena','kinsmen','kinsmen twin arena','londonderry','londonderry arena',
-            'michael cameron arena','mill woods twin arena','millwoods','meadows recreation centre',
-            'the meadows twin arena','russ barnes arena','terwillegar','terwillegar quad arena',
-            'terwillegar rink','tipton','tipton arena','westwood arena','wîhkwêntôwin (oliver) arena'
-        ];
-
-        function getRinkGroup(location) {
-            if (!location) return null;
-            const loc = location.toLowerCase();
-            if (loc.includes('nait')) return 'NAIT';
-            if (loc.includes('rivercree')) return 'Rivercree';
-            if (COE_RINKS.some(r => loc.includes(r) || r.includes(loc.split(' ')[0]))) return 'CoE';
-            return null;
-        }
-
-        function getSeason(date) {
-            if (!date) return null;
-            const d = new Date(date + 'T12:00:00');
-            const month = d.getMonth() + 1;
-            const day = d.getDate();
-            // Summer: Mar 30 – Aug 30
-            const afterMar30 = month > 3 || (month === 3 && day >= 30);
-            const beforeAug31 = month < 8 || (month === 8 && day <= 30);
-            return (afterMar30 && beforeAug31) ? 'summer' : 'winter';
-        }
-
-        function getDayType(date) {
-            if (!date) return null;
-            const d = new Date(date + 'T12:00:00');
-            const dow = d.getDay(); // 0=Sun, 6=Sat
-            return (dow === 0 || dow === 6) ? 'weekend' : 'weekday';
-        }
-
-        function getTimeMinutes(timeStr) {
-            if (!timeStr) return null;
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-        }
-
-        function calcIceCost() {
-            const location = document.getElementById('skateLocation')?.value;
-            const month = document.getElementById('skateMonth')?.value;
-            const day = document.getElementById('skateDay')?.value;
-            const year = document.getElementById('skateYear')?.value;
-            const date = (month && day && year)
-                ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-                : null;
-            const timeStartRaw = document.getElementById('skateStartTime')?.value;
-            const timeStart = timeStartRaw; // e.g. "21:00"
-            const duration = parseInt(document.getElementById('skateDuration')?.value);
-
-            const rinkGroup = getRinkGroup(location);
-            const iceCostEl = document.getElementById('skateIceCost');
-            const labelEl = document.getElementById('iceCostLabel');
-            const totalEl = document.getElementById('skateTotalCost');
-
-            // Update total whenever any cost field changes
-            updateTotalCost();
-
-            if (!rinkGroup || !date || !timeStart || !duration) {
-                if (labelEl) labelEl.textContent = rinkGroup ? '— fill in date, time & duration to auto-calc' : '— no rate data for this rink';
-                return;
-            }
-
-            const season = getSeason(date);
-            const dayType = getDayType(date);
-            const startMins = getTimeMinutes(timeStart);
-            const hours = duration / 60;
-
-            let rate = null;
-            let slotLabel = '';
-
-            if (rinkGroup === 'NAIT') {
-                rate = 230;
-                slotLabel = 'NAIT standard rate';
-            } else if (rinkGroup === 'Rivercree') {
-                rate = 144;
-                slotLabel = 'Rivercree AM rate';
-            } else if (rinkGroup === 'CoE') {
-                if (season === 'summer') {
-                    // High priority: weekday 6pm+, or weekend Apr-May
-                    const isHighPriority = (dayType === 'weekday' && startMins >= 18 * 60) ||
-                                           (dayType === 'weekend');
-                    rate = isHighPriority ? 265 : 201;
-                    slotLabel = `CoE ${season} ${isHighPriority ? 'High Priority' : 'Low Priority'}`;
-                } else {
-                    // Winter: Prime weekday 4-11pm, weekend 8am-11pm
-                    const isPrime = (dayType === 'weekday' && startMins >= 16 * 60 && startMins < 23 * 60) ||
-                                    (dayType === 'weekend' && startMins >= 8 * 60 && startMins < 23 * 60);
-                    rate = isPrime ? 342 : 203;
-                    slotLabel = `CoE ${season} ${isPrime ? 'Prime Time' : 'Non-Prime'}`;
-                }
-            }
-
-            if (rate !== null) {
-                const iceCost = Math.round(rate * hours * 100) / 100;
-                if (iceCostEl) iceCostEl.value = iceCost;
-                if (labelEl) labelEl.textContent = `${slotLabel} · $${rate}/hr × ${hours}hr = $${iceCost}`;
-                updateTotalCost();
-            }
-        }
-
-        function updateTotalCost(skaterCount) {
-            const ice = parseFloat(document.getElementById('skateIceCost')?.value) || 0;
-            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0;
-            const other = parseFloat(document.getElementById('skateOtherCost')?.value) || 0;
-            const total = ice + ref + other;
-            const totalEl = document.getElementById('skateTotalCost');
-            if (totalEl) totalEl.value = total > 0 ? `$${total.toFixed(2)}` : '—';
-
-            // P&L
-            const costStr = document.getElementById('skateCost')?.value || '';
-            const costPerPlayer = parseFloat(costStr.replace('$', '')) || 0;
-            const skaters = skaterCount !== undefined ? skaterCount :
-                (currentSkateId ? (allSkates.find(s => s.id === currentSkateId)?.skater_count || 0) : 0);
-            const revenue = costPerPlayer * skaters;
-            const profit = revenue - total;
-
-            const revEl = document.getElementById('skateRevenue');
-            const profEl = document.getElementById('skateProfit');
-            if (revEl) revEl.value = revenue > 0 ? `$${revenue.toFixed(2)}` : '—';
-            if (profEl) {
-                profEl.value = total > 0 || revenue > 0 ? `${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}` : '—';
-                profEl.style.color = profit >= 0 ? '#10b981' : '#ef4444';
-            }
-        }
-
         // ========== TOAST ==========
         let toastTimer;
         function showToast(message) {
@@ -3891,6 +3763,122 @@
             bar.style.width = pct + '%';
             label.textContent = isEven ? '—' : `${pct}% / ${100 - pct}%`;
             count.textContent = isEven ? 'Even' : (pct > 50 ? '⬛ Dark stronger' : '⬜ Light stronger');
+        }
+
+        // ========== ICE COST CALCULATOR ==========
+        const COE_RINKS = [
+            'bill hunter','callingwood','castle downs','clareview','confederation',
+            'crestwood','donnan','downtown community','george s hughes','glengarry',
+            'grand trunk','kenilworth','kinsmen','londonderry','michael cameron',
+            'mill woods','millwoods','meadows','russ barnes','terwillegar',
+            'tipton','westwood','wîhkwêntôwin','oliver'
+        ];
+
+        function getRinkGroup(location) {
+            if (!location) return null;
+            const loc = location.toLowerCase();
+            if (loc.includes('nait')) return 'NAIT';
+            if (loc.includes('rivercree')) return 'Rivercree';
+            if (loc.includes('silent ice')) return 'Silent Ice';
+            if (loc.includes('zerOne') || loc.includes('zer one') || loc.includes('wem')) return null;
+            if (COE_RINKS.some(r => loc.includes(r))) return 'CoE';
+            return null;
+        }
+
+        function getSeason(date) {
+            if (!date) return null;
+            const d = new Date(date + 'T12:00:00');
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            const afterMar30 = month > 3 || (month === 3 && day >= 30);
+            const beforeAug31 = month < 8 || (month === 8 && day <= 30);
+            return (afterMar30 && beforeAug31) ? 'summer' : 'winter';
+        }
+
+        function getDayType(date) {
+            if (!date) return null;
+            const d = new Date(date + 'T12:00:00');
+            const dow = d.getDay();
+            return (dow === 0 || dow === 6) ? 'weekend' : 'weekday';
+        }
+
+        function calcIceCost() {
+            const location = document.getElementById('skateLocation')?.value;
+            const month = document.getElementById('skateMonth')?.value;
+            const day = document.getElementById('skateDay')?.value;
+            const year = document.getElementById('skateYear')?.value;
+            const date = (month && day && year)
+                ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+                : null;
+            const timeStart = document.getElementById('skateStartTime')?.value;
+            const duration = parseInt(document.getElementById('skateDuration')?.value);
+
+            const rinkGroup = getRinkGroup(location);
+            const labelEl = document.getElementById('iceCostLabel');
+
+            updateTotalCost();
+
+            if (!rinkGroup || !date || !timeStart || !duration) {
+                if (labelEl) labelEl.textContent = rinkGroup ? '— fill in date, time & duration' : '— no rate data for this rink';
+                return;
+            }
+
+            const season = getSeason(date);
+            const dayType = getDayType(date);
+            const [h, m] = timeStart.split(':').map(Number);
+            const startMins = h * 60 + m;
+            const hours = duration / 60;
+
+            let rate = null;
+            let slotLabel = '';
+
+            if (rinkGroup === 'NAIT') {
+                rate = 230; slotLabel = 'NAIT standard';
+            } else if (rinkGroup === 'Rivercree') {
+                rate = 144; slotLabel = 'Rivercree AM';
+            } else if (rinkGroup === 'CoE') {
+                if (season === 'summer') {
+                    const isHigh = (dayType === 'weekday' && startMins >= 18 * 60) || dayType === 'weekend';
+                    rate = isHigh ? 265 : 201;
+                    slotLabel = `CoE Summer ${isHigh ? 'High' : 'Low'} Priority`;
+                } else {
+                    const isPrime = (dayType === 'weekday' && startMins >= 16*60 && startMins < 23*60) ||
+                                    (dayType === 'weekend' && startMins >= 8*60 && startMins < 23*60);
+                    rate = isPrime ? 342 : 203;
+                    slotLabel = `CoE Winter ${isPrime ? 'Prime' : 'Non-Prime'}`;
+                }
+            }
+
+            if (rate !== null) {
+                const iceCost = Math.round(rate * hours * 100) / 100;
+                document.getElementById('skateIceCost').value = iceCost;
+                if (labelEl) labelEl.textContent = `${slotLabel} · $${rate}/hr × ${hours}hr = $${iceCost}`;
+                updateTotalCost();
+            }
+        }
+
+        function updateTotalCost(skaterCount) {
+            const ice = parseFloat(document.getElementById('skateIceCost')?.value) || 0;
+            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0;
+            const other = parseFloat(document.getElementById('skateOtherCost')?.value) || 0;
+            const total = ice + ref + other;
+            const totalEl = document.getElementById('skateTotalCost');
+            if (totalEl) totalEl.value = total > 0 ? `$${total.toFixed(2)}` : '—';
+
+            const costStr = document.getElementById('skateCost')?.value || '';
+            const costPerPlayer = parseFloat(costStr.replace('$', '')) || 0;
+            const skaters = skaterCount !== undefined ? skaterCount :
+                (currentSkateId ? (goalieSkaterCounts[currentSkateId]?.skaters || 0) : 0);
+            const revenue = costPerPlayer * skaters;
+            const profit = revenue - total;
+
+            const revEl = document.getElementById('skateRevenue');
+            const profEl = document.getElementById('skateProfit');
+            if (revEl) revEl.value = revenue > 0 ? `$${revenue.toFixed(2)}` : '—';
+            if (profEl) {
+                profEl.value = (total > 0 || revenue > 0) ? `${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}` : '—';
+                profEl.style.color = profit >= 0 ? '#10b981' : '#ef4444';
+            }
         }
 
         // ========== AT A GLANCE FUNCTIONS ==========
