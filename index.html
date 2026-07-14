@@ -770,6 +770,7 @@
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
                 <a href="credits.html" class="back-button">💳 Credits</a>
                 <a href="payments.html" class="back-button">💰 Payments</a>
+                <a href="financials.html" class="back-button">📊 Financials</a>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
@@ -951,9 +952,15 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Ref Cost</label>
-                        <input type="number" id="skateRefCost" placeholder="e.g. 50" step="0.01" min="0" oninput="updateTotalCost()"
+                        <label>Ref</label>
+                        <select id="skateRefCost" onchange="updateTotalCost()"
                             style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                            <option value="0">No Ref — $0</option>
+                            <option value="40">1hr — $40</option>
+                            <option value="45">75min — $45</option>
+                            <option value="50">90min — $50</option>
+                            <option value="70">2hr — $70</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
@@ -1957,7 +1964,11 @@
             document.getElementById('skateCost').value = skate.cost || '$25';
             document.getElementById('skateCapacity').value = skate.capacity || 24;
             document.getElementById('skateIceCost').value = skate.ice_cost || '';
-            document.getElementById('skateRefCost').value = skate.ref_cost || '';
+            // Set ref dropdown to closest matching value
+            const refSelect = document.getElementById('skateRefCost');
+            const refVal = skate.ref_cost ? String(Math.round(skate.ref_cost)) : '0';
+            const refOptions = Array.from(refSelect.options).map(o => o.value);
+            refSelect.value = refOptions.includes(refVal) ? refVal : '0';
             document.getElementById('skateOtherCost').value = skate.other_cost || '';
             updateTotalCost(goalieSkaterCounts[skate.id]?.skaters || 0);
             
@@ -3802,6 +3813,19 @@
             return (dow === 0 || dow === 6) ? 'weekend' : 'weekday';
         }
 
+        function autoSetRefCost() {
+            const duration = parseInt(document.getElementById('skateDuration')?.value);
+            const refSelect = document.getElementById('skateRefCost');
+            if (!refSelect || !duration) return;
+            // Only auto-set if currently on default (0)
+            if (refSelect.value !== '0' && refSelect.value !== '') return;
+            if (duration <= 60) refSelect.value = '40';
+            else if (duration <= 75) refSelect.value = '45';
+            else if (duration <= 90) refSelect.value = '50';
+            else if (duration >= 120) refSelect.value = '70';
+            updateTotalCost();
+        }
+
         function calcIceCost() {
             const location = document.getElementById('skateLocation')?.value;
             const month = document.getElementById('skateMonth')?.value;
@@ -3812,6 +3836,7 @@
                 : null;
             const timeStart = document.getElementById('skateStartTime')?.value;
             const duration = parseInt(document.getElementById('skateDuration')?.value);
+            autoSetRefCost();
 
             const rinkGroup = getRinkGroup(location);
             const labelEl = document.getElementById('iceCostLabel');
@@ -3859,7 +3884,7 @@
 
         function updateTotalCost(skaterCount) {
             const ice = parseFloat(document.getElementById('skateIceCost')?.value) || 0;
-            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0;
+            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0; // works for both select and input
             const other = parseFloat(document.getElementById('skateOtherCost')?.value) || 0;
             const total = ice + ref + other;
             const totalEl = document.getElementById('skateTotalCost');
