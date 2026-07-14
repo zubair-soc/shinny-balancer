@@ -899,7 +899,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Cost</label>
-                    <input type="text" id="skateCost" placeholder="e.g., $25" value="$25">
+                    <input type="text" id="skateCost" placeholder="e.g., $25" value="$25" oninput="updateTotalCost()">
+                    <label style="display:flex; align-items:center; gap:8px; margin-top:8px; cursor:pointer; font-weight:normal; font-size:13px; color:var(--text-muted);">
+                        <input type="checkbox" id="skateFree" onchange="handleFreeSkate()" style="width:15px; height:15px;">
+                        Free skate (no revenue)
+                    </label>
                 </div>
                 <div class="form-group">
                     <label>Capacity</label>
@@ -1825,6 +1829,8 @@
             document.getElementById('skateTitle').value = '';
             document.getElementById('skateTier').selectedIndex = 0;
             document.getElementById('skateCost').value = '$25';
+            document.getElementById('skateFree').checked = false;
+            document.getElementById('skateCost').disabled = false;
             document.getElementById('skateIceCost').value = '';
             document.getElementById('skateRefCost').value = '0';
             document.getElementById('skateOtherCost').value = '';
@@ -1964,6 +1970,8 @@
 
             document.getElementById('skateCost').value = skate.cost || '$25';
             document.getElementById('skateCapacity').value = skate.capacity || 24;
+            document.getElementById('skateFree').checked = skate.is_free || false;
+            document.getElementById('skateCost').disabled = skate.is_free || false;
             document.getElementById('skateIceCost').value = skate.ice_cost || '';
             const refSelect = document.getElementById('skateRefCost');
             const refVal = skate.ref_cost ? String(Math.round(skate.ref_cost)) : '0';
@@ -2040,18 +2048,21 @@
             const ref_cost = parseFloat(document.getElementById('skateRefCost').value) || null;
             const other_cost = parseFloat(document.getElementById('skateOtherCost').value) || null;
 
+            const is_free = document.getElementById('skateFree').checked;
+
             const skateData = {
                 title,
                 date,
                 tier,
                 time_start: timeStart,
                 time_end: timeEnd,
-                cost,
+                cost: is_free ? '$0' : cost,
                 capacity,
                 location,
                 ice_cost,
                 ref_cost,
-                other_cost
+                other_cost,
+                is_free
             };
 
             try {
@@ -3808,6 +3819,19 @@
             if (!date) return null;
             const d = new Date(date + 'T12:00:00');
             return (d.getDay() === 0 || d.getDay() === 6) ? 'weekend' : 'weekday';
+        }
+
+        function handleFreeSkate() {
+            const isFree = document.getElementById('skateFree').checked;
+            const costEl = document.getElementById('skateCost');
+            if (isFree) {
+                costEl.value = '$0';
+                costEl.disabled = true;
+            } else {
+                costEl.value = '$25';
+                costEl.disabled = false;
+            }
+            updateTotalCost();
         }
 
         function autoSetRefCost() {

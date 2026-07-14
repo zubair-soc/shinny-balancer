@@ -368,7 +368,7 @@
         // Fetch skates for the month
         const { data: skates, error } = await db
             .from('skates')
-            .select('id, title, date, time_start, time_end, location, tier, cost, capacity, ice_cost, ref_cost, other_cost')
+            .select('id, title, date, time_start, time_end, location, tier, cost, capacity, ice_cost, ref_cost, other_cost, is_free')
             .gte('date', startDate)
             .lte('date', endDate)
             .order('date', { ascending: true });
@@ -411,7 +411,7 @@
         const rows = skates.map(skate => {
             const c = counts[skate.id] || { skaters: 0, goalies: 0 };
             const costPerPlayer = parseFloat((skate.cost || '$0').replace('$','')) || 0;
-            const revenue = costPerPlayer * c.skaters;
+            const revenue = skate.is_free ? 0 : costPerPlayer * c.skaters;
             const ice = skate.ice_cost || 0;
             const ref = skate.ref_cost || 0;
             const other = skate.other_cost || 0;
@@ -436,7 +436,7 @@
         tbody.innerHTML = rows.map(({ skate, c, revenue, ice, ref, other, totalCost, pl }) => {
             const titleParts = skate.title || '';
             return `<tr>
-                <td><span class="skate-name">${titleParts}</span></td>
+                <td><span class="skate-name">${titleParts}</span>${skate.is_free ? ' <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:rgba(239,68,68,0.1); color:#ef4444; font-weight:700;">FREE</span>' : ''}</td>
                 <td class="muted">${formatDate(skate.date)}</td>
                 <td class="muted">${skate.location || '—'}</td>
                 <td class="num">${c.skaters}${c.goalies > 0 ? ` <span style="color:var(--text-muted); font-size:11px;">+${c.goalies}G</span>` : ''}</td>
