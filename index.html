@@ -930,6 +930,7 @@
                     <option value="Heavy Metal Place">Heavy Metal Place</option>
                     <option value="Rivercree">Rivercree</option>
                     <option value="Silent Ice Center">Silent Ice Center</option>
+                    <option value="Silent Ice Shooting Lanes">Silent Ice Shooting Lanes</option>
                     <option value="Terwillegar Rink">Terwillegar Rink</option>
                     <option value="Tipton">Tipton</option>
                     <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
@@ -1825,7 +1826,7 @@
             document.getElementById('skateTier').selectedIndex = 0;
             document.getElementById('skateCost').value = '$25';
             document.getElementById('skateIceCost').value = '';
-            document.getElementById('skateRefCost').value = '';
+            document.getElementById('skateRefCost').value = '0';
             document.getElementById('skateOtherCost').value = '';
             document.getElementById('skateTotalCost').value = '';
             document.getElementById('skateRevenue').value = '';
@@ -1964,11 +1965,9 @@
             document.getElementById('skateCost').value = skate.cost || '$25';
             document.getElementById('skateCapacity').value = skate.capacity || 24;
             document.getElementById('skateIceCost').value = skate.ice_cost || '';
-            // Set ref dropdown to closest matching value
             const refSelect = document.getElementById('skateRefCost');
             const refVal = skate.ref_cost ? String(Math.round(skate.ref_cost)) : '0';
-            const refOptions = Array.from(refSelect.options).map(o => o.value);
-            refSelect.value = refOptions.includes(refVal) ? refVal : '0';
+            refSelect.value = Array.from(refSelect.options).map(o => o.value).includes(refVal) ? refVal : '0';
             document.getElementById('skateOtherCost').value = skate.other_cost || '';
             updateTotalCost(goalieSkaterCounts[skate.id]?.skaters || 0);
             
@@ -2067,8 +2066,7 @@
                         .eq('id', currentSkateId)
                         .select();
 
-                    if (error) throw new Error(`Save failed: ${error.message} (${error.code})`);
-                    if (!data || data.length === 0) throw new Error(`No rows updated — skate ID ${currentSkateId} not found. Make sure ice_cost/ref_cost/other_cost columns exist in Supabase.`);
+                    if (error) throw error;
                     console.log('Update successful:', data);
 
                     isEditMode = false; // Reset after successful update
@@ -3782,7 +3780,7 @@
             'crestwood','donnan','downtown community','george s hughes','glengarry',
             'grand trunk','kenilworth','kinsmen','londonderry','michael cameron',
             'mill woods','millwoods','meadows','russ barnes','terwillegar',
-            'tipton','westwood','wîhkwêntôwin','oliver'
+            'tipton','westwood','wîhkwêntôwin','oliver','castledowns','castledown'
         ];
 
         function getRinkGroup(location) {
@@ -3790,8 +3788,8 @@
             const loc = location.toLowerCase();
             if (loc.includes('nait')) return 'NAIT';
             if (loc.includes('rivercree')) return 'Rivercree';
+            if (loc.includes('silent ice shooting')) return 'Silent Ice Shooting';
             if (loc.includes('silent ice')) return 'Silent Ice';
-            if (loc.includes('zerOne') || loc.includes('zer one') || loc.includes('wem')) return null;
             if (COE_RINKS.some(r => loc.includes(r))) return 'CoE';
             return null;
         }
@@ -3809,15 +3807,13 @@
         function getDayType(date) {
             if (!date) return null;
             const d = new Date(date + 'T12:00:00');
-            const dow = d.getDay();
-            return (dow === 0 || dow === 6) ? 'weekend' : 'weekday';
+            return (d.getDay() === 0 || d.getDay() === 6) ? 'weekend' : 'weekday';
         }
 
         function autoSetRefCost() {
             const duration = parseInt(document.getElementById('skateDuration')?.value);
             const refSelect = document.getElementById('skateRefCost');
             if (!refSelect || !duration) return;
-            // Only auto-set if currently on default (0)
             if (refSelect.value !== '0' && refSelect.value !== '') return;
             if (duration <= 60) refSelect.value = '40';
             else if (duration <= 75) refSelect.value = '45';
@@ -3840,7 +3836,6 @@
 
             const rinkGroup = getRinkGroup(location);
             const labelEl = document.getElementById('iceCostLabel');
-
             updateTotalCost();
 
             if (!rinkGroup || !date || !timeStart || !duration) {
@@ -3861,6 +3856,10 @@
                 rate = 230; slotLabel = 'NAIT standard';
             } else if (rinkGroup === 'Rivercree') {
                 rate = 144; slotLabel = 'Rivercree AM';
+            } else if (rinkGroup === 'Silent Ice Shooting') {
+                rate = 40; slotLabel = 'Silent Ice Shooting Lanes';
+            } else if (rinkGroup === 'Silent Ice') {
+                rate = 375.75; slotLabel = 'Silent Ice';
             } else if (rinkGroup === 'CoE') {
                 if (season === 'summer') {
                     const isHigh = (dayType === 'weekday' && startMins >= 18 * 60) || dayType === 'weekend';
@@ -3884,7 +3883,7 @@
 
         function updateTotalCost(skaterCount) {
             const ice = parseFloat(document.getElementById('skateIceCost')?.value) || 0;
-            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0; // works for both select and input
+            const ref = parseFloat(document.getElementById('skateRefCost')?.value) || 0;
             const other = parseFloat(document.getElementById('skateOtherCost')?.value) || 0;
             const total = ice + ref + other;
             const totalEl = document.getElementById('skateTotalCost');
