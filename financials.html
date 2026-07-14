@@ -255,7 +255,8 @@
     // ===== SUPABASE =====
     const SUPABASE_URL = 'https://qmqhpcbhvlpdhjccmzoa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcWhwY2JodmxwZGhqY2Mtem9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTUwNTIsImV4cCI6MjA1NTE3MTA1Mn0.WkzFBpG4fwqzCX-i7BGCqLSQqOz2mAJJEQiKxXKFPWM';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ===== STATE =====
     let currentYear = new Date().getFullYear();
@@ -326,7 +327,7 @@
         const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${lastDay}`;
 
         // Fetch skates for the month
-        const { data: skates, error } = await supabase
+        const { data: skates, error } = await db
             .from('skates')
             .select('id, title, date, time_start, time_end, location, tier, cost, capacity, ice_cost, ref_cost, other_cost')
             .gte('date', startDate)
@@ -350,7 +351,7 @@
         const chunkSize = 10;
         for (let i = 0; i < skateIds.length; i += chunkSize) {
             const chunk = skateIds.slice(i, i + chunkSize);
-            const { data: regs } = await supabase
+            const { data: regs } = await db
                 .from('skate_registrations')
                 .select('skate_id, is_goalie, is_waitlist')
                 .in('skate_id', chunk)
