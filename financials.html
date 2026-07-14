@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financials — BH Hockey</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -253,10 +253,9 @@
 
 <script>
     // ===== SUPABASE =====
-    const SUPABASE_URL = 'https://qmqhpcbhvlpdhjccmzoa.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtcWhwY2JodmxwZGhqY2Mtem9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1OTUwNTIsImV4cCI6MjA1NTE3MTA1Mn0.WkzFBpG4fwqzCX-i7BGCqLSQqOz2mAJJEQiKxXKFPWM';
-    const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_URL = 'https://fqbtfgkwhnfyodinjvcn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxYnRmZ2t3aG5meW9kaW5qdmNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MzIzODAsImV4cCI6MjA4NjAwODM4MH0.dVank1VxQ4-9EsQ7ekwSRs5Vu9V2rQLgVmN01iBDYHs';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ===== STATE =====
     let currentYear = new Date().getFullYear();
