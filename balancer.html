@@ -490,8 +490,6 @@
                             <option value="Terwillegar Recreation Centre">Terwillegar Recreation Centre</option>
                             <option value="Donnan">Donnan</option>
                             <option value="NAIT">NAIT</option>
-                            <option value="NAIT - Parking: Honk App (GARENT2526)">NAIT - Parking: Honk App (GARENT2526)</option>
-                            <option value="Heavy Metal Place">Heavy Metal Place</option>
                             <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
                             <option value="Meadows Recreation Centre">Meadows Recreation Centre</option>
                             <option value="custom">+ Add Custom Location</option>
@@ -597,7 +595,7 @@
             try {
                 const { data, error } = await supabaseClient
                     .from('players')
-                    .select('id, name, rating, rating_v2, rating_v2_anchored, is_pillar, lower_pillar_id, upper_pillar_id')
+                    .select('name, rating')
                     .order('name');
 
                 if (error) {
@@ -607,20 +605,10 @@
                     throw error;
                 }
 
-                playerDatabase = data.map(p => ({
-                    name: p.name,
-                    rating: p.rating,
-                    id: p.id,
-                    rating_v2: p.rating_v2,
-                    rating_v2_anchored: p.rating_v2_anchored,
-                    is_pillar: p.is_pillar,
-                    lower_pillar_id: p.lower_pillar_id,
-                    upper_pillar_id: p.upper_pillar_id
-                }));
+                playerDatabase = data.map(p => ({ name: p.name, rating: p.rating }));
                 document.getElementById('playerCountPaste').textContent = playerDatabase.length;
                 document.getElementById('playerCount').textContent = playerDatabase.length;
                 console.log(`Loaded ${playerDatabase.length} players from Supabase`);
-                loadPillarSection();
             } catch (error) {
                 console.error('Error loading players:', error);
                 console.error('Full error:', JSON.stringify(error, null, 2));
@@ -1043,19 +1031,29 @@
                 if (!trimmed) return;
 
                 // Check for goalie designation (lowercase 'g' at end)
-                const goalieMatch = trimmed.match(/\s+g$/);
+                const goalieMatch = trimmed.match(/\s+g$/i) || trimmed.match(/\s+g\s+[a-fh-zA-FH-Z]$/i);
                 const isGoalie = goalieMatch ? true : false;
                 
                 // Check for friend group (A-F, H in any case at end - skip g/G for goalies)
-                const groupMatch = trimmed.match(/\s+([a-fhA-FH])$/);
-                const friendGroup = groupMatch && !isGoalie ? groupMatch[1].toUpperCase() : null;
-                
-                // Remove both goalie marker and friend group from name
+                // Handle "Name g A" format — goalie + friend group
+                const goalieAndGroupMatch = trimmed.match(/\s+g\s+([a-fh-zA-FH-Z])$/i);
+                let friendGroup = null;
                 let nameToMatch = trimmed;
-                if (isGoalie) {
-                    nameToMatch = nameToMatch.replace(/\s+g$/, '').trim();
-                } else if (friendGroup) {
-                    nameToMatch = nameToMatch.replace(/\s+[a-fhA-FH]$/, '').trim();
+
+                if (goalieAndGroupMatch) {
+                    // Both goalie and friend group
+                    friendGroup = goalieAndGroupMatch[1].toUpperCase();
+                    nameToMatch = trimmed.replace(/\s+g\s+[a-fh-zA-FH-Z]$/i, '').trim();
+                } else if (isGoalie) {
+                    // Just goalie
+                    nameToMatch = trimmed.replace(/\s+g$/i, '').trim();
+                } else {
+                    // Check for friend group only
+                    const groupMatch = trimmed.match(/\s+([a-fh-zA-FH-Z])$/i);
+                    if (groupMatch) {
+                        friendGroup = groupMatch[1].toUpperCase();
+                        nameToMatch = trimmed.replace(/\s+[a-fh-zA-FH-Z]$/i, '').trim();
+                    }
                 }
 
                 // Find player in database, stripping position tags like (F), (D), (F/D) for matching
@@ -1285,6 +1283,23 @@
             const lightStats = getTeamStats(lightTeam);
 
             let html = '<div class="teams-container">';
+
+            // Show move button when a player is selected
+            if (selectedPlayer) {
+                const p = selectedPlayer.player;
+                const destTeam = selectedPlayer.team === 'dark' ? 'Light ⚪️' : 'Dark ⚫️';
+                html += `<div style="position:sticky; top:0; z-index:10; background:rgba(var(--primary-rgb),0.12); border:1px solid rgba(var(--primary-rgb),0.3); border-radius:10px; padding:10px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <span style="font-size:13px; color:var(--text);">
+                        <strong>${p.name}</strong> selected — tap another player to swap, or move to ${destTeam}
+                    </span>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="moveSelectedPlayer()" style="padding:6px 14px; background:var(--primary); border:none; border-radius:8px; color:white; font-size:13px; font-weight:600; cursor:pointer;">
+                            → Move to ${destTeam}
+                        </button>
+                        <button onclick="selectedPlayer=null; renderTeams();" style="padding:6px 12px; background:rgba(0,0,0,0.1); border:1px solid var(--card-border); border-radius:8px; color:var(--text-muted); font-size:13px; cursor:pointer;">✕</button>
+                    </div>
+                </div>`;
+            }
             
             // Dark team
             html += '<div class="team">';
@@ -1501,7 +1516,6 @@
             
             // If clicking a player on the OPPOSITE team, swap them
             if (selectedPlayer.team !== team) {
-                // Perform the swap
                 if (selectedPlayer.team === 'dark') {
                     const darkPlayer = darkTeam[selectedPlayer.index];
                     const lightPlayer = lightTeam[index];
@@ -1513,11 +1527,26 @@
                     lightTeam[selectedPlayer.index] = darkPlayer;
                     darkTeam[index] = lightPlayer;
                 }
-                
                 selectedPlayer = null;
                 renderTeams();
                 saveTeams();
             }
+        }
+
+        function moveSelectedPlayer() {
+            if (!selectedPlayer) return;
+            const { team, index, player } = selectedPlayer;
+            if (team === 'dark') {
+                darkTeam.splice(index, 1);
+                lightTeam.push(player);
+            } else {
+                lightTeam.splice(index, 1);
+                darkTeam.push(player);
+            }
+            selectedPlayer = null;
+            sortTeams();
+            renderTeams();
+            saveTeams();
         }
 
         function getTeamStats(team) {
@@ -1891,178 +1920,6 @@
 
         // Initialize theme on page load
         initTheme();
-
-        // ========== PILLAR & RATING V2 SYSTEM ==========
-        let allPillars = [];
-
-        async function loadPillarSection() {
-            const pillars = playerDatabase.filter(p => p.is_pillar).sort((a, b) => (a.rating_v2 || 0) - (b.rating_v2 || 0));
-            allPillars = pillars;
-            const container = document.getElementById('pillarList');
-            if (!container) return;
-            if (pillars.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-muted); font-size: 13px;">No pillars set yet. Mark players as pillars below.</p>';
-            } else {
-                container.innerHTML = pillars.map(p => `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 8px; margin-bottom: 8px;">
-                        <div>
-                            <span style="font-weight: 600; color: var(--text);">⭐ ${p.name}</span>
-                            <span style="color: var(--text-muted); font-size: 13px; margin-left: 10px;">v2: ${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '—'}</span>
-                            <span style="color: var(--text-muted); font-size: 13px; margin-left: 8px;">v1: ${p.rating || '—'}</span>
-                        </div>
-                        <button onclick="openPlayerProfile('${p.name.replace(/'/g, "\'")}')" style="background: rgba(var(--primary-rgb),0.15); border: 1px solid rgba(var(--primary-rgb),0.3); color: var(--primary); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Edit</button>
-                    </div>
-                `).join('');
-            }
-
-            // Populate player search
-            const search = document.getElementById('pillarPlayerSearch');
-            if (search) {
-                search.addEventListener('input', () => {
-                    const q = search.value.toLowerCase();
-                    const results = playerDatabase.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
-                    const dd = document.getElementById('pillarPlayerDropdown');
-                    if (q.length < 2) { dd.style.display = 'none'; return; }
-                    dd.innerHTML = results.map(p => `
-                        <div onclick="openPlayerProfile('${p.name.replace(/'/g, "\'")}'); document.getElementById('pillarPlayerSearch').value=''; document.getElementById('pillarPlayerDropdown').style.display='none';"
-                            style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center;">
-                            <span>${p.name} ${p.is_pillar ? '⭐' : ''}</span>
-                            <span style="color: var(--text-muted); font-size: 12px;">v2: ${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '—'} | v1: ${p.rating || '—'}</span>
-                        </div>
-                    `).join('');
-                    dd.style.display = 'block';
-                });
-            }
-        }
-
-        function openPlayerProfile(name) {
-            const player = playerDatabase.find(p => p.name === name);
-            if (!player) return;
-
-            const pillars = playerDatabase.filter(p => p.is_pillar && p.name !== name).sort((a, b) => (a.rating_v2 || 0) - (b.rating_v2 || 0));
-            const lowerPillar = player.lower_pillar_id ? playerDatabase.find(p => p.id === player.lower_pillar_id) : null;
-            const upperPillar = player.upper_pillar_id ? playerDatabase.find(p => p.id === player.upper_pillar_id) : null;
-
-            document.getElementById('profileName').textContent = name;
-            document.getElementById('profileV1Rating').textContent = player.rating || '—';
-            document.getElementById('profileV2Rating').value = player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '';
-            document.getElementById('profileIsPillar').checked = player.is_pillar || false;
-            document.getElementById('profileAnchored').textContent = player.rating_v2_anchored ? '✓ Anchored' : 'Not anchored';
-
-            // Populate pillar selects
-            const lowerSel = document.getElementById('profileLowerPillar');
-            const upperSel = document.getElementById('profileUpperPillar');
-            const pillarOptions = '<option value="">— None —</option>' + pillars.map(p =>
-                `<option value="${p.id}">${p.name} (${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '?'})</option>`
-            ).join('');
-            lowerSel.innerHTML = pillarOptions;
-            upperSel.innerHTML = pillarOptions;
-            if (lowerPillar) lowerSel.value = lowerPillar.id;
-            if (upperPillar) upperSel.value = upperPillar.id;
-
-            // Store current player name for saving
-            document.getElementById('playerProfileModal').dataset.playerName = name;
-            document.getElementById('playerProfileModal').classList.add('active');
-        }
-
-        async function savePlayerProfile() {
-            const name = document.getElementById('playerProfileModal').dataset.playerName;
-            const player = playerDatabase.find(p => p.name === name);
-            if (!player) return;
-
-            const rating_v2Raw = document.getElementById('profileV2Rating').value;
-            const rating_v2 = rating_v2Raw !== '' ? parseFloat(rating_v2Raw) : null;
-            const is_pillar = document.getElementById('profileIsPillar').checked;
-            const lower_pillar_id = document.getElementById('profileLowerPillar').value || null;
-            const upper_pillar_id = document.getElementById('profileUpperPillar').value || null;
-            const rating_v2_anchored = rating_v2 !== null;
-
-            try {
-                const { error } = await supabaseClient
-                    .from('players')
-                    .update({ rating_v2, is_pillar, lower_pillar_id, upper_pillar_id, rating_v2_anchored })
-                    .eq('name', name);
-                if (error) throw error;
-
-                // Update local
-                player.rating_v2 = rating_v2;
-                player.is_pillar = is_pillar;
-                player.lower_pillar_id = lower_pillar_id;
-                player.upper_pillar_id = upper_pillar_id;
-                player.rating_v2_anchored = rating_v2_anchored;
-
-                document.getElementById('playerProfileModal').classList.remove('active');
-                loadPillarSection();
-            } catch (err) {
-                console.error('Save failed:', err);
-                alert('Failed to save player profile');
-            }
-        }
-
-        function closePillarModal() {
-            document.getElementById('playerProfileModal').classList.remove('active');
-        }
     </script>
-
-    <!-- Pillar Management Section (injected after teams) -->
-    <div id="pillarSection" style="max-width: 900px; margin: 32px auto; padding: 0 16px;">
-        <div class="setup-section">
-            <h2>⭐ Rating V2 — Pillar Management</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">Set pillar players as anchors for the 0–100 rating system. Search any player to set their v2 rating and pillar boundaries.</p>
-
-            <div style="position: relative; margin-bottom: 20px;">
-                <input type="text" id="pillarPlayerSearch" placeholder="Search player to edit profile..." autocomplete="off"
-                    style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px;">
-                <div id="pillarPlayerDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; z-index:100; max-height:240px; overflow-y:auto;"></div>
-            </div>
-
-            <h3 style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px;">Current Pillars</h3>
-            <div id="pillarList"></div>
-        </div>
-    </div>
-
-    <!-- Player Profile Modal -->
-    <div id="playerProfileModal" class="modal" style="z-index: 2000;">
-        <div class="modal-content" style="max-width: 460px;">
-            <div class="modal-header">
-                <span>Player Profile</span>
-                <button class="close-modal" onclick="closePillarModal()">×</button>
-            </div>
-
-            <div style="margin-bottom: 20px; padding: 12px 16px; background: rgba(var(--primary-rgb),0.1); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <strong id="profileName" style="color: var(--primary); font-size: 16px;"></strong>
-                <span style="font-size: 12px; color: var(--text-muted);">v1 rating: <strong id="profileV1Rating" style="color: var(--text);"></strong></span>
-            </div>
-
-            <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
-                    <input type="checkbox" id="profileIsPillar" style="width:16px; height:16px; flex-shrink:0;">
-                    Mark as Pillar Player ⭐
-                </label>
-            </div>
-
-            <div class="form-group">
-                <label>V2 Rating (0–100) <span id="profileAnchored" style="font-size: 11px; color: var(--primary); margin-left: 8px;"></span></label>
-                <input type="number" id="profileV2Rating" min="0" max="100" step="0.5" placeholder="e.g. 72"
-                    style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 16px;">
-            </div>
-
-            <div class="form-group">
-                <label>Lower Pillar (best player they're worse than)</label>
-                <select id="profileLowerPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px;"></select>
-            </div>
-
-            <div class="form-group">
-                <label>Upper Pillar (worst player they're better than)</label>
-                <select id="profileUpperPillar" style="width:100%; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px;"></select>
-            </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 8px;">
-                <button class="button button-secondary" onclick="closePillarModal()" style="flex:1;">Cancel</button>
-                <button class="button" onclick="savePlayerProfile()" style="flex:1;">Save</button>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>
