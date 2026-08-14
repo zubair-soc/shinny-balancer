@@ -920,6 +920,7 @@
                     <option value="Canadian Athletic Club">Canadian Athletic Club</option>
                     <option value="Castledowns">Castledowns</option>
                     <option value="Clareview">Clareview</option>
+                    <option value="Confederation">Confederation</option>
                     <option value="Donnan">Donnan</option>
                     <option value="Downtown Community Arena">Downtown Community Arena</option>
                     <option value="Grand Trunk Arena">Grand Trunk Arena</option>
@@ -930,11 +931,10 @@
                     <option value="Millenium Place">Millenium Place</option>
                     <option value="Millwoods">Millwoods</option>
                     <option value="NAIT">NAIT</option>
-                    <option value="NAIT - Parking: Honk App (GARENT2526)">NAIT - Parking: Honk App (GARENT2526)</option>
+                    <option value="NAIT - Parking: Honk App (RENTALGA27)">NAIT - Parking: Honk App (RENTALGA27)</option>
                     <option value="Heavy Metal Place">Heavy Metal Place</option>
                     <option value="Rivercree">Rivercree</option>
                     <option value="Silent Ice Center">Silent Ice Center</option>
-                    <option value="Silent Ice Shooting Lanes">Silent Ice Shooting Lanes</option>
                     <option value="Terwillegar Rink">Terwillegar Rink</option>
                     <option value="Tipton">Tipton</option>
                     <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
@@ -1240,7 +1240,7 @@
         let allSkates = [];
         let allPlayers = [];
         let currentSkateId = null;
-        let isEditMode = false; // Track if we're editing or creating
+        let isEditMode = false;
         let goalieSkaterCounts = {};
 
         // Format time to 12hr with AM/PM (e.g., "19:45" -> "7:45PM")
@@ -2047,7 +2047,6 @@
             const ice_cost = parseFloat(document.getElementById('skateIceCost').value) || null;
             const ref_cost = parseFloat(document.getElementById('skateRefCost').value) || null;
             const other_cost = parseFloat(document.getElementById('skateOtherCost').value) || null;
-
             const is_free = document.getElementById('skateFree').checked;
 
             const skateData = {
@@ -3801,6 +3800,8 @@
             if (loc.includes('rivercree')) return 'Rivercree';
             if (loc.includes('silent ice shooting')) return 'Silent Ice Shooting';
             if (loc.includes('silent ice')) return 'Silent Ice';
+            if (loc.includes('zerone') || loc.includes('zer one')) return 'ZerOne';
+            if (loc.includes('heavy metal')) return 'Heavy Metal';
             if (COE_RINKS.some(r => loc.includes(r))) return 'CoE';
             return null;
         }
@@ -3824,13 +3825,8 @@
         function handleFreeSkate() {
             const isFree = document.getElementById('skateFree').checked;
             const costEl = document.getElementById('skateCost');
-            if (isFree) {
-                costEl.value = '$0';
-                costEl.disabled = true;
-            } else {
-                costEl.value = '$25';
-                costEl.disabled = false;
-            }
+            if (isFree) { costEl.value = '$0'; costEl.disabled = true; }
+            else { costEl.value = '$25'; costEl.disabled = false; }
             updateTotalCost();
         }
 
@@ -3884,6 +3880,10 @@
                 rate = 40; slotLabel = 'Silent Ice Shooting Lanes';
             } else if (rinkGroup === 'Silent Ice') {
                 rate = 375.75; slotLabel = 'Silent Ice';
+            } else if (rinkGroup === 'ZerOne') {
+                rate = 150; slotLabel = 'ZerOne W.E.M.';
+            } else if (rinkGroup === 'Heavy Metal') {
+                rate = 262; slotLabel = 'Heavy Metal Place';
             } else if (rinkGroup === 'CoE') {
                 if (season === 'summer') {
                     const isHigh = (dayType === 'weekday' && startMins >= 18 * 60) || dayType === 'weekend';
@@ -3913,11 +3913,12 @@
             const totalEl = document.getElementById('skateTotalCost');
             if (totalEl) totalEl.value = total > 0 ? `$${total.toFixed(2)}` : '—';
 
+            const isFree = document.getElementById('skateFree')?.checked;
             const costStr = document.getElementById('skateCost')?.value || '';
             const costPerPlayer = parseFloat(costStr.replace('$', '')) || 0;
             const skaters = skaterCount !== undefined ? skaterCount :
                 (currentSkateId ? (goalieSkaterCounts[currentSkateId]?.skaters || 0) : 0);
-            const revenue = costPerPlayer * skaters;
+            const revenue = isFree ? 0 : costPerPlayer * skaters;
             const profit = revenue - total;
 
             const revEl = document.getElementById('skateRevenue');
