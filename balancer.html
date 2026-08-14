@@ -1283,23 +1283,6 @@
             const lightStats = getTeamStats(lightTeam);
 
             let html = '<div class="teams-container">';
-
-            // Show move button when a player is selected
-            if (selectedPlayer) {
-                const p = selectedPlayer.player;
-                const destTeam = selectedPlayer.team === 'dark' ? 'Light ⚪️' : 'Dark ⚫️';
-                html += `<div style="position:sticky; top:0; z-index:10; background:rgba(var(--primary-rgb),0.12); border:1px solid rgba(var(--primary-rgb),0.3); border-radius:10px; padding:10px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                    <span style="font-size:13px; color:var(--text);">
-                        <strong>${p.name}</strong> selected — tap another player to swap, or move to ${destTeam}
-                    </span>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="moveSelectedPlayer()" style="padding:6px 14px; background:var(--primary); border:none; border-radius:8px; color:white; font-size:13px; font-weight:600; cursor:pointer;">
-                            → Move to ${destTeam}
-                        </button>
-                        <button onclick="selectedPlayer=null; renderTeams();" style="padding:6px 12px; background:rgba(0,0,0,0.1); border:1px solid var(--card-border); border-radius:8px; color:var(--text-muted); font-size:13px; cursor:pointer;">✕</button>
-                    </div>
-                </div>`;
-            }
             
             // Dark team
             html += '<div class="team">';
@@ -1496,7 +1479,8 @@
             // If no player selected yet, select this one
             if (!selectedPlayer) {
                 selectedPlayer = { team, index, player };
-                renderTeams(); // Re-render to show selection
+                renderTeams();
+                showMoveBanner();
                 return;
             }
             
@@ -1504,6 +1488,7 @@
             if (selectedPlayer.team === team && selectedPlayer.index === index) {
                 selectedPlayer = null;
                 renderTeams();
+                showMoveBanner();
                 return;
             }
             
@@ -1511,6 +1496,7 @@
             if (selectedPlayer.team === team) {
                 selectedPlayer = { team, index, player };
                 renderTeams();
+                showMoveBanner();
                 return;
             }
             
@@ -1533,6 +1519,16 @@
             }
         }
 
+        function showMoveBanner() {
+            const banner = document.getElementById('moveBanner');
+            if (!banner) return;
+            if (!selectedPlayer) { banner.style.display = 'none'; return; }
+            const destTeam = selectedPlayer.team === 'dark' ? 'Light ⚪️' : 'Dark ⚫️';
+            document.getElementById('moveBannerText').textContent = `${selectedPlayer.player.name} selected`;
+            document.getElementById('moveBannerBtn').textContent = `→ Move to ${destTeam}`;
+            banner.style.display = 'flex';
+        }
+
         function moveSelectedPlayer() {
             if (!selectedPlayer) return;
             const { team, index, player } = selectedPlayer;
@@ -1547,6 +1543,7 @@
             sortTeams();
             renderTeams();
             saveTeams();
+            showMoveBanner();
         }
 
         function getTeamStats(team) {
@@ -1921,5 +1918,12 @@
         // Initialize theme on page load
         initTheme();
     </script>
+    <!-- Move player banner -->
+    <div id="moveBanner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:1000; background:var(--card-bg); border:1px solid rgba(var(--primary-rgb),0.4); border-radius:12px; padding:12px 16px; box-shadow:0 4px 20px rgba(0,0,0,0.2); display:none; align-items:center; gap:12px; white-space:nowrap;">
+        <span id="moveBannerText" style="font-size:13px; color:var(--text);"></span>
+        <button id="moveBannerBtn" onclick="moveSelectedPlayer()" style="padding:6px 14px; background:var(--primary); border:none; border-radius:8px; color:white; font-size:13px; font-weight:600; cursor:pointer;"></button>
+        <button onclick="selectedPlayer=null; renderTeams();" style="padding:6px 10px; background:rgba(0,0,0,0.08); border:1px solid var(--card-border); border-radius:8px; color:var(--text-muted); font-size:13px; cursor:pointer;">✕</button>
+    </div>
+
 </body>
 </html>
