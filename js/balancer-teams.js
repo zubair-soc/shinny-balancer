@@ -1,0 +1,479 @@
+        async function saveTeams() {
+            if (!currentBalancerSkateId || !supabaseClient) return;
+            try {
+                await supabaseClient
+                    .from('skate_teams')
+                    .upsert({
+                        skate_id: currentBalancerSkateId,
+                        dark_team: darkTeam,
+                        light_team: lightTeam,
+                        saved_at: new Date().toISOString()
+                    }, { onConflict: 'skate_id' });
+            } catch (err) {
+                console.error('Failed to save teams:', err);
+            }
+        }
+
+        async function loadSavedTeams(skateId) {
+            if (!skateId || !supabaseClient) return false;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('skate_teams')
+                    .select('dark_team, light_team, saved_at')
+                    .eq('skate_id', skateId)
+                    .single();
+
+                if (error || !data) return false;
+
+                const savedAt = new Date(data.saved_at).toLocaleString();
+                const load = confirm(`Saved teams found for this skate (last saved ${savedAt}).\n\nLoad saved teams?`);
+                if (!load) return false;
+
+                darkTeam = data.dark_team || [];
+                lightTeam = data.light_team || [];
+                renderTeams();
+                return true;
+            } catch (err) {
+                console.error('Failed to load saved teams:', err);
+                return false;
+            }
+        }
+
+        function balanceTeams() {
+            console.log('balanceTeams called');
+            console.log('matchedPlayers:', matchedPlayers);
+            console.log('matchedPlayers.length:', matchedPlayers.length);
+            
+            if (matchedPlayers.length === 0) {
+                alert('Please match players first');
+                return;
+            }
+
+            console.log('Starting to balance teams...');
+            
+            const totalPlayers = matchedPlayers.length;
+            const targetDark = Math.ceil(totalPlayers / 2);
+            const targetLight = Math.floor(totalPlayers / 2);
+            
+            // Separate goalies from skaters
+            const goalies = matchedPlayers.filter(p => p.isGoalie);
+            const skaters = matchedPlayers.filter(p => !p.isGoalie);
+            
+            // Separate grouped and ungrouped skaters
+            const grouped = {};
+            const ungrouped = [];
+
+            skaters.forEach(player => {
+                if (player.friendGroup) {
+                    if (!grouped[player.friendGroup]) {
+                        grouped[player.friendGroup] = [];
+                    }
+                    grouped[player.friendGroup].push(player);
+                } else {
+                    ungrouped.push(player);
+                }
+            });
+
+            console.log('Goalies:', goalies);
+            console.log('Grouped skaters:', grouped);
+            console.log('Ungrouped skaters:', ungrouped);
+            console.log(`Target team sizes: Dark ${targetDark}, Light ${targetLight}`);
+
+            // Assign goalies - one per team (don't count their ratings in team totals)
+            darkTeam = [];
+            lightTeam = [];
+            let darkTotal = 0;
+            let lightTotal = 0;
+            
+            if (goalies.length >= 2) {
+                // Put first goalie on dark, second on light (ratings don't count)
+                darkTeam.push(goalies[0]);
+                lightTeam.push(goalies[1]);
+                
+                // If there are extra goalies (3+), add them as skaters
+                for (let i = 2; i < goalies.length; i++) {
+                    ungrouped.push({...goalies[i], isGoalie: false});
+                }
+            } else if (goalies.length === 1) {
+                // Only one goalie, put on dark team (rating doesn't count)
+                darkTeam.push(goalies[0]);
+            }
+
+            // Sort groups by average rating (descending) for better distribution
+            const groups = Object.entries(grouped).map(([letter, players]) => ({
+                letter,
+                players,
+                size: players.length,
+                // Only count players with actual ratings
+                totalRating: players.reduce((sum, p) => sum + (p.rating !== null ? p.rating : 0), 0),
+                avgRating: players.filter(p => p.rating !== null).length > 0 
+                    ? players.reduce((sum, p) => sum + (p.rating !== null ? p.rating : 0), 0) / players.filter(p => p.rating !== null).length
+                    : 0
+            }));
+
+            groups.sort((a, b) => b.avgRating - a.avgRating);
+            // Sort ungrouped by rating, but put unrated players at the end
+            ungrouped.sort((a, b) => {
+                if (a.rating === null && b.rating === null) return 0;
+                if (a.rating === null) return 1;
+                if (b.rating === null) return -1;
+                return b.rating - a.rating;
+            });
+
+            // Distribute friend groups - alternate between teams, prioritizing team size balance
+            groups.forEach(group => {
+                const darkSize = darkTeam.length;
+                const lightSize = lightTeam.length;
+                
+                // Check if adding this group would exceed target size
+                const darkWouldExceed = (darkSize + group.size) > targetDark;
+                const lightWouldExceed = (lightSize + group.size) > targetLight;
+                
+                if (lightWouldExceed && !darkWouldExceed) {
+                    darkTeam.push(...group.players);
+                    darkTotal += group.totalRating;
+                } else if (darkWouldExceed && !lightWouldExceed) {
+                    lightTeam.push(...group.players);
+                    lightTotal += group.totalRating;
+                } else {
+                    if (darkTotal <= lightTotal) {
+                        darkTeam.push(...group.players);
+                        darkTotal += group.totalRating;
+                    } else {
+                        lightTeam.push(...group.players);
+                        lightTotal += group.totalRating;
+                    }
+                }
+            });
+
+            // Distribute ungrouped players
+            ungrouped.forEach(player => {
+                const rating = player.rating !== null ? player.rating : 0; // Don't count null ratings in balance
+                const darkSize = darkTeam.length;
+                const lightSize = lightTeam.length;
+                
+                if (darkSize >= targetDark) {
+                    lightTeam.push(player);
+                    if (player.rating !== null) lightTotal += rating;
+                } else if (lightSize >= targetLight) {
+                    darkTeam.push(player);
+                    if (player.rating !== null) darkTotal += rating;
+                } else {
+                    if (darkTotal <= lightTotal) {
+                        darkTeam.push(player);
+                        if (player.rating !== null) darkTotal += rating;
+                    } else {
+                        lightTeam.push(player);
+                        if (player.rating !== null) lightTotal += rating;
+                    }
+                }
+            });
+
+            // Sort teams so goalies appear first
+            darkTeam.sort((a, b) => (b.isGoalie ? 1 : 0) - (a.isGoalie ? 1 : 0));
+            lightTeam.sort((a, b) => (b.isGoalie ? 1 : 0) - (a.isGoalie ? 1 : 0));
+
+            console.log('Dark team:', darkTeam);
+            console.log('Light team:', lightTeam);
+            console.log(`Final sizes: Dark ${darkTeam.length}, Light ${lightTeam.length}`);
+            console.log(`Final totals: Dark ${darkTotal}, Light ${lightTotal}`);
+
+            // Sort teams after balancing
+            sortTeams();
+            
+            renderTeams();
+            saveTeams();
+        }
+
+        // Render teams
+        function renderTeams() {
+            const darkStats = getTeamStats(darkTeam);
+            const lightStats = getTeamStats(lightTeam);
+
+            let html = '<div class="teams-container">';
+            
+            // Dark team
+            html += '<div class="team">';
+            html += '<div class="team-header">';
+            html += '<div class="team-title">Dark ⚫️</div>';
+            html += `<div class="team-stats">${darkStats.count} players • Avg: ${darkStats.avg}</div>`;
+            html += '</div>';
+            
+            darkTeam.forEach((player, i) => {
+                html += renderPlayer(player, i, 'dark');
+            });
+            
+            html += '</div>';
+
+            // Light team
+            html += '<div class="team">';
+            html += '<div class="team-header">';
+            html += '<div class="team-title">Light ⚪️</div>';
+            html += `<div class="team-stats">${lightStats.count} players • Avg: ${lightStats.avg}</div>`;
+            html += '</div>';
+            
+            lightTeam.forEach((player, i) => {
+                html += renderPlayer(player, i, 'light');
+            });
+            
+            html += '</div>';
+            html += '</div>';
+
+            document.getElementById('teamsDisplay').innerHTML = html;
+            renderExport();
+        }
+
+        function renderPlayer(player, index, team) {
+            const isSelected = selectedPlayer && selectedPlayer.team === team && selectedPlayer.index === index;
+            const isEditing = selectedPlayer && selectedPlayer.team === team && selectedPlayer.index === index && selectedPlayer.editing;
+            
+            let html = `<div class="player-item${isSelected ? ' selected' : ''}" onclick="selectPlayer('${team}', ${index})" style="cursor: pointer; ${isSelected ? 'background: rgba(var(--primary-rgb), 0.3); border-color: var(--primary);' : ''}">`;
+            html += '<div class="player-info">';
+            html += `<span class="player-number">${index + 1}.</span>`;
+            html += `<span class="player-name">${escapeHTML(player.name)}</span>`;
+            
+            if (player.friendGroup) {
+                html += `<span class="player-group-badge" style="background-color: ${FRIEND_GROUP_COLORS[player.friendGroup]}">${escapeHTML(player.friendGroup)}</span>`;
+            }
+            
+            html += '</div>';
+            html += '<div style="display: flex; align-items: center; gap: 4px;">';
+            
+            // Don't show rating for goalies
+            if (!player.isGoalie) {
+                // Show editable input if in edit mode, otherwise show rating
+                if (isEditing) {
+                    html += `<input type="number" id="rating-input-${team}-${index}" class="rating-input" value="${player.rating || ''}" 
+                             onkeypress="handleRatingKeypress(event, '${team}', ${index})" 
+                             onblur="cancelRatingEdit()" 
+                             style="width: 50px; padding: 4px; background: rgba(0,0,0,0.4); border: 1px solid var(--primary); border-radius: 4px; color: var(--text); font-size: 14px;"
+                             onclick="event.stopPropagation()">`;
+                } else {
+                    if (player.rating !== null) {
+                        html += `<span class="player-rating">${player.rating}</span>`;
+                    } else {
+                        html += `<span class="player-rating" style="color: #fbbf24;">???</span>`;
+                    }
+                    
+                    // Edit rating button (show for all players now)
+                    html += `<button class="icon-button" onclick="startEditRating(event, '${team}', ${index})" title="Edit rating">✏️</button>`;
+                }
+            }
+            
+            html += `<button class="icon-button" onclick="event.stopPropagation(); toggleGoalie('${team}', ${index})">${player.isGoalie ? '🥅' : '👤'}</button>`;
+            html += '</div>';
+            html += '</div>';
+            
+            return html;
+        }
+
+        function startEditRating(event, team, index) {
+            event.stopPropagation();
+            selectedPlayer = { team, index, editing: true };
+            renderTeams();
+            
+            // Focus the input after render
+            setTimeout(() => {
+                const input = document.getElementById(`rating-input-${team}-${index}`);
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 0);
+        }
+
+        async function handleRatingKeypress(event, team, index) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const input = document.getElementById(`rating-input-${team}-${index}`);
+                const newRating = parseFloat(input.value);
+                
+                if (!isNaN(newRating) && newRating >= 0 && newRating <= 20) {
+                    const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
+                    const oldRating = player.rating;
+                    player.rating = newRating;
+                    selectedPlayer = null;
+                    
+                    // Save to Supabase
+                    const playerInDb = playerDatabase.find(p => p.name === player.name);
+                    if (playerInDb) {
+                        // Player exists, update rating
+                        await updatePlayerInSupabase(player.name, newRating);
+                    } else {
+                        // New player, insert
+                        await savePlayerToSupabase(player.name, newRating);
+                    }
+                    
+                    // Re-sort teams after rating change
+                    sortTeams();
+                    renderTeams();
+                } else {
+                    alert('Please enter a valid rating between 0 and 20');
+                }
+            } else if (event.key === 'Escape') {
+                cancelRatingEdit();
+            }
+        }
+
+        function sortTeams() {
+            // Sort each team: goalies first, then by rating (high to low), then unrated
+            const sortPlayers = (a, b) => {
+                // Goalies always first
+                if (a.isGoalie && !b.isGoalie) return -1;
+                if (!a.isGoalie && b.isGoalie) return 1;
+                if (a.isGoalie && b.isGoalie) return 0;
+                
+                // Players with ratings sorted high to low
+                if (a.rating !== null && b.rating !== null) {
+                    return b.rating - a.rating;
+                }
+                
+                // Rated players before unrated
+                if (a.rating !== null && b.rating === null) return -1;
+                if (a.rating === null && b.rating !== null) return 1;
+                
+                // Both unrated, keep original order
+                return 0;
+            };
+            
+            darkTeam.sort(sortPlayers);
+            lightTeam.sort(sortPlayers);
+        }
+
+        function cancelRatingEdit() {
+            selectedPlayer = null;
+            renderTeams();
+        }
+
+        function handleEditRating(event, team, index) {
+            event.stopPropagation();
+            console.log('handleEditRating called', team, index);
+            editRating(team, index);
+        }
+
+        function editRating(team, index) {
+            console.log('editRating called', team, index);
+            const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
+            console.log('Editing player:', player);
+            const currentRating = player.rating || '';
+            const newRating = prompt(`Enter rating for ${player.name}:`, currentRating);
+            
+            if (newRating !== null && newRating.trim() !== '') {
+                const rating = parseFloat(newRating);
+                if (!isNaN(rating) && rating >= 0 && rating <= 20) {
+                    player.rating = rating;
+                    console.log('Rating updated to:', rating);
+                    renderTeams();
+                    saveTeams();
+                } else {
+                    alert('Please enter a valid rating between 0 and 20');
+                }
+            }
+        }
+
+        function toggleGoalie(team, index) {
+            if (team === 'dark') {
+                darkTeam[index].isGoalie = !darkTeam[index].isGoalie;
+            } else {
+                lightTeam[index].isGoalie = !lightTeam[index].isGoalie;
+            }
+            renderTeams();
+            saveTeams();
+        }
+
+        function selectPlayer(team, index) {
+            const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
+            
+            // If no player selected yet, select this one
+            if (!selectedPlayer) {
+                selectedPlayer = { team, index, player };
+                renderTeams();
+                showMoveBanner();
+                return;
+            }
+            
+            // If clicking the same player, deselect
+            if (selectedPlayer.team === team && selectedPlayer.index === index) {
+                selectedPlayer = null;
+                renderTeams();
+                showMoveBanner();
+                return;
+            }
+            
+            // If clicking a player on the SAME team, select that one instead
+            if (selectedPlayer.team === team) {
+                selectedPlayer = { team, index, player };
+                renderTeams();
+                showMoveBanner();
+                return;
+            }
+            
+            // If clicking a player on the OPPOSITE team, swap them
+            if (selectedPlayer.team !== team) {
+                if (selectedPlayer.team === 'dark') {
+                    const darkPlayer = darkTeam[selectedPlayer.index];
+                    const lightPlayer = lightTeam[index];
+                    darkTeam[selectedPlayer.index] = lightPlayer;
+                    lightTeam[index] = darkPlayer;
+                } else {
+                    const lightPlayer = lightTeam[selectedPlayer.index];
+                    const darkPlayer = darkTeam[index];
+                    lightTeam[selectedPlayer.index] = darkPlayer;
+                    darkTeam[index] = lightPlayer;
+                }
+                selectedPlayer = null;
+                renderTeams();
+                saveTeams();
+            }
+        }
+
+        function showMoveBanner() {
+            const banner = document.getElementById('moveBanner');
+            if (!banner) return;
+            if (!selectedPlayer) { banner.style.display = 'none'; return; }
+            const destTeam = selectedPlayer.team === 'dark' ? 'Light ⚪️' : 'Dark ⚫️';
+            document.getElementById('moveBannerText').textContent = `${selectedPlayer.player.name} selected`;
+            document.getElementById('moveBannerBtn').textContent = `→ Move to ${destTeam}`;
+            banner.style.display = 'flex';
+        }
+
+        function moveSelectedPlayer() {
+            if (!selectedPlayer) return;
+            const { team, index, player } = selectedPlayer;
+            if (team === 'dark') {
+                darkTeam.splice(index, 1);
+                lightTeam.push(player);
+            } else {
+                lightTeam.splice(index, 1);
+                darkTeam.push(player);
+            }
+            selectedPlayer = null;
+            sortTeams();
+            renderTeams();
+            saveTeams();
+            showMoveBanner();
+        }
+
+        function getTeamStats(team) {
+            if (team.length === 0) return { avg: 0, total: 0, count: 0, skaters: 0 };
+            
+            // Exclude goalies from rating calculations
+            const skaters = team.filter(p => !p.isGoalie);
+            const goalies = team.filter(p => p.isGoalie);
+            
+            // Also exclude players with no rating from calculations
+            const skatersWithRatings = skaters.filter(p => p.rating !== null);
+            
+            if (skatersWithRatings.length === 0) {
+                return { avg: 0, total: 0, count: team.length, skaters: skaters.length };
+            }
+            
+            const total = skatersWithRatings.reduce((sum, p) => sum + p.rating, 0);
+            return {
+                avg: (total / skatersWithRatings.length).toFixed(1),
+                total,
+                count: team.length,
+                skaters: skaters.length
+            };
+        }
+
