@@ -537,8 +537,6 @@
     <script src="js/supabase-config.js"></script>
     <script>
         // Supabase configuration
-        const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = window.SKATE_MANAGER_CONFIG;
-        
         let supabaseClient;
         
         // Wait for page to load before initializing
@@ -547,8 +545,8 @@
             console.log('window.supabase:', typeof window.supabase);
             console.log('window.supabase keys:', Object.keys(window.supabase || {}));
             
-            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (window.SKATE_MANAGER_CLIENT) {
+                supabaseClient = window.SKATE_MANAGER_CLIENT;
                 console.log('Supabase client created');
                 console.log('Client has .from?', typeof supabaseClient.from);
                 loadPlayersFromSupabase();
@@ -1322,10 +1320,10 @@
             let html = `<div class="player-item${isSelected ? ' selected' : ''}" onclick="selectPlayer('${team}', ${index})" style="cursor: pointer; ${isSelected ? 'background: rgba(var(--primary-rgb), 0.3); border-color: var(--primary);' : ''}">`;
             html += '<div class="player-info">';
             html += `<span class="player-number">${index + 1}.</span>`;
-            html += `<span class="player-name">${player.name}</span>`;
+            html += `<span class="player-name">${escapeHTML(player.name)}</span>`;
             
             if (player.friendGroup) {
-                html += `<span class="player-group-badge" style="background-color: ${FRIEND_GROUP_COLORS[player.friendGroup]}">${player.friendGroup}</span>`;
+                html += `<span class="player-group-badge" style="background-color: ${FRIEND_GROUP_COLORS[player.friendGroup]}">${escapeHTML(player.friendGroup)}</span>`;
             }
             
             html += '</div>';
@@ -1699,8 +1697,8 @@
             
             listContainer.innerHTML = allLocations.map((loc, idx) => `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--card-bg); border-radius: 6px; margin-bottom: 6px;">
-                    <span style="color: var(--text); font-size: 14px;">${loc.value}</span>
-                    <button class="delete-location-btn" data-location="${loc.value}" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Delete</button>
+                    <span style="color: var(--text); font-size: 14px;">${escapeHTML(loc.value)}</span>
+                    <button class="delete-location-btn" data-location="${escapeHTML(loc.value)}" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Delete</button>
                 </div>
             `).join('');
             

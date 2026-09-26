@@ -269,8 +269,7 @@
 
 <script>
     // ===== SUPABASE =====
-    const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = window.SKATE_MANAGER_CONFIG;
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const db = window.SKATE_MANAGER_CLIENT;
 
     // ===== STATE =====
     let currentYear = new Date().getFullYear();
@@ -436,9 +435,9 @@
         tbody.innerHTML = rows.map(({ skate, c, revenue, ice, ref, other, totalCost, pl }) => {
             const titleParts = skate.title || '';
             return `<tr>
-                <td><span class="skate-name">${titleParts}</span>${skate.is_free ? ' <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:rgba(239,68,68,0.1); color:#ef4444; font-weight:700;">FREE</span>' : ''}</td>
+                <td><span class="skate-name">${escapeHTML(titleParts)}</span>${skate.is_free ? ' <span style="font-size:10px; padding:2px 6px; border-radius:10px; background:rgba(239,68,68,0.1); color:#ef4444; font-weight:700;">FREE</span>' : ''}</td>
                 <td class="muted">${formatDate(skate.date)}</td>
-                <td class="muted">${skate.location || '—'}</td>
+                <td class="muted">${escapeHTML(skate.location || '—')}</td>
                 <td class="num">${c.skaters}${c.goalies > 0 ? ` <span style="color:var(--text-muted); font-size:11px;">+${c.goalies}G</span>` : ''}</td>
                 <td class="num">${(() => {
                     if (!revenue) return '<span class="no-data">—</span>';

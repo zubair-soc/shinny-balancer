@@ -769,7 +769,6 @@
                 <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
                 <a href="credits.html" class="back-button">💳 Credits</a>
-                <a href="payments.html" class="back-button">💰 Payments</a>
                 <a href="financials.html" class="back-button">📊 Financials</a>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
@@ -1234,8 +1233,6 @@
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script>
         // Supabase configuration
-        const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = window.SKATE_MANAGER_CONFIG;
-        
         let supabaseClient;
         let allSkates = [];
         let allPlayers = [];
@@ -1458,8 +1455,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             initTheme(); // Load saved theme preference
             
-            if (typeof window.supabase !== 'undefined') {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (window.SKATE_MANAGER_CLIENT) {
+                supabaseClient = window.SKATE_MANAGER_CLIENT;
                 loadSkates();
                 loadAllPlayers();
             } else {
@@ -1495,10 +1492,10 @@
             if (matches.length === 0) { box.style.display = 'none'; return; }
             box.innerHTML = matches.map(p => `
                 <div style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border); color: var(--text);"
-                    onmousedown="selectPlayerSuggestion('${inputId}', '${suggestionsId}', '${p.name.replace(/'/g, "\\'")}')"
+                    onmousedown="selectPlayerSuggestion('${inputId}', '${suggestionsId}', ${inlineJSString(p.name)})"
                     onmouseover="this.style.background='rgba(var(--primary-rgb),0.1)'"
                     onmouseout="this.style.background=''">
-                    ${p.name}
+                    ${escapeHTML(p.name)}
                 </div>`).join('');
             box.style.display = 'block';
         }
@@ -1547,7 +1544,7 @@
                 console.error('Error loading skates:', error);
                 console.error('Full error:', JSON.stringify(error, null, 2));
                 document.getElementById('skatesContainer').innerHTML = 
-                    `<div class="empty-state"><h3>Failed to load skates</h3><p>Error: ${error.message || 'Unknown error'}</p><p>Check console for details</p></div>`;
+                    `<div class="empty-state"><h3>Failed to load skates</h3><p>Error: ${escapeHTML(error.message || 'Unknown error')}</p><p>Check console for details</p></div>`;
             }
         }
 
@@ -1625,12 +1622,12 @@
                     
                     return `
                         <div class="skate-card" onclick="openSkate(${skate.id})">
-                            <div class="skate-title">${skate.title}</div>
+                            <div class="skate-title">${escapeHTML(skate.title)}</div>
                             <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
                             <div class="skate-detail">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                            <div class="skate-detail">💰 ${skate.cost}</div>
-                            <div class="skate-detail">📍 ${skate.location}</div>
-                            ${skate.tier ? `<div class="skate-detail">🏒 ${skate.tier}</div>` : ''}
+                            <div class="skate-detail">💰 ${escapeHTML(skate.cost)}</div>
+                            <div class="skate-detail">📍 ${escapeHTML(skate.location)}</div>
+                            ${skate.tier ? `<div class="skate-detail">🏒 ${escapeHTML(skate.tier)}</div>` : ''}
                             <div class="skate-count ${countColorClass}">${goalieText} · ${skaters}/${maxSkaters} skaters</div>
                         </div>
                     `;
@@ -2116,9 +2113,9 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 14px;">
                     <div><strong>Date:</strong> ${formatDate(skate.date)}</div>
                     <div><strong>Time:</strong> ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                    <div><strong>Cost:</strong> ${skate.cost}</div>
-                    <div><strong>Location:</strong> ${skate.location}</div>
-                    ${skate.tier ? `<div><strong>Tier:</strong> ${skate.tier}</div>` : ''}
+                    <div><strong>Cost:</strong> ${escapeHTML(skate.cost)}</div>
+                    <div><strong>Location:</strong> ${escapeHTML(skate.location)}</div>
+                    ${skate.tier ? `<div><strong>Tier:</strong> ${escapeHTML(skate.tier)}</div>` : ''}
                     <div><strong>Capacity:</strong> ${skate.capacity}</div>
                 </div>
             `;
@@ -2191,20 +2188,20 @@
                         // Show rating if available (hidden for goalies)
                         const rating = player.rating;
                         const ratingDisplay = player.is_goalie ? '' : (rating ? 
-                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', ${rating})" title="Click to edit rating">${rating}</span>` : 
-                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, '${player.player_name.replace(/'/g, "\\'")}', 0)" title="Click to add rating">No rating</span>`);
+                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, ${inlineJSString(player.player_name)}, ${rating})" title="Click to edit rating">${rating}</span>` :
+                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, ${inlineJSString(player.player_name)}, 0)" title="Click to add rating">No rating</span>`);
                         
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
-                            `<span style="display: inline-block; background: ${getFriendGroupColor(player.friend_group)}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${player.friend_group}</span>` : '';
+                            `<span style="display: inline-block; background: ${getFriendGroupColor(player.friend_group)}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px;">${escapeHTML(player.friend_group)}</span>` : '';
 
                         return `
                             <div class="${classes}" onclick="selectPlayerForSwap(${player.id}, this)" style="cursor: pointer;">
-                                <span class="roster-item-name swappable" data-player-id="${player.id}" data-position="${player.position}">${playerDisplay}${ratingDisplay}${friendTag}</span>
+                                <span class="roster-item-name swappable" data-player-id="${player.id}" data-position="${player.position}">${escapeHTML(playerDisplay)}${ratingDisplay}${friendTag}</span>
                                 <div class="player-menu" onclick="event.stopPropagation()">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
-                                        <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔁 Replace Player</div>
+                                        <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔁 Replace Player</div>
                                         ${!player.is_goalie ? 
                                             `<div class="menu-item" onclick="toggleGoalie(${player.id}, true); closeMenu(${player.id})">🥅 Mark as Goalie</div>` : 
                                             `<div class="menu-item" onclick="toggleGoalie(${player.id}, false); closeMenu(${player.id})">👤 Remove Goalie</div>`
@@ -2213,9 +2210,9 @@
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, false); closeMenu(${player.id})">❌ Mark Unpaid</div>` : 
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
                                         }
-                                        <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${player.friend_group}]` : ''} ›</div>
-                                        <div class="menu-item" onclick="giveCredit(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">💳 Give Credit</div>
-                                        <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, '${player.player_name.replace(/'/g, "\\'")}'); closeMenu(${player.id})">🔄 Move to Another Skate</div>
+                                        <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${escapeHTML(player.friend_group)}]` : ''} ›</div>
+                                        <div class="menu-item" onclick="giveCredit(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">💳 Give Credit</div>
+                                        <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
                                         <div class="menu-item" onclick="window.open('database.html?player=${encodeURIComponent(player.player_name)}', '_blank'); closeMenu(${player.id})">📊 View in Database</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
@@ -2233,7 +2230,7 @@
                 } else {
                     waitlistList.innerHTML = waitlist.map(player => `
                         <div class="roster-item waitlist">
-                            <span class="roster-item-name">${player.player_name}</span>
+                            <span class="roster-item-name">${escapeHTML(player.player_name)}</span>
                             <div class="roster-item-actions">
                                 <button class="icon-btn" onclick="moveToRoster(${player.id})" title="Move to roster">▶️</button>
                                 <button class="icon-btn" onclick="deletePlayer(${player.id})" title="Remove">🗑️</button>
@@ -2422,10 +2419,10 @@
             if (matches.length === 0) { box.style.display = 'none'; return; }
             box.innerHTML = matches.map(p => `
                 <div style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--card-border);"
-                    onmousedown="selectReplacePlayer('${p.name.replace(/'/g, "\\'")}')"
+                    onmousedown="selectReplacePlayer(${inlineJSString(p.name)})"
                     onmouseover="this.style.background='rgba(var(--primary-rgb),0.1)'"
                     onmouseout="this.style.background=''">
-                    ${p.name}
+                    ${escapeHTML(p.name)}
                 </div>`).join('');
             box.style.display = 'block';
         }
@@ -2601,7 +2598,7 @@
                     return `
                         <div class="quick-add-skate-card" onclick="movePlayerToSkate(${skate.id})" style="cursor: pointer;">
                             <div class="quick-add-skate-info">
-                                <div class="quick-add-skate-title">${skate.title || `Skate ${skate.id}`}</div>
+                                <div class="quick-add-skate-title">${escapeHTML(skate.title || `Skate ${skate.id}`)}</div>
                                 <div class="quick-add-skate-date">${dateStr} · ${formatTime(skate.time_start)}</div>
                             </div>
                         </div>
@@ -3205,11 +3202,11 @@
                     ${parsedCSVData.map((skate, i) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">
                             <div style="flex: 1;">
-                                <div style="font-weight: 600; color: var(--text);">${i + 1}. ${skate.tier || skate.title || 'Untitled'}</div>
+                                <div style="font-weight: 600; color: var(--text);">${i + 1}. ${escapeHTML(skate.tier || skate.title || 'Untitled')}</div>
                                 <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
                                     📅 ${(() => { const [y,m,d] = skate.date.split('-'); const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[parseInt(m)-1]} ${parseInt(d)}, ${y}`; })()}
                                     • 🕐 ${formatTime(skate.time_start)} - ${formatTime(skate.time_end)}
-                                    • 📍 ${skate.location || 'No location'}
+                                    • 📍 ${escapeHTML(skate.location || 'No location')}
                                 </div>
                             </div>
                             <button onclick="removeFromImport(${i})" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 12px;">Remove</button>
@@ -3425,7 +3422,7 @@
                 return `
                     <div class="quick-add-skate-card" data-skate-id="${skate.id}" data-skate-number="${skateNumber}" onclick="toggleSkateSelection(${skate.id})">
                         <div class="quick-add-skate-info">
-                            <div class="quick-add-skate-title">${skate.title || `Skate ${skate.id}`}</div>
+                            <div class="quick-add-skate-title">${escapeHTML(skate.title || `Skate ${skate.id}`)}</div>
                             <div class="quick-add-skate-date">${dateStr}</div>
                         </div>
                         <div class="quick-add-checkmark">
@@ -3654,11 +3651,11 @@
             if (!players.length) { container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No players</p>'; return; }
             container.innerHTML = players.filter(p => !p.isGoalie).map(p => `
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:6px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:13px;">
-                    <a href="balancer.html?player=${encodeURIComponent(p.name)}" style="color:var(--text); text-decoration:none; flex:1;" title="View profile">${p.name}</a>
+                    <a href="balancer.html?player=${encodeURIComponent(p.name)}" style="color:var(--text); text-decoration:none; flex:1;" title="View profile">${escapeHTML(p.name)}</a>
                     <div style="display:flex; gap:4px; align-items:center;">
                         <span style="color:var(--text-muted); font-size:11px; margin-right:4px;">${p.rating_v2 !== undefined && p.rating_v2 !== null ? p.rating_v2 : (p.rating || '—')}</span>
-                        <button onclick="nudgePlayer('${p.name.replace(/'/g,"\'")}', ${skateId}, 'up')" style="background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.4); color:#22c55e; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▲</button>
-                        <button onclick="nudgePlayer('${p.name.replace(/'/g,"\'")}', ${skateId}, 'down')" style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▼</button>
+                        <button onclick="nudgePlayer(${inlineJSString(p.name)}, ${skateId}, 'up')" style="background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.4); color:#22c55e; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▲</button>
+                        <button onclick="nudgePlayer(${inlineJSString(p.name)}, ${skateId}, 'down')" style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▼</button>
                     </div>
                 </div>
             `).join('');
@@ -3985,19 +3982,19 @@
                     const renderPlayer = (p, i) => {
                         const bg = p.is_goalie ? 'background:#fef08a;color:#713f12;' : 'background:var(--bg-start);color:var(--text);';
                         return `<div style="${bg} padding:6px 10px; border-radius:6px; margin-bottom:4px; font-size:13px; display:flex; justify-content:space-between;">
-                            <span>${i + 1}. ${p.player_name}${p.is_goalie ? ' 🥅' : ''}</span>
+                            <span>${i + 1}. ${escapeHTML(p.player_name)}${p.is_goalie ? ' 🥅' : ''}</span>
                         </div>`;
                     };
 
                     const waitlistHtml = waitlist.length > 0 ? `
                         <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--card-border);">
                             <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Waitlist (${waitlist.length})</div>
-                            ${waitlist.map((p, i) => `<div style="padding:5px 10px; border-radius:6px; margin-bottom:4px; font-size:12px; color:var(--text-muted); background:var(--card-border);">${i+1}. ${p.player_name}</div>`).join('')}
+                            ${waitlist.map((p, i) => `<div style="padding:5px 10px; border-radius:6px; margin-bottom:4px; font-size:12px; color:var(--text-muted); background:var(--card-border);">${i+1}. ${escapeHTML(p.player_name)}</div>`).join('')}
                         </div>` : '';
 
                     return `
                         <div style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:12px; padding:16px; min-width:220px; flex:0 0 220px;">
-                            <div style="font-weight:700; font-size:15px; color:var(--text); margin-bottom:4px;">${skate.title}</div>
+                            <div style="font-weight:700; font-size:15px; color:var(--text); margin-bottom:4px;">${escapeHTML(skate.title)}</div>
                             <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">📅 ${formatDate(skate.date)}</div>
                             <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
                             <div style="font-size:12px; font-weight:600; color:${statusColor}; margin-bottom:10px;">${statusText} · ${skaters.length}/${skate.capacity}</div>

@@ -1,11 +1,10 @@
 (function () {
-  const config = window.SKATE_MANAGER_CONFIG;
-  if (!config || !window.supabase?.createClient) {
+  if (!window.SKATE_MANAGER_CONFIG || !window.SKATE_MANAGER_CLIENT) {
     document.documentElement.innerHTML = '<body style="font:16px system-ui;padding:2rem">Unable to load the Skate Manager sign-in service. Refresh the page and try again.</body>';
     return;
   }
 
-  const authClient = window.supabase.createClient(config.url, config.publishableKey);
+  const authClient = window.SKATE_MANAGER_CLIENT;
   const style = document.createElement('style');
   style.textContent = `
     #sm-auth-gate { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 20px; background: #0f172a; color: #f8fafc; font: 16px system-ui, sans-serif; }

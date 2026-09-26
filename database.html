@@ -475,8 +475,6 @@
     <script src="js/supabase-config.js"></script>
     <script>
         // Supabase configuration
-        const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = window.SKATE_MANAGER_CONFIG;
-        
         let supabaseClient;
         let allPlayers = [];
         let filteredPlayers = [];
@@ -485,8 +483,8 @@
 
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
-            if (typeof window.supabase !== 'undefined') {
-                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            if (window.SKATE_MANAGER_CLIENT) {
+                supabaseClient = window.SKATE_MANAGER_CLIENT;
                 loadPlayers();
             } else {
                 alert('Database connection failed. Please refresh.');
@@ -575,18 +573,18 @@
             }
 
             tbody.innerHTML = filteredPlayers.map(player => {
-                const safeName = player.name.replace(/'/g, '&#39;');
+                const safeName = inlineJSString(player.name);
                 return `
                 <tr>
-                    <td>${player.name} ${player.is_pillar ? '' : ''}</td>
+                    <td>${escapeHTML(player.name)} ${player.is_pillar ? '' : ''}</td>
                     <td class="rating-cell" style="color:var(--primary)">${player.rating ?? '—'}</td>
                     <td class="rating-cell" style="color:#10b981">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
                     <td class="actions">
                         <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                            <button class="icon-button" onclick="editName(${player.id}, '${safeName}')" title="Edit name">🖊️</button>
-                            <button class="icon-button" onclick="editRating(${player.id}, '${safeName}', ${player.rating})" title="Edit rating">✏️</button>
+                            <button class="icon-button" onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>
+                            <button class="icon-button" onclick="editRating(${player.id}, ${safeName}, ${player.rating})" title="Edit rating">✏️</button>
                             <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="Rate Player" style="color:#10b981;">📊</button>
-                            <button class="icon-button delete" onclick="confirmDelete(${player.id}, '${safeName}')" title="Delete">🗑️</button>
+                            <button class="icon-button delete" onclick="confirmDelete(${player.id}, ${safeName})" title="Delete">🗑️</button>
                         </div>
                     </td>
                 </tr>`;
@@ -975,7 +973,7 @@
             document.getElementById('profileV2bDisplay').textContent = player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—';
 
             const pillarOptions = '<option value="">— None —</option>' + pillars.map(p =>
-                `<option value="${p.id}">${p.name} (${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '?'})</option>`
+                `<option value="${p.id}">${escapeHTML(p.name)} (${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '?'})</option>`
             ).join('');
             document.getElementById('profileLowerPillar').innerHTML = pillarOptions;
             document.getElementById('profileUpperPillar').innerHTML = pillarOptions;
@@ -1214,7 +1212,7 @@
                 const isActive = i < 3;
                 return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:8px; margin-bottom:6px; background:${isActive ? 'rgba(16,185,129,0.08)' : 'rgba(128,128,128,0.05)'}; border:1px solid ${isActive ? 'rgba(16,185,129,0.2)' : 'rgba(128,128,128,0.1)'}; opacity:${isActive ? '1' : '0.5'};">
                     <div>
-                        <span style="font-size:13px; font-weight:600; color:var(--text);">${entry.rater}</span>
+                        <span style="font-size:13px; font-weight:600; color:var(--text);">${escapeHTML(entry.rater)}</span>
                         <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">${date}</span>
                         ${i === 0 ? '<span style="font-size:10px; color:#10b981; margin-left:6px;">latest</span>' : ''}
                         ${i >= 3 ? '<span style="font-size:10px; color:var(--text-muted); margin-left:6px;">not counted</span>' : ''}
