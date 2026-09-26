@@ -130,9 +130,10 @@ async function supabaseRequest(path, accessToken, options = {}) {
   });
 }
 
-export default async function handler(request) {
+async function runBenchAppSync(request, setStage) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
+  setStage('checking your sign-in');
   const authorization = request.headers.get('authorization') || '';
   const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!accessToken) return json({ error: 'Sign in before syncing the calendar.' }, 401);
@@ -142,6 +143,7 @@ export default async function handler(request) {
   });
   if (!authResponse.ok) return json({ error: 'Your session expired. Sign in again.' }, 401);
 
+  setStage('reading the sync request');
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Invalid request.' }, 400); }
   let feedUrl;
@@ -153,6 +155,7 @@ export default async function handler(request) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   let feedResponse;
+  setStage('downloading the BenchApp calendar');
   try {
     feedResponse = await fetch(feedUrl, { signal: controller.signal, headers: { accept: 'text/calendar, text/plain;q=0.9' } });
   } catch {
@@ -169,11 +172,13 @@ export default async function handler(request) {
   }
 
   const { eventCount, results } = parseBenchAppEvents(icsText);
+  setStage('reading the calendar events');
   const usable = results.filter(item => !item.cancelled);
   if (eventCount === 0 || results.length === 0 || usable.length === 0) {
     return json({ error: 'The calendar contained no usable skate events. No skates were changed.' }, 422);
   }
 
+  setStage('checking existing skates in Supabase');
   const existingResponse = await supabaseRequest('/rest/v1/skates?select=id,benchapp_event_uid,date,is_archived&benchapp_event_uid=not.is.null', accessToken);
   if (!existingResponse.ok) return json({ error: 'Could not read existing imported skates. No skates were changed.' }, 502);
   const existingSkates = await existingResponse.json();
@@ -189,6 +194,7 @@ export default async function handler(request) {
   });
 
   const upsertUrl = new URL('/rest/v1/skates', SUPABASE_URL);
+  setStage('saving imported skates');
   upsertUrl.searchParams.set('on_conflict', 'benchapp_event_uid');
   const upsertResponse = await supabaseRequest(`${upsertUrl.pathname}${upsertUrl.search}`, accessToken, {
     method: 'POST',
@@ -205,6 +211,7 @@ export default async function handler(request) {
     .map(skate => skate.id);
 
   if (archiveIds.length) {
+    setStage('archiving removed skates');
     const archiveUrl = new URL('/rest/v1/skates', SUPABASE_URL);
     archiveUrl.searchParams.set('id', `in.(${archiveIds.join(',')})`);
     const archiveResponse = await supabaseRequest(`${archiveUrl.pathname}${archiveUrl.search}`, accessToken, {
@@ -225,4 +232,14 @@ export default async function handler(request) {
     eventCount: usable.length,
     syncedAt: new Date().toISOString()
   });
+}
+
+export default async function handler(request) {
+  let stage = 'starting the sync';
+  try {
+    return await runBenchAppSync(request, value => { stage = value; });
+  } catch (error) {
+    console.error(`BenchApp sync crashed while ${stage}:`, error);
+    return json({ error: `The sync server crashed while ${stage}. Please try again later.` }, 500);
+  }
 }
