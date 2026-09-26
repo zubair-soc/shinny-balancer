@@ -11,6 +11,7 @@
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
     <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/navigation.css">
     <link rel="stylesheet" href="css/manager-components.css">
     <link rel="stylesheet" href="css/index.css">
 </head>
@@ -20,14 +21,21 @@
         <span id="themeIcon">🌙</span>
     </button>
 
+    <nav class="app-nav" aria-label="Primary">
+        <a class="app-nav-brand" href="index.html"><span class="app-nav-mark">🏒</span><span><strong>Skate Manager</strong><small>Shinny of Champions</small></span></a>
+        <div class="app-nav-links">
+            <a class="app-nav-link is-active" href="index.html" aria-current="page">Skates</a>
+            <a class="app-nav-link" href="balancer.html">Team Balancer</a>
+            <a class="app-nav-link" href="database.html">Players</a>
+            <details class="app-nav-admin"><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a></div></details>
+        </div>
+    </nav>
+
     <div class="container">
         <div class="header">
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
-                <a href="balancer.html" class="back-button">⚖️ Team Balancer</a>
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
-                <a href="credits.html" class="back-button">💳 Credits</a>
-                <a href="financials.html" class="back-button">📊 Financials</a>
                 <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
