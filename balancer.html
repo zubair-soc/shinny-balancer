@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="Skate Manager">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
+    <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/balancer.css">
 </head>
 <body>
@@ -42,7 +43,7 @@
                 <div class="form-group">
                     <textarea id="importSkateData" placeholder="Paste your full WhatsApp message here..." style="min-height: 120px; font-family: 'Courier New', monospace;"></textarea>
                 </div>
-                <button class="button" onclick="importSkate()" style="margin-top: 12px;">
+                <button class="button u-mt-12" onclick="importSkate()">
                     Import Skate
                 </button>
             </div>
@@ -56,7 +57,7 @@
                     <label>Copy columns A & B from your sheet and paste here</label>
                     <textarea id="pasteData" placeholder="Name&#9;Rating&#10;Nick Plaza&#9;17&#10;Anthony Estrada&#9;15&#10;..." style="min-height: 80px; font-family: 'Courier New', monospace;"></textarea>
                 </div>
-                <button class="button" onclick="loadFromPaste()" style="margin-top: 12px;">
+                <button class="button u-mt-12" onclick="loadFromPaste()">
                     Load from Paste (<span id="playerCountPaste">0</span> loaded)
                 </button>
             </div>
@@ -67,7 +68,7 @@
                     <label>Apps Script Web App URL</label>
                     <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
                 </div>
-                <button class="button" onclick="loadGoogleSheet()" style="margin-top: 12px;">
+                <button class="button u-mt-12" onclick="loadGoogleSheet()">
                     Load from URL (<span id="playerCount">0</span> loaded)
                 </button>
             </div>
@@ -133,7 +134,7 @@
             <button class="button" onclick="matchPlayers()" style="margin-top: 12px; margin-right: 12px;">
                 Match Players
             </button>
-            <button class="button" onclick="balanceTeams()" style="margin-top: 12px;">
+            <button class="button u-mt-12" onclick="balanceTeams()">
                 Balance Teams
             </button>
             <div id="warningDiv"></div>
@@ -148,7 +149,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/balancer.js"></script>
+    <script src="js/balancer-core.js"></script>
+    <script src="js/balancer-teams.js"></script>
+    <script src="js/balancer-locations.js"></script>
+    <script src="js/balancer-export.js"></script>
     <!-- Move player banner -->
     <div id="moveBanner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:1000; background:var(--card-bg); border:1px solid rgba(var(--primary-rgb),0.4); border-radius:12px; padding:12px 16px; box-shadow:0 4px 20px rgba(0,0,0,0.2); display:none; align-items:center; gap:12px; white-space:nowrap;">
         <span id="moveBannerText" style="font-size:13px; color:var(--text);"></span>
