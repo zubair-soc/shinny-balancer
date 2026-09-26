@@ -93,7 +93,9 @@ function parseBenchAppEvents(icsText) {
     const skateNumber = legacyMatch?.[1] || null;
     const tier = legacyMatch?.[2]?.trim() || titleText.match(/Tier\s*[123][^:|]*/i)?.[0]?.trim() || null;
     const summaryPrefix = titleText.split(':')[0]?.trim() || '';
-    const eventType = /^skate\s+\d+/i.test(summaryPrefix) || !titleText.includes(':') ? 'Scrimmage' : summaryPrefix;
+    const notes = decodeText(property(linesInEvent, 'DESCRIPTION')?.value || '');
+    const isBlast = /\bBLAST Hockey\b/i.test(notes);
+    const eventType = isBlast ? 'BLAST' : (/^skate\s+\d+/i.test(summaryPrefix) || !titleText.includes(':') ? 'Scrimmage' : summaryPrefix);
     const location = property(linesInEvent, 'LOCATION')?.value;
     const status = property(linesInEvent, 'STATUS')?.value.trim().toUpperCase();
 
@@ -102,12 +104,12 @@ function parseBenchAppEvents(icsText) {
       cancelled: status === 'CANCELLED',
       skate: {
         benchapp_event_uid: eventUid,
-        title: legacyMatch ? `Skate ${skateNumber} ${tier}` : titleText,
+        title: isBlast ? 'BLAST Practice' : (legacyMatch ? `Skate ${skateNumber} ${tier}` : titleText),
         date: start.date,
         time_start: `${start.time}:00`,
         time_end: `${(end || start).time}:00`,
         location: decodeText(location || '').trim() || 'TBD',
-        tier,
+        tier: isBlast ? 'BLAST' : tier,
         skate_number: skateNumber,
         event_type: eventType,
         cost: '$25',

@@ -207,14 +207,14 @@
             
             if (showingArchive) {
                 pastSection.style.setProperty('display', 'block', 'important');
-                toggleBtn.innerHTML = `📦 Hide Past / Removed (${archiveCount})`;
+                toggleBtn.innerHTML = `📦 Hide Past / Removed (<span id="archiveCount">${archiveCount}</span>)`;
                 // Scroll to past skates section
                 setTimeout(() => {
                     pastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
                 pastSection.style.setProperty('display', 'none', 'important');
-                toggleBtn.innerHTML = `📦 Show Past / Removed (${archiveCount})`;
+                toggleBtn.innerHTML = `📦 Show Past / Removed (<span id="archiveCount">${archiveCount}</span>)`;
             }
         }
 
