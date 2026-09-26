@@ -1,8 +1,4 @@
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+
 
         :root {
             --bg-start: #f8fafc;
@@ -38,23 +34,9 @@
             margin: 0 auto;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--card-border);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
 
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text);
-        }
+
+
 
         .back-button {
             background: rgba(var(--primary-rgb), 0.1);
@@ -320,9 +302,7 @@
             justify-content: center;
         }
 
-        .modal.active {
-            display: flex;
-        }
+
 
         .modal-content {
             background: var(--card-bg);
@@ -340,9 +320,7 @@
             color: var(--text);
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+
 
         .form-group label {
             display: block;
@@ -402,17 +380,9 @@
             transform: translateY(-4px);
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
+
+
 
         .empty-state h3 {
             margin-bottom: 12px;
