@@ -22,4 +22,3 @@
 
         // Initialize theme on page load
         initTheme();
-
