@@ -4,6 +4,16 @@
     let syncSettings = null;
     let syncInProgress = false;
 
+    function withTimeout(promise, milliseconds, message) {
+        let timeoutId;
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error(message)), milliseconds);
+            })
+        ]).finally(() => clearTimeout(timeoutId));
+    }
+
     function getStatusElement() {
         return document.getElementById('benchAppSyncStatus');
     }
@@ -37,7 +47,9 @@
 
     window.openBenchAppSettings = async function () {
         try {
-            if (!syncSettings) await loadBenchAppSettings();
+            if (!syncSettings) {
+                await withTimeout(loadBenchAppSettings(), 15000, 'Loading calendar settings took too long. Try again.');
+            }
             const input = document.getElementById('benchAppFeedUrl');
             input.value = syncSettings?.feed_url || '';
             document.getElementById('benchAppSettingsModal').classList.add('active');
@@ -84,25 +96,33 @@
         syncInProgress = true;
         const button = document.getElementById('benchAppSyncButton');
         if (button) button.disabled = true;
-        if (!silent) setStatus('Syncing BenchApp…');
+        setStatus(silent ? 'Checking BenchApp calendar…' : 'Syncing BenchApp…');
         try {
             if (!syncSettings) await loadBenchAppSettings();
             if (!syncSettings?.feed_url) {
                 if (!silent) openBenchAppSettings();
                 return;
             }
-            const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+            const { data: sessionData, error: sessionError } = await withTimeout(
+                supabaseClient.auth.getSession(),
+                15000,
+                'Checking your sign-in took too long. Refresh the page and try again.'
+            );
             if (sessionError || !sessionData.session) throw new Error('Sign in again to sync the calendar.');
 
-            const response = await fetch('/api/benchapp-sync', {
+            const response = await withTimeout(fetch('/api/benchapp-sync', {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
                     authorization: `Bearer ${sessionData.session.access_token}`
                 },
                 body: JSON.stringify({ feedUrl: syncSettings.feed_url })
-            });
-            const responseText = await response.text();
+            }), 30000, 'The sync server took too long to respond. Try again.');
+            const responseText = await withTimeout(
+                response.text(),
+                15000,
+                'Reading the sync response took too long. Try again.'
+            );
             let result = {};
             try {
                 result = responseText ? JSON.parse(responseText) : {};
@@ -116,7 +136,7 @@
             if (!response.ok) throw new Error(result.error || 'BenchApp sync failed.');
 
             localStorage.setItem('benchappLastSyncAt', String(Date.now()));
-            await loadSkates();
+            await withTimeout(loadSkates(), 15000, 'The calendar synced, but reloading the skate list took too long. Refresh the page.');
             const summary = `${result.newCount} new · ${result.updatedCount} updated · ${result.archivedCount} removed`;
             setStatus(`Synced ${summary}`);
             if (!silent) alert(`BenchApp calendar synced.\n${result.newCount} new · ${result.updatedCount} updated · ${result.archivedCount} removed from active skates.`);
