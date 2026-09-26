@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Skate Manager">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/manager-components.css">
     <link rel="stylesheet" href="css/credits.css">
 </head>
 <body>
@@ -126,7 +128,7 @@
         <div class="modal-content">
             <div class="modal-header">💳 Apply Credit to Skate</div>
             
-            <div style="margin-bottom: 20px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
+            <div class="u-highlight-panel">
                 <div style="font-weight: 600; margin-bottom: 4px;" id="applyPlayerName"></div>
                 <div style="color: var(--primary); font-size: 18px; font-weight: 700;" id="applyAvailableAmount"></div>
             </div>
@@ -144,7 +146,7 @@
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; font-weight: 600;">
                         <span>Total Applied:</span>
-                        <span style="color: var(--primary);" id="totalApplied"></span>
+                        <span class="u-text-primary" id="totalApplied"></span>
                     </div>
                     <div id="remainingToPay" style="display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-muted); font-size: 13px;"></div>
                 </div>
