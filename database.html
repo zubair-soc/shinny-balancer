@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Skate Manager">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/manager-components.css">
     <link rel="stylesheet" href="css/database.css">
 </head>
 <body>
@@ -39,8 +41,8 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
-                        <th onclick="sortTable('rating')" style="cursor:pointer;">V1 ↕</th>
-                        <th onclick="sortTable('rating_v2b')" style="cursor:pointer;">V2B ↕</th>
+                        <th onclick="sortTable('rating')" class="u-clickable">V1 ↕</th>
+                        <th onclick="sortTable('rating_v2b')" class="u-clickable">V2B ↕</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -74,7 +76,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/database.js"></script>
+    <script src="js/database-core.js"></script>
+    <script src="js/database-ratings.js"></script>
+    <script src="js/database-theme.js"></script>
     <!-- Player Profile Modal -->
     <div id="playerProfileModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
         <div style="background:var(--card-bg); border-radius:16px; border:1px solid var(--card-border); padding:28px; width:100%; max-width:600px; margin:16px; box-shadow:0 20px 60px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto;">
