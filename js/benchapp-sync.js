@@ -102,7 +102,17 @@
                 },
                 body: JSON.stringify({ feedUrl: syncSettings.feed_url })
             });
-            const result = await response.json().catch(() => ({}));
+            const responseText = await response.text();
+            let result = {};
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch {
+                console.error('BenchApp sync endpoint returned a non-JSON response:', response.status, responseText.slice(0, 500));
+                if (response.status === 404) {
+                    throw new Error('The sync endpoint was not found on this Vercel deployment (404).');
+                }
+                throw new Error(`The sync endpoint returned an unexpected response (HTTP ${response.status}).`);
+            }
             if (!response.ok) throw new Error(result.error || 'BenchApp sync failed.');
 
             localStorage.setItem('benchappLastSyncAt', String(Date.now()));
