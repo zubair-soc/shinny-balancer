@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Skate Manager">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/manager-components.css">
     <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
@@ -105,7 +107,7 @@
             <div class="form-group">
                 <label>Date</label>
                 <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
-                    <select id="skateMonth" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
+                    <select id="skateMonth" onchange="calcIceCost()" class="u-form-control">
                         <option value="">Month</option>
                         <option value="1">January</option>
                         <option value="2">February</option>
@@ -120,10 +122,10 @@
                         <option value="11">November</option>
                         <option value="12">December</option>
                     </select>
-                    <select id="skateDay" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
+                    <select id="skateDay" onchange="calcIceCost()" class="u-form-control">
                         <option value="">Day</option>
                     </select>
-                    <select id="skateYear" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
+                    <select id="skateYear" onchange="calcIceCost()" class="u-form-control">
                         <option value="">Year</option>
                     </select>
                 </div>
@@ -132,13 +134,13 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Start Time</label>
-                    <select id="skateStartTime" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
+                    <select id="skateStartTime" onchange="calcIceCost()" class="u-form-control-full">
                         <option value="">Select time</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Duration</label>
-                    <select id="skateDuration" onchange="calcIceCost()" style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;">
+                    <select id="skateDuration" onchange="calcIceCost()" class="u-form-control-full">
                         <option value="">Select duration</option>
                         <option value="60">1:00</option>
                         <option value="75">1:15</option>
@@ -205,16 +207,16 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Ice Cost</label>
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="u-flex-gap-8">
                             <input type="number" id="skateIceCost" placeholder="Auto-calculated" step="0.01" min="0" oninput="updateTotalCost()"
-                                style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                                class="u-text-field">
                             <button type="button" onclick="calcIceCost()" title="Recalculate" style="padding: 10px 12px; background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 8px; cursor: pointer; color: var(--primary); font-size: 13px;">↻</button>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Ref</label>
                         <select id="skateRefCost" onchange="updateTotalCost()"
-                            style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                            class="u-text-field">
                             <option value="0">No Ref — $0</option>
                             <option value="40">1hr — $40</option>
                             <option value="45">75min — $45</option>
@@ -227,7 +229,7 @@
                     <div class="form-group">
                         <label>Other Cost</label>
                         <input type="number" id="skateOtherCost" placeholder="e.g. 20" step="0.01" min="0" oninput="updateTotalCost()"
-                            style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px;">
+                            class="u-text-field">
                     </div>
                     <div class="form-group">
                         <label>Total Cost</label>
@@ -270,7 +272,7 @@
             <div class="roster-section">
                 <div class="roster-header">
                     <h3>Roster <span id="rosterCount">(0/24)</span></h3>
-                    <div style="display: flex; gap: 8px; align-items: center;">
+                    <div class="u-flex-gap-8">
                         <button id="sortToggleBtn" class="button button-secondary" onclick="toggleRosterSort()" style="font-size: 12px; padding: 6px 12px;">🔤 A–Z</button>
                         <button class="button" onclick="balanceSkate()">⚖️ Balance This Skate</button>
                     </div>
@@ -310,7 +312,7 @@
                 </div>
                 <div id="teamsContent" style="display:none;">
                     <!-- Tug of war bar -->
-                    <div style="margin-bottom: 20px;">
+                    <div class="u-mb-20">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 600;">
                             <span style="color: #1a1a2e;">⬛ Dark</span>
                             <span style="color: var(--text-muted);" id="tugVoteCount">No votes yet</span>
@@ -330,11 +332,11 @@
                     <!-- Team lists with nudge buttons -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                         <div>
-                            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">⬛ Dark</h4>
+                            <h4 class="u-section-caption">⬛ Dark</h4>
                             <div id="teamsModalDark"></div>
                         </div>
                         <div>
-                            <h4 style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">⬜ Light</h4>
+                            <h4 class="u-section-caption">⬜ Light</h4>
                             <div id="teamsModalLight"></div>
                         </div>
                     </div>
@@ -358,7 +360,7 @@
                 <button class="close-modal" onclick="closeCSVPreviewModal()">×</button>
             </div>
 
-            <div id="csvPreviewContent" style="margin-bottom: 20px;">
+            <div id="csvPreviewContent" class="u-mb-20">
                 <p style="color: var(--text-muted); font-size: 14px;">Upload a BenchApp CSV file to import multiple skates at once.</p>
             </div>
 
@@ -371,7 +373,7 @@
 
     <!-- Quick Add Player Modal -->
     <div id="quickAddModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content u-modal-max-500">
             <div class="modal-header">
                 <span>⚡ Quick Add Player</span>
                 <button class="close-modal" onclick="closeQuickAdd()">×</button>
@@ -383,12 +385,12 @@
                 <div id="quickAddSuggestions" style="display:none; position:absolute; left:0; right:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; max-height:200px; overflow-y:auto; z-index:1000;"></div>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
+            <div class="u-mb-20">
+                <label class="u-form-label">
                     Select Skate(s): 
                     <span id="selectedSkatesCount" style="color: var(--primary); font-weight: 700; margin-left: 4px;">(0 selected)</span>
                 </label>
-                <div id="quickAddSkatesList" style="max-height: 300px; overflow-y: auto;">
+                <div id="quickAddSkatesList" class="u-scrollbox-300">
                     <!-- Skates will be loaded here -->
                 </div>
             </div>
@@ -403,28 +405,28 @@
     <!-- Move to Another Skate Modal -->
     <!-- Replace Player Modal -->
     <div id="replacePlayerModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content u-modal-max-500">
             <div class="modal-header">
                 <span>🔁 Replace Player</span>
                 <button class="close-modal" onclick="closeReplacePlayerModal()">×</button>
             </div>
             <div style="margin-bottom: 16px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
-                Replacing: <strong id="replacePlayerName" style="color: var(--primary);"></strong>
+                Replacing: <strong id="replacePlayerName" class="u-text-primary"></strong>
             </div>
             <div class="form-group">
                 <label>New Player Name</label>
-                <input type="text" id="replacePlayerInput" placeholder="Enter new player name..." style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%;" oninput="filterReplaceSuggestions(this.value)">
+                <input type="text" id="replacePlayerInput" placeholder="Enter new player name..." class="u-form-control-full" oninput="filterReplaceSuggestions(this.value)">
                 <div id="replaceSuggestions" style="max-height: 200px; overflow-y: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 4px; display: none;"></div>
             </div>
             <div class="form-group">
                 <label>Credit for outgoing player?</label>
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal; font-size: 14px; color: var(--text);">
-                        <input type="radio" name="replaceCredit" id="replaceCreditNo" value="no" checked style="width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;">
+                    <label class="u-inline-label">
+                        <input type="radio" name="replaceCredit" id="replaceCreditNo" value="no" checked class="u-checkbox">
                         No credit needed
                     </label>
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal; font-size: 14px; color: var(--text);">
-                        <input type="radio" name="replaceCredit" id="replaceCreditYes" value="yes" style="width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;">
+                    <label class="u-inline-label">
+                        <input type="radio" name="replaceCredit" id="replaceCreditYes" value="yes" class="u-checkbox">
                         Give credit <span id="replaceCreditAmount" style="color: var(--primary); font-weight: 600; margin-left: 4px;"></span>
                     </label>
                 </div>
@@ -437,17 +439,17 @@
     </div>
 
     <div id="moveToSkateModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content u-modal-max-500">
             <div class="modal-header">
                 <span>🔄 Move Player to Another Skate</span>
                 <button class="close-modal" onclick="closeMoveToSkateModal()">×</button>
             </div>
-            <div style="margin-bottom: 20px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px;">
-                <strong id="movePlayerName" style="color: var(--primary);"></strong>
+            <div class="u-highlight-panel">
+                <strong id="movePlayerName" class="u-text-primary"></strong>
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted);">Select Destination Skate:</label>
-                <div id="moveToSkatesList" style="max-height: 300px; overflow-y: auto;"></div>
+            <div class="u-mb-20">
+                <label class="u-form-label">Select Destination Skate:</label>
+                <div id="moveToSkatesList" class="u-scrollbox-300"></div>
             </div>
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeMoveToSkateModal()">Cancel</button>
@@ -464,7 +466,7 @@
             </div>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Select all and copy (Ctrl+A / Cmd+A, then Ctrl+C / Cmd+C)</p>
             <textarea id="manualCopyText" readonly style="width: 100%; height: 400px; background: var(--card-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 12px; color: var(--text); font-size: 14px; line-height: 1.6; resize: vertical; box-sizing: border-box;"></textarea>
-            <div class="modal-buttons" style="margin-top: 12px;">
+            <div class="modal-buttons u-mt-12">
                 <button class="button button-secondary" onclick="document.getElementById('manualCopyModal').classList.remove('active')">Close</button>
                 <button class="button" onclick="selectManualCopyText()">Select All</button>
             </div>
@@ -502,15 +504,15 @@
             <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
                 Player: <strong id="ratingModalPlayerName" style="color: var(--text);"></strong>
             </p>
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group u-mb-20">
                 <label for="ratingModalInput">Rating</label>
                 <input type="number" id="ratingModalInput" min="0" max="20" step="0.5"
                     style="width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 16px;"
                     onkeydown="if(event.key==='Enter') saveRatingFromModal(); if(event.key==='Escape') closeRatingModal();">
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="button button-secondary" onclick="closeRatingModal()" style="flex: 1;">Cancel</button>
-                <button class="button" onclick="saveRatingFromModal()" style="flex: 1;">Save</button>
+                <button class="button button-secondary u-flex-1" onclick="closeRatingModal()">Cancel</button>
+                <button class="button u-flex-1" onclick="saveRatingFromModal()">Save</button>
             </div>
         </div>
     </div>
