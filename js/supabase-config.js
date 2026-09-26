@@ -8,7 +8,14 @@ window.SKATE_MANAGER_CONFIG = Object.freeze({
 // stay consistent throughout the app.
 window.SKATE_MANAGER_CLIENT = window.supabase?.createClient(
   window.SKATE_MANAGER_CONFIG.url,
-  window.SKATE_MANAGER_CONFIG.publishableKey
+  window.SKATE_MANAGER_CONFIG.publishableKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
 
 window.escapeHTML = function (value) {
