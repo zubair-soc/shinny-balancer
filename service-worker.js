@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skate-manager-shell-v2';
+const CACHE_NAME = 'skate-manager-shell-v3';
 const APP_FILES = [
   './',
   './index.html',
@@ -16,7 +16,12 @@ const APP_FILES = [
   './js/database.js',
   './js/database-modal.js',
   './js/financials.js',
-  './js/index.js',
+  './js/app-core.js',
+  './js/skates.js',
+  './js/roster-actions.js',
+  './js/import-balance.js',
+  './js/quick-add.js',
+  './js/teams-tools.js',
   './manifest.webmanifest',
   './js/supabase-config.js',
   './js/auth-gate.js',
