@@ -619,9 +619,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
     <script>
-        const SUPABASE_URL = 'https://fqbtfgkwhnfyodinjvcn.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxYnRmZ2t3aG5meW9kaW5qdmNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MzIzODAsImV4cCI6MjA4NjAwODM4MH0.dVank1VxQ4-9EsQ7ekwSRs5Vu9V2rQLgVmN01iBDYHs';
+        const { url: SUPABASE_URL, publishableKey: SUPABASE_KEY } = window.SKATE_MANAGER_CONFIG;
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allCredits = [];
@@ -1190,5 +1190,6 @@
             }
         });
     </script>
+    <script src="js/auth-gate.js"></script>
 </body>
 </html>
