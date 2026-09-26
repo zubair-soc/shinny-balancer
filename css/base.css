@@ -1,0 +1,25 @@
+/* Shared reset used by every page. */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+/* Reused utility styles moved out of HTML style attributes. */
+body .u-mb-20 { margin-bottom: 20px; }
+body .u-modal-max-500 { max-width: 500px; }
+body .u-text-primary { color: var(--primary); }
+body .u-mt-12 { margin-top: 12px; }
+body .u-flex-1 { flex: 1; }
+body .u-scrollbox-300 { max-height: 300px; overflow-y: auto; }
+body .u-flex-gap-8 { display: flex; gap: 8px; align-items: center; }
+body .u-form-control { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; }
+body .u-form-control-full { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px; width: 100%; }
+body .u-text-field { width: 100%; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; }
+body .u-section-caption { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+body .u-form-label { display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+body .u-inline-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal; font-size: 14px; color: var(--text); }
+body .u-checkbox { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+body .u-highlight-panel { margin-bottom: 20px; padding: 12px; background: rgba(var(--primary-rgb), 0.1); border-radius: 8px; }
+body .u-clickable { cursor: pointer; }
