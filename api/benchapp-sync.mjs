@@ -234,12 +234,14 @@ async function runBenchAppSync(request, setStage) {
   });
 }
 
-export default async function handler(request) {
-  let stage = 'starting the sync';
-  try {
-    return await runBenchAppSync(request, value => { stage = value; });
-  } catch (error) {
-    console.error(`BenchApp sync crashed while ${stage}:`, error);
-    return json({ error: `The sync server crashed while ${stage}. Please try again later.` }, 500);
+export default {
+  async fetch(request) {
+    let stage = 'starting the sync';
+    try {
+      return await runBenchAppSync(request, value => { stage = value; });
+    } catch (error) {
+      console.error(`BenchApp sync crashed while ${stage}:`, error);
+      return json({ error: `The sync server crashed while ${stage}. Please try again later.` }, 500);
+    }
   }
-}
+};
