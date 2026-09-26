@@ -185,6 +185,7 @@
             if (e.target.classList.contains('modal')) {
                 // Close the appropriate modal
                 if (e.target.id === 'skateModal') closeSkateModal();
+                else if (e.target.id === 'benchAppSettingsModal') closeBenchAppSettings();
                 else if (e.target.id === 'rosterModal') closeRosterModal();
                 else if (e.target.id === 'csvPreviewModal') closeCSVPreviewModal();
                 else if (e.target.id === 'quickAddModal') closeQuickAdd();
@@ -206,14 +207,14 @@
             
             if (showingArchive) {
                 pastSection.style.setProperty('display', 'block', 'important');
-                toggleBtn.innerHTML = `📦 Hide Past Skates (${archiveCount})`;
+                toggleBtn.innerHTML = `📦 Hide Past / Removed (${archiveCount})`;
                 // Scroll to past skates section
                 setTimeout(() => {
                     pastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
                 pastSection.style.setProperty('display', 'none', 'important');
-                toggleBtn.innerHTML = `📦 Show Past Skates (${archiveCount})`;
+                toggleBtn.innerHTML = `📦 Show Past / Removed (${archiveCount})`;
             }
         }
 
@@ -225,6 +226,7 @@
                 supabaseClient = window.SKATE_MANAGER_CLIENT;
                 loadSkates();
                 loadAllPlayers();
+                if (window.syncBenchAppOnOpen) window.syncBenchAppOnOpen();
             } else {
                 alert('Database connection failed. Please refresh.');
             }
@@ -236,4 +238,3 @@
                 loadAllPlayers();
             }
         });
-

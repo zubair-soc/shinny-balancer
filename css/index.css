@@ -717,3 +717,53 @@
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
+
+        .benchapp-sync-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 0 0 24px;
+            padding: 14px 16px;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            background: var(--card-bg);
+        }
+        .benchapp-sync-toolbar > div:first-child,
+        .benchapp-sync-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .benchapp-sync-toolbar strong {
+            color: var(--text);
+            font-size: 14px;
+        }
+        #benchAppSyncStatus {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        #benchAppSyncStatus.is-error { color: #ef4444; }
+        .benchapp-settings-copy {
+            margin: 0 0 18px;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        #benchAppFeedUrl {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text);
+            font: inherit;
+        }
+        .skate-archived-label { color: #b45309 !important; font-weight: 600; }
+        @media (max-width: 640px) {
+            .benchapp-sync-toolbar { align-items: flex-start; flex-direction: column; }
+            .benchapp-sync-toolbar > div:first-child { align-items: flex-start; flex-direction: column; gap: 4px; }
+            .benchapp-sync-actions { width: 100%; }
+            .benchapp-sync-actions button { flex: 1; }
+        }

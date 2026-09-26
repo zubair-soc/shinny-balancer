@@ -91,12 +91,12 @@
             // Separate future and past skates
             const futureSkates = allSkates.filter(skate => {
                 const skateDate = new Date(skate.date + 'T00:00:00');
-                return skateDate >= today;
+                return !skate.is_archived && skateDate >= today;
             }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
             const pastSkates = allSkates.filter(skate => {
                 const skateDate = new Date(skate.date + 'T00:00:00');
-                return skateDate < today;
+                return skate.is_archived || skateDate < today;
             }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Reverse chronological
 
             // Get registration counts for ALL skates in ONE BULK QUERY (fast!)
@@ -150,9 +150,9 @@
                     return `
                         <div class="skate-card" onclick="openSkate(${skate.id})">
                             <div class="skate-title">${escapeHTML(skate.title)}</div>
+                            ${skate.is_archived ? '<div class="skate-detail skate-archived-label">Archived · no longer on BenchApp</div>' : ''}
                             <div class="skate-detail">📅 ${formatDate(skate.date)}</div>
                             <div class="skate-detail">🕐 ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                            <div class="skate-detail">💰 ${escapeHTML(skate.cost)}</div>
                             <div class="skate-detail">📍 ${escapeHTML(skate.location)}</div>
                             ${skate.tier ? `<div class="skate-detail">🏒 ${escapeHTML(skate.tier)}</div>` : ''}
                             <div class="skate-count ${countColorClass}">${goalieText} · ${skaters}/${maxSkaters} skaters</div>
@@ -784,4 +784,3 @@
                 console.error('Error loading roster:', error);
             }
         }
-

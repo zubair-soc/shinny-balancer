@@ -33,6 +33,17 @@
             </div>
         </div>
 
+        <div class="benchapp-sync-toolbar">
+            <div>
+                <strong>BenchApp Calendar</strong>
+                <span id="benchAppSyncStatus" role="status" aria-live="polite">Connect a BenchApp calendar to sync</span>
+            </div>
+            <div class="benchapp-sync-actions">
+                <button id="benchAppSyncButton" class="back-button" onclick="syncBenchAppNow()">↻ Sync Calendar</button>
+                <button class="back-button" onclick="openBenchAppSettings()">Calendar Link</button>
+            </div>
+        </div>
+
         <!-- Archive Toggle -->
         <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
             <h2 style="font-size: 20px; font-weight: 700; color: var(--text);">
@@ -40,7 +51,7 @@
                 <span id="upcomingCount" style="color: var(--text-muted); font-size: 16px; font-weight: 500; margin-left: 8px;"></span>
             </h2>
             <button id="archiveToggle" class="back-button" onclick="toggleArchive()" style="display: none;">
-                📦 Show Past Skates (<span id="archiveCount">0</span>)
+                📦 Show Past / Removed (<span id="archiveCount">0</span>)
             </button>
         </div>
 
@@ -55,7 +66,7 @@
         <!-- Past Skates Section (Hidden by default) -->
         <div id="pastSkatesSection" style="display: none; margin-top: 40px;">
             <h2 style="font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 20px;">
-                📦 Past Skates
+                📦 Past / Removed Skates
                 <span id="pastCount" style="color: var(--text-muted); font-size: 16px; font-weight: 500; margin-left: 8px;"></span>
             </h2>
             <div id="pastSkatesContainer" class="skates-grid"></div>
@@ -352,6 +363,24 @@
         </div>
     </div>
 
+    <div id="benchAppSettingsModal" class="modal">
+        <div class="modal-content u-modal-max-500">
+            <div class="modal-header">
+                <span>BenchApp Calendar Link</span>
+                <button class="close-modal" onclick="closeBenchAppSettings()">×</button>
+            </div>
+            <p class="benchapp-settings-copy">Paste the link from BenchApp’s <strong>Copy ICS Link</strong> option. The app checks for updates when you open Skates and when you sync manually.</p>
+            <div class="form-group">
+                <label for="benchAppFeedUrl">ICS link</label>
+                <input id="benchAppFeedUrl" type="url" placeholder="https://ics.benchapp.com/…" autocomplete="url">
+            </div>
+            <div class="modal-buttons">
+                <button class="button button-secondary" onclick="closeBenchAppSettings()">Cancel</button>
+                <button id="saveBenchAppSettingsButton" class="button" onclick="saveBenchAppSettings()">Save Link</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CSV Import Preview Modal -->
     <div id="csvPreviewModal" class="modal">
         <div class="modal-content">
@@ -495,6 +524,7 @@
     <script src="js/import-balance.js"></script>
     <script src="js/quick-add.js"></script>
     <script src="js/teams-tools.js"></script>
+    <script src="js/benchapp-sync.js"></script>
     <div id="ratingModal" class="modal" style="z-index: 2000;">
         <div class="modal-content" style="max-width: 340px; padding: 28px;">
             <div class="modal-header">
