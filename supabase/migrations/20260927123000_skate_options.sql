@@ -49,7 +49,6 @@ insert into public.skate_options (option_type, name, sort_order) values
   ('location', 'Millenium Place', 140),
   ('location', 'Millwoods', 150),
   ('location', 'NAIT', 160),
-  ('location', 'NAIT - Parking: Honk App', 170),
   ('location', 'Heavy Metal Place', 180),
   ('location', 'Rivercree', 190),
   ('location', 'Silent Ice Center', 200),
