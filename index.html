@@ -38,11 +38,11 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
-                <button class="add-button" data-admin-only hidden onclick="showCreateModal()">+ Create Skate</button>
+                <button id="createSkateButton" class="add-button" data-admin-only hidden onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>
 
-        <div class="benchapp-sync-toolbar" data-admin-only hidden>
+        <div id="benchAppSyncCard" class="benchapp-sync-toolbar" data-admin-only hidden>
             <div>
                 <strong>BenchApp Calendar</strong>
                 <span id="benchAppSyncStatus" role="status" aria-live="polite">Connect a BenchApp calendar to sync</span>
@@ -232,8 +232,8 @@
 
             <div class="modal-buttons">
                 <button class="button" onclick="copyForWhatsApp(event)" style="background: #25D366; color: white; border: none;">📋 Copy for WhatsApp</button>
-                <button class="button" data-admin-only hidden onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
-                <button class="button button-danger" data-admin-only hidden onclick="confirmDeleteSkate()">Delete Skate</button>
+                <button id="editSkateButton" class="button" data-admin-only hidden onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
+                <button id="deleteSkateButton" class="button button-danger" data-admin-only hidden onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
             </div>
         </div>

@@ -21,10 +21,12 @@
     #sm-sign-out { position: static; flex: 0 0 auto; margin-left: 12px; padding: 9px 12px; border: 1px solid #94a3b8; border-radius: 8px; background: #0f172a; color: white; font: 13px system-ui, sans-serif; cursor: pointer; }
   `;
   style.textContent += `
-    html[data-skate-role='skate_manager'] [data-admin-only],
-    html[data-skate-role='unassigned'] [data-admin-only] { display: none !important; }
-    html[data-skate-role='admin'] [data-skate-manager-only],
-    html[data-skate-role='unassigned'] [data-skate-manager-only] { display: none !important; }
+    html:not([data-skate-role='admin']) [data-admin-only],
+    html:not([data-skate-role='admin']) #benchAppSyncCard,
+    html:not([data-skate-role='admin']) #createSkateButton,
+    html:not([data-skate-role='admin']) #editSkateButton,
+    html:not([data-skate-role='admin']) #deleteSkateButton { display: none !important; }
+    html:not([data-skate-role='skate_manager']) [data-skate-manager-only] { display: none !important; }
     [hidden] { display: none !important; }
     @media (max-width: 700px) { #sm-sign-out { align-self: flex-end; margin: 0; } }
   `;
