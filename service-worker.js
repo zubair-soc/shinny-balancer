@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skate-manager-shell-v9';
+const CACHE_NAME = 'skate-manager-shell-v10';
 const APP_FILES = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_FILES = [
   './database.html',
   './credits.html',
   './financials.html',
+  './admin-settings.html',
   './css/base.css',
   './css/navigation.css',
   './css/ui-overhaul.css',
@@ -14,6 +15,7 @@ const APP_FILES = [
   './css/credits.css',
   './css/database.css',
   './css/financials.css',
+  './css/admin-settings.css',
   './css/index.css',
   './js/balancer-core.js',
   './js/balancer-teams.js',
@@ -25,6 +27,8 @@ const APP_FILES = [
   './js/database-theme.js',
   './js/database-modal.js',
   './js/financials.js',
+  './js/admin-settings.js',
+  './js/parking-code.js',
   './js/app-core.js',
   './js/skates.js',
   './js/roster-actions.js',

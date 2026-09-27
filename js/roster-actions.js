@@ -632,6 +632,21 @@
                 const skate = allSkates.find(s => s.id === currentSkateId);
                 if (!skate) return;
 
+                let naitParkingCode = '';
+                if (String(skate.location || '').trim().toLowerCase().startsWith('nait')) {
+                    try {
+                        naitParkingCode = await window.getNaitParkingCode();
+                    } catch (parkingError) {
+                        console.error('Could not load the NAIT parking code:', parkingError);
+                        alert('Could not load the NAIT parking code. Check the one-time Admin Settings setup, then try again.');
+                        return;
+                    }
+                    if (!naitParkingCode) {
+                        alert('Add the current NAIT parking code under Admin → Settings before copying this roster.');
+                        return;
+                    }
+                }
+
                 const { data, error } = await supabaseClient
                     .from('skate_registrations')
                     .select('*')
@@ -654,6 +669,7 @@
                 message += `Date & Time: ${dateStr} · ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}\n`;
                 message += `Cost: ${skate.cost} — payments@shinnyofchampions.com\n`;
                 message += `Location: ${skate.location}\n`;
+                if (naitParkingCode) message += `Parking code: ${naitParkingCode}\n`;
 
                 sortedRoster.forEach((player, index) => {
                     const num = index + 1;
