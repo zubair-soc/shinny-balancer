@@ -209,6 +209,7 @@
         }
 
         let skateOptionRows = [];
+        let skateOptionsLoadError = null;
 
         function populateTimeDropdowns() {
             const startSelect = document.getElementById('skateStartTime');
@@ -266,7 +267,8 @@
 
             if (error) {
                 console.error('Unable to load skate options:', error);
-                setSkateOptionsStatus('Options could not load. Run the Skate Options SQL setup in Supabase, then refresh.', true);
+                skateOptionsLoadError = error;
+                setSkateOptionsStatus('Could not load saved options. Check the one-time Skate Options setup in Supabase, then refresh.', true);
                 const notice = document.getElementById('skateOptionsFormNotice');
                 if (notice) {
                     notice.textContent = 'Tiers and locations need their one-time Supabase setup before you can create a skate.';
@@ -275,6 +277,7 @@
                 return false;
             }
 
+            skateOptionsLoadError = null;
             const notice = document.getElementById('skateOptionsFormNotice');
             if (notice) {
                 notice.textContent = '';
@@ -358,6 +361,11 @@
             const name = input.value.trim();
             if (!name) return;
 
+            if (skateOptionsLoadError) {
+                setSkateOptionsStatus('Options are not connected yet. Finish the Skate Options setup in Supabase, then refresh this page.', true);
+                return;
+            }
+
             const existingOption = skateOptionRows.find(option => option.option_type === type && option.name.toLowerCase() === name.toLowerCase());
             if (existingOption?.is_active) {
                 setSkateOptionsStatus('That option is already on the list.', true);
@@ -371,7 +379,17 @@
                 : await supabaseClient.from('skate_options').insert({ option_type: type, name, sort_order });
             if (error) {
                 console.error('Unable to add skate option:', error);
-                setSkateOptionsStatus('Could not save that option. Please try again.', true);
+                const code = String(error.code || '');
+                const detail = String(error.message || '').toLowerCase();
+                if (code === '23505') {
+                    setSkateOptionsStatus('That name already exists. Refresh the list and try again.', true);
+                } else if (code === '42501' || code === '401' || detail.includes('permission') || detail.includes('row-level security')) {
+                    setSkateOptionsStatus('Supabase blocked this save. Re-run the Skate Options setup in your staging project, then refresh.', true);
+                } else if (code.startsWith('PGRST') || code === '42P01' || detail.includes('skate_options')) {
+                    setSkateOptionsStatus('The Skate Options table is missing or not ready. Run its setup in your staging project, then refresh.', true);
+                } else {
+                    setSkateOptionsStatus('Could not save. Check your connection and try again.', true);
+                }
                 return;
             }
 
