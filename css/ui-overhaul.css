@@ -371,16 +371,17 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
 
 /* Skate roster modal: give the mobile controls room and keep standby tools tucked away. */
 #rosterModal .modal-content {
+    width: min(960px, calc(100vw - 40px));
     max-height: min(88vh, 900px);
-    padding: 26px;
+    padding: 28px;
 }
 #rosterModal .roster-skate-details {
     margin-bottom: 18px;
-    padding: 15px 17px;
+    padding: 16px;
     border: 1px solid var(--card-border);
     border-radius: 14px;
     color: var(--text);
-    background: var(--ui-soft);
+    background: linear-gradient(120deg, rgba(var(--primary-rgb), .11), rgba(var(--primary-rgb), .035));
 }
 #rosterModal .roster-details-grid {
     display: grid;
@@ -388,15 +389,55 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
     gap: 12px 16px;
     font-size: 13px;
 }
+#rosterModal .roster-details-grid > div {
+    min-width: 0;
+    padding: 9px 11px;
+    border: 1px solid rgba(var(--primary-rgb), .1);
+    border-radius: 10px;
+    background: rgba(255,255,255,.58);
+    line-height: 1.4;
+}
 #rosterModal .roster-details-grid strong { color: var(--text-muted); font-weight: 600; }
 #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header { align-items: center; }
 #rosterModal .roster-header h3 { font-size: 17px; letter-spacing: -0.02em; }
+#rosterModal #rosterCount {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    color: var(--primary-dark, var(--primary));
+    background: rgba(var(--primary-rgb), .1);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
 #rosterModal .roster-list {
     padding: 10px;
     border: 1px solid var(--card-border);
     border-radius: 14px;
     background: var(--ui-soft);
 }
+#rosterModal #rosterList { min-height: 68px; }
+#rosterModal .roster-empty-state {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+#rosterModal .roster-empty-state > span:first-child { font-size: 18px; opacity: .72; }
+#rosterModal .capacity-bar { height: 7px; border-radius: 99px; margin-top: 14px; }
+#rosterModal .button.button-secondary {
+    color: var(--text);
+    background: var(--ui-soft);
+    border: 1px solid var(--card-border);
+}
+#rosterModal .button.button-secondary:hover { color: var(--primary); background: rgba(var(--primary-rgb), .09); }
 #rosterModal .roster-item {
     min-height: 48px;
     padding: 8px 11px;
@@ -447,6 +488,7 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
         gap: 10px 12px;
         font-size: 12px;
     }
+    #rosterModal .roster-details-grid > div { padding: 8px; }
     #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header {
         display: flex;
         flex-direction: column;
