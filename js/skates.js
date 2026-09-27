@@ -101,18 +101,23 @@
 
             // Get registration counts for ALL skates in ONE BULK QUERY (fast!)
             const skateIds = allSkates.map(s => s.id);
-            let allRegs = [];
             const chunkSize = 10;
+            const skateIdChunks = [];
             for (let i = 0; i < skateIds.length; i += chunkSize) {
-                const chunk = skateIds.slice(i, i + chunkSize);
-                const { data: chunkRegs } = await supabaseClient
+                skateIdChunks.push(skateIds.slice(i, i + chunkSize));
+            }
+
+            // Fetch count data for all skate groups concurrently so older skates do
+            // not make the home page wait through one network round trip per group.
+            const registrationResults = await Promise.all(skateIdChunks.map(chunk =>
+                supabaseClient
                     .from('skate_registrations')
                     .select('skate_id, is_goalie, is_waitlist')
                     .in('skate_id', chunk)
                     .eq('is_waitlist', false)
-                    .limit(2000);
-                if (chunkRegs) allRegs = allRegs.concat(chunkRegs);
-            }
+                    .limit(2000)
+            ));
+            const allRegs = registrationResults.flatMap(result => result.data || []);
             
             // Group counts by skate
             const skateCounts = {};
