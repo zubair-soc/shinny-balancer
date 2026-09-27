@@ -322,21 +322,24 @@
         .create-skate-submit { display: flex; align-items: center; justify-content: space-between; gap: 22px; min-width: 170px !important; }
 
         .skate-options-modal { z-index: 1200; }
-        .skate-options-content { width: min(780px, 94vw); max-width: 780px; padding: 0; overflow-x: hidden; }
-        .skate-options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 24px 32px 10px; }
+        .skate-options-content { width: min(780px, 94vw); max-width: 780px; max-height: 90vh; padding: 0; overflow: auto; }
+        .skate-options-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 22px 32px 10px; }
         .skate-option-group { min-width: 0; padding: 16px; border: 1px solid var(--card-border); border-radius: 15px; background: var(--ui-soft, rgba(var(--primary-rgb), .035)); }
         .skate-option-group h3 { margin: 0 0 12px; color: var(--text); font-size: 14px; }
-        .skate-option-add { display: flex; gap: 7px; margin-bottom: 12px; }
-        .skate-option-add input { min-width: 0; flex: 1; }
-        .skate-option-add .button { min-height: 42px; padding: 8px 14px; }
-        .skate-options-list { display: grid; gap: 6px; max-height: 265px; overflow: auto; }
+        .skate-option-add { display: flex; align-items: stretch; gap: 9px; margin: 0; }
+        #skateOptionsModal .skate-option-add input { box-sizing: border-box; width: 0; min-width: 0; min-height: 44px; flex: 1 1 auto; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 11px; background: var(--card-bg); color: var(--text); box-shadow: none; outline: none; }
+        #skateOptionsModal .skate-option-add input::placeholder { color: var(--text-muted); opacity: .85; }
+        #skateOptionsModal .skate-option-add input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .14); }
+        .skate-option-add .button { min-height: 44px; padding: 8px 16px; }
+        .skate-options-list { display: grid; gap: 6px; max-height: 265px; margin-top: 12px; overflow: auto; }
         .skate-option-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; padding: 5px 7px 5px 10px; border-radius: 9px; background: var(--card-bg); color: var(--text); font-size: 12px; }
         .skate-option-item span { overflow-wrap: anywhere; }
         .skate-option-item button { width: 29px; height: 29px; flex: 0 0 29px; border: 0; border-radius: 8px; background: rgba(220, 38, 38, .09); color: #dc2626; font-size: 19px; cursor: pointer; }
-        .skate-options-empty { margin: 6px 0; color: var(--text-muted); font-size: 12px; }
-        .skate-options-status { min-height: 18px; margin: 4px 32px 0; color: var(--primary-dark); font-size: 12px; }
+        .skate-options-empty { margin: 0; padding: 9px 10px; border-radius: 9px; background: var(--card-bg); color: var(--text-muted); font-size: 12px; }
+        .skate-options-status { min-height: 0; margin: 4px 32px 0; color: var(--primary-dark); font-size: 13px; line-height: 1.45; }
         #skateOptionsFormNotice { min-height: 0; margin: 9px 0 0; }
         .skate-options-status.is-error { color: #dc2626; }
+        #skateOptionsModal .create-skate-footer .button-secondary { border-color: var(--card-border); background: var(--ui-soft, #f7faf8); color: var(--text); }
 
         @media (max-width: 640px) {
             .create-skate-modal, .skate-options-content { width: 96vw; max-height: 94vh; border-radius: 17px; }
@@ -352,6 +355,7 @@
             .skate-options-grid { grid-template-columns: 1fr; gap: 12px; padding: 18px 20px 8px; }
             .skate-option-group { padding: 13px; }
             .skate-options-status { margin-right: 20px; margin-left: 20px; }
+            #skateOptionsModal .create-skate-footer { padding-top: 12px; }
         }
 
         .modal {
