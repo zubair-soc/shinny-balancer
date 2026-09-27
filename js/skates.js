@@ -637,7 +637,7 @@
 
             document.getElementById('rosterSkateTitle').textContent = skate.title;
             document.getElementById('rosterSkateDetails').innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 14px;">
+                <div class="roster-details-grid">
                     <div><strong>Date:</strong> ${formatDate(skate.date)}</div>
                     <div><strong>Time:</strong> ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
                     <div><strong>Cost:</strong> ${escapeHTML(skate.cost)}</div>

@@ -43,6 +43,24 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     box-shadow: var(--ui-shadow);
     backdrop-filter: blur(14px);
 }
+.app-nav #sm-sign-out {
+    position: static;
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid rgba(var(--primary-rgb), .22);
+    border-radius: 11px;
+    color: var(--text-muted);
+    background: rgba(var(--primary-rgb), .07);
+    box-shadow: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.app-nav #sm-sign-out:hover { color: var(--primary); background: rgba(var(--primary-rgb), .13); }
 
 .container, .main { max-width: 1400px; }
 .container { margin-bottom: 36px; }
@@ -167,6 +185,7 @@ body:has(.app-nav) > .main { padding-top: 8px; }
         margin-top: 12px;
         margin-bottom: 16px;
     }
+    .app-nav #sm-sign-out { align-self: flex-end; min-height: 34px; margin-top: -3px; padding: 6px 10px; }
     .container { width: 100%; }
     .header {
         padding: 18px 16px;
@@ -348,4 +367,143 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
     }
     body:has(.app-nav-link[href="index.html"].is-active) .container > .header::after { right: -48px; }
     .skate-card { min-height: 0; }
+}
+
+/* Skate roster modal: give the mobile controls room and keep standby tools tucked away. */
+#rosterModal .modal-content {
+    max-height: min(88vh, 900px);
+    padding: 26px;
+}
+#rosterModal .roster-skate-details {
+    margin-bottom: 18px;
+    padding: 15px 17px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    color: var(--text);
+    background: var(--ui-soft);
+}
+#rosterModal .roster-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px;
+    font-size: 13px;
+}
+#rosterModal .roster-details-grid strong { color: var(--text-muted); font-weight: 600; }
+#rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header { align-items: center; }
+#rosterModal .roster-header h3 { font-size: 17px; letter-spacing: -0.02em; }
+#rosterModal .roster-list {
+    padding: 10px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: var(--ui-soft);
+}
+#rosterModal .roster-item {
+    min-height: 48px;
+    padding: 8px 11px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--ui-surface);
+}
+#rosterModal .roster-item.goalie { background: #fef3c7; color: #713f12; }
+#rosterModal .roster-item.waitlist { background: var(--ui-surface); color: var(--text-muted); }
+#rosterModal .roster-item.unpaid { border-color: #fca5a5; background: #fff7f7; }
+#rosterModal .waitlist-disclosure {
+    padding: 0 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: var(--ui-soft);
+}
+#rosterModal .waitlist-disclosure > summary { list-style: none; cursor: pointer; }
+#rosterModal .waitlist-disclosure > summary::-webkit-details-marker { display: none; }
+#rosterModal .waitlist-disclosure .roster-header {
+    min-height: 54px;
+    margin: 0;
+    gap: 10px;
+}
+#rosterModal .waitlist-caption { margin-left: auto; color: var(--text-muted); font-size: 12px; }
+#rosterModal .waitlist-chevron { color: var(--text-muted); font-size: 18px; transition: transform 150ms ease; }
+#rosterModal .waitlist-disclosure[open] .waitlist-chevron { transform: rotate(180deg); }
+#rosterModal .waitlist-content { padding-bottom: 12px; }
+
+@media (max-width: 600px) {
+    #rosterModal.modal { padding: 8px 0; }
+    #rosterModal .modal-content {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 16px);
+        padding: 16px;
+        margin: 0 auto;
+        border-radius: 18px;
+    }
+    #rosterModal .modal-header {
+        top: -16px;
+        min-height: 48px;
+        margin: -16px -16px 14px;
+        padding: 11px 16px;
+        font-size: 16px;
+    }
+    #rosterModal .roster-skate-details { padding: 12px; margin-bottom: 16px; }
+    #rosterModal .roster-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        font-size: 12px;
+    }
+    #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    #rosterModal .roster-header h3 { font-size: 17px; }
+    #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr);
+        gap: 8px;
+        width: 100%;
+    }
+    #rosterModal #sortToggleBtn {
+        width: 86px;
+        min-height: 46px;
+        padding: 7px 5px !important;
+        white-space: nowrap;
+    }
+    #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 .button:last-child {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        padding: 8px 12px;
+        white-space: normal;
+    }
+    #rosterModal .add-player-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 96px;
+        gap: 8px;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+    #rosterModal .add-player-form input {
+        width: 100%;
+        min-width: 0;
+        min-height: 52px;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    #rosterModal .add-player-form > .button {
+        width: 96px;
+        min-width: 96px;
+        min-height: 52px;
+        padding: 7px 8px;
+        line-height: 1.2;
+        white-space: normal;
+    }
+    #rosterModal .roster-list { padding: 7px; }
+    #rosterModal .roster-item { padding: 8px; gap: 8px; }
+    #rosterModal .roster-item-name { min-width: 0; overflow-wrap: anywhere; }
+    #rosterModal .waitlist-disclosure { padding: 0 11px; }
+    #rosterModal .waitlist-disclosure .roster-header { flex-direction: row; align-items: center; }
+    #rosterModal .waitlist-caption { font-size: 11px; }
+    #rosterModal .waitlist-content .add-player-form { grid-template-columns: minmax(0, 1fr) 112px; }
+    #rosterModal .waitlist-content .add-player-form > .button { width: 112px; min-width: 112px; }
+    #rosterModal .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #rosterModal .modal-buttons .button { min-height: 44px; padding: 9px 7px; font-size: 12px; }
 }

@@ -54,7 +54,8 @@
       await authClient.auth.signOut();
       location.reload();
     });
-    document.body.appendChild(button);
+    const appNav = document.querySelector('.app-nav');
+    (appNav || document.body).appendChild(button);
   }
 
   authClient.auth.getSession().then(({ data, error }) => {

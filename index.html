@@ -286,7 +286,7 @@
                 <button class="close-modal" onclick="closeRosterModal()">×</button>
             </div>
 
-            <div id="rosterSkateDetails" style="margin-bottom: 24px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+            <div id="rosterSkateDetails" class="roster-skate-details">
             </div>
 
             <div class="roster-section">
@@ -311,18 +311,21 @@
                 </div>
             </div>
 
-            <div class="roster-section">
-                <div class="roster-header">
+            <details class="roster-section waitlist-disclosure">
+                <summary class="roster-header">
                     <h3>Waitlist <span id="waitlistCount">(0)</span></h3>
-                </div>
-
+                    <span class="waitlist-caption">Optional standby list</span>
+                    <span class="waitlist-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div class="waitlist-content">
                 <div class="add-player-form">
                     <input type="text" id="newWaitlistName" placeholder="Player name" onkeypress="if(event.key==='Enter') addToWaitlist()">
                     <button class="button button-secondary" onclick="addToWaitlist()">Add to Waitlist</button>
                 </div>
 
                 <div id="waitlistList" class="roster-list"></div>
-            </div>
+                </div>
+            </details>
 
             <!-- Teams Section -->
             <div class="roster-section" id="teamsSection" style="display:none;">
