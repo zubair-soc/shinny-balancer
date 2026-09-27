@@ -234,12 +234,7 @@
 
         function calcIceCost() {
             const location = document.getElementById('skateLocation')?.value;
-            const month = document.getElementById('skateMonth')?.value;
-            const day = document.getElementById('skateDay')?.value;
-            const year = document.getElementById('skateYear')?.value;
-            const date = (month && day && year)
-                ? `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-                : null;
+            const date = document.getElementById('skateDate')?.value || null;
             const timeStart = document.getElementById('skateStartTime')?.value;
             const duration = parseInt(document.getElementById('skateDuration')?.value);
             autoSetRefCost();

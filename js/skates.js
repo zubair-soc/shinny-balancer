@@ -195,171 +195,231 @@
         function updateSkateTitle() {
             const number = document.getElementById('skateNumber').value;
             const tierSelect = document.getElementById('skateTier');
-            const tier = tierSelect.value === 'custom' ? '' : tierSelect.value;
+            const tier = tierSelect.value;
             
             if (number && tier) {
                 document.getElementById('skateTitle').value = `${number} ${tier}`;
             } else if (number) {
                 document.getElementById('skateTitle').value = `${number}`;
+            } else if (tier) {
+                document.getElementById('skateTitle').value = tier;
             } else {
                 document.getElementById('skateTitle').value = '';
             }
         }
 
-        function populateDateDropdowns() {
-            // Populate days (1-31)
-            const daySelect = document.getElementById('skateDay');
-            daySelect.innerHTML = '<option value="">Day</option>';
-            for (let i = 1; i <= 31; i++) {
-                daySelect.innerHTML += `<option value="${i}">${i}</option>`;
-            }
-
-            // Populate years (current year and next year)
-            const yearSelect = document.getElementById('skateYear');
-            const currentYear = new Date().getFullYear();
-            yearSelect.innerHTML = '<option value="">Year</option>';
-            yearSelect.innerHTML += `<option value="${currentYear}">${currentYear}</option>`;
-            yearSelect.innerHTML += `<option value="${currentYear + 1}">${currentYear + 1}</option>`;
-        }
+        let skateOptionRows = [];
 
         function populateTimeDropdowns() {
-            const times = [];
-            
-            // Generate times in 15-minute intervals
-            for (let hour = 0; hour < 24; hour++) {
-                for (let min = 0; min < 60; min += 15) {
-                    const h = hour % 12 || 12;
-                    const ampm = hour < 12 ? 'AM' : 'PM';
-                    const displayTime = `${h}:${min.toString().padStart(2, '0')} ${ampm}`;
-                    const valueTime = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-                    times.push({ display: displayTime, value: valueTime });
+            const startSelect = document.getElementById('skateStartTime');
+            startSelect.innerHTML = '<option value="">Select a time</option>';
+            const pmGroup = document.createElement('optgroup');
+            pmGroup.label = 'PM times';
+            const amGroup = document.createElement('optgroup');
+            amGroup.label = 'AM times';
+
+            // Evening times first, descending. Exclude midnight through 5:45 AM.
+            for (let totalMinutes = 23 * 60 + 45; totalMinutes >= 6 * 60; totalMinutes -= 15) {
+                const hour24 = Math.floor(totalMinutes / 60);
+                const minute = totalMinutes % 60;
+                const hour12 = hour24 % 12 || 12;
+                const period = hour24 >= 12 ? 'PM' : 'AM';
+                const option = document.createElement('option');
+                option.value = String(hour24).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+                option.textContent = hour12 + ':' + String(minute).padStart(2, '0') + ' ' + period;
+                (period === 'PM' ? pmGroup : amGroup).appendChild(option);
+            }
+
+            startSelect.append(pmGroup, amGroup);
+        }
+
+        function setSkateOptionSelect(selectId, type, selectedValue = '') {
+            const select = document.getElementById(selectId);
+            const placeholder = type === 'tier' ? 'Select a format' : 'Select a rink';
+            select.innerHTML = '<option value="">' + placeholder + '</option>';
+            skateOptionRows
+                .filter(option => option.option_type === type && option.is_active)
+                .forEach(option => {
+                    const item = document.createElement('option');
+                    item.value = option.name;
+                    item.textContent = option.name;
+                    select.appendChild(item);
+                });
+
+            if (selectedValue && !Array.from(select.options).some(option => option.value === selectedValue)) {
+                const legacy = document.createElement('option');
+                legacy.value = selectedValue;
+                legacy.textContent = selectedValue + ' (used on this skate)';
+                select.appendChild(legacy);
+            }
+            select.value = selectedValue || '';
+        }
+
+        async function loadSkateOptions() {
+            const selectedTier = document.getElementById('skateTier')?.value || '';
+            const selectedLocation = document.getElementById('skateLocation')?.value || '';
+            const { data, error } = await supabaseClient
+                .from('skate_options')
+                .select('id, option_type, name, sort_order, is_active')
+                .order('sort_order', { ascending: true })
+                .order('name', { ascending: true });
+
+            if (error) {
+                console.error('Unable to load skate options:', error);
+                setSkateOptionsStatus('Options could not load. Run the Skate Options SQL setup in Supabase, then refresh.', true);
+                const notice = document.getElementById('skateOptionsFormNotice');
+                if (notice) {
+                    notice.textContent = 'Tiers and locations need their one-time Supabase setup before you can create a skate.';
+                    notice.classList.add('is-error');
+                }
+                return false;
+            }
+
+            const notice = document.getElementById('skateOptionsFormNotice');
+            if (notice) {
+                notice.textContent = '';
+                notice.classList.remove('is-error');
+            }
+            skateOptionRows = data || [];
+
+            // Bring forward custom tiers saved in this browser by the old version.
+            let legacyTiers = [];
+            try { legacyTiers = JSON.parse(localStorage.getItem('customTiers') || '[]'); } catch (_) {}
+            const missingLegacy = legacyTiers
+                .filter(name => typeof name === 'string' && name.trim())
+                .filter(name => !skateOptionRows.some(option => option.option_type === 'tier' && option.name.toLowerCase() === name.trim().toLowerCase()))
+                .map((name, index) => ({ option_type: 'tier', name: name.trim(), sort_order: 1000 + index }));
+            if (missingLegacy.length) {
+                const { error: legacyError } = await supabaseClient
+                    .from('skate_options')
+                    .upsert(missingLegacy, { onConflict: 'option_type,name', ignoreDuplicates: true });
+                if (!legacyError) {
+                    localStorage.removeItem('customTiers');
+                    const refreshed = await supabaseClient.from('skate_options')
+                        .select('id, option_type, name, sort_order, is_active')
+                        .order('sort_order', { ascending: true }).order('name', { ascending: true });
+                    if (!refreshed.error) skateOptionRows = refreshed.data || skateOptionRows;
+                } else {
+                    console.warn('Legacy local tiers were not migrated:', legacyError);
                 }
             }
 
-            const startSelect = document.getElementById('skateStartTime');
-            startSelect.innerHTML = '<option value="">Select time</option>';
-            
-            times.forEach(time => {
-                startSelect.innerHTML += `<option value="${time.value}">${time.display}</option>`;
-            });
+            setSkateOptionSelects(selectedTier, selectedLocation);
+            renderSkateOptionLists();
+            return true;
+        }
+
+        function setSkateOptionSelects(selectedTier = '', selectedLocation = '') {
+            setSkateOptionSelect('skateTier', 'tier', selectedTier);
+            setSkateOptionSelect('skateLocation', 'location', selectedLocation);
+        }
+
+        function renderSkateOptionLists() {
+            const renderGroup = (type, containerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                const options = skateOptionRows.filter(option => option.option_type === type && option.is_active);
+                container.innerHTML = options.length ? options.map(option =>
+                    '<div class="skate-option-item"><span>' + escapeHTML(option.name) +
+                    '</span><button type="button" onclick="archiveSkateOption(' + option.id +
+                    ')" aria-label="Remove ' + escapeHTML(option.name) +
+                    '" title="Remove from future skates">×</button></div>'
+                ).join('') : '<p class="skate-options-empty">No options yet. Add one above.</p>';
+            };
+            renderGroup('tier', 'tierOptionsList');
+            renderGroup('location', 'locationOptionsList');
+        }
+
+        function openSkateOptions() {
+            const modal = document.getElementById('skateOptionsModal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            setSkateOptionsStatus('');
+            loadSkateOptions();
+        }
+
+        function closeSkateOptions() {
+            const modal = document.getElementById('skateOptionsModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function setSkateOptionsStatus(message, isError = false) {
+            const status = document.getElementById('skateOptionsStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.classList.toggle('is-error', Boolean(isError));
+        }
+
+        async function addSkateOption(event, type) {
+            event.preventDefault();
+            const inputId = type === 'tier' ? 'newTierOption' : 'newLocationOption';
+            const input = document.getElementById(inputId);
+            const name = input.value.trim();
+            if (!name) return;
+
+            const existingOption = skateOptionRows.find(option => option.option_type === type && option.name.toLowerCase() === name.toLowerCase());
+            if (existingOption?.is_active) {
+                setSkateOptionsStatus('That option is already on the list.', true);
+                return;
+            }
+
+            const currentOptions = skateOptionRows.filter(option => option.option_type === type);
+            const sort_order = Math.max(0, ...currentOptions.map(option => Number(option.sort_order) || 0)) + 10;
+            const { error } = existingOption
+                ? await supabaseClient.from('skate_options').update({ is_active: true, sort_order }).eq('id', existingOption.id)
+                : await supabaseClient.from('skate_options').insert({ option_type: type, name, sort_order });
+            if (error) {
+                console.error('Unable to add skate option:', error);
+                setSkateOptionsStatus('Could not save that option. Please try again.', true);
+                return;
+            }
+
+            input.value = '';
+            setSkateOptionsStatus((type === 'tier' ? 'Tier' : 'Location') + (existingOption ? ' restored.' : ' added.'));
+            await loadSkateOptions();
+        }
+
+        async function archiveSkateOption(id) {
+            const option = skateOptionRows.find(item => Number(item.id) === Number(id));
+            if (!option) return;
+            const typeName = option.option_type === 'tier' ? 'tier' : 'location';
+            if (!confirm('Remove “' + option.name + '” from future skates? Existing skate records will keep this value.')) return;
+
+            const { error } = await supabaseClient.from('skate_options')
+                .update({ is_active: false }).eq('id', option.id);
+            if (error) {
+                console.error('Unable to remove skate option:', error);
+                setSkateOptionsStatus('Could not remove that ' + typeName + '. Please try again.', true);
+                return;
+            }
+
+            setSkateOptionsStatus(typeName[0].toUpperCase() + typeName.slice(1) + ' removed from future skates.');
+            await loadSkateOptions();
+        }
+
+        function adjustSkateCapacity(change) {
+            const input = document.getElementById('skateCapacity');
+            input.value = Math.max(1, Math.min(100, (parseInt(input.value, 10) || 24) + change));
         }
 
         function handleTierChange() {
-            const select = document.getElementById('skateTier');
-            
-            if (select.value === 'custom') {
-                document.getElementById('customTierInput').style.display = 'block';
-                document.getElementById('customTierText').focus();
-            } else {
-                document.getElementById('customTierInput').style.display = 'none';
-                updateSkateTitle();
-            }
-
-            // Auto-set price and duration based on tier
-            const tier = select.value;
-            const costEl = document.getElementById('skateCost');
-            const durationEl = document.getElementById('skateDuration');
-
-            if (tier === 'Breakfast of Champions') {
-                costEl.value = '$30';
-                durationEl.value = '120';
-            } else if (tier === '3v3') {
-                costEl.value = '$20';
-                durationEl.value = '60';
-            } else if (tier === 'Stick n Puck') {
-                costEl.value = '$20';
-                durationEl.value = '90';
-            } else if (tier && tier !== 'custom') {
-                costEl.value = '$25';
-                durationEl.value = '90';
-            }
-        }
-
-        function saveCustomTier() {
-            const customText = document.getElementById('customTierText').value.trim();
-            
-            if (!customText) {
-                alert('Please enter a tier/format name');
-                return;
-            }
-            
-            const select = document.getElementById('skateTier');
-            
-            // Add new option before "+ Add Custom Tier"
-            const newOption = document.createElement('option');
-            newOption.value = customText;
-            newOption.textContent = customText;
-            select.insertBefore(newOption, select.lastElementChild);
-            
-            // Select it
-            select.value = customText;
-            
-            // Hide custom input
-            document.getElementById('customTierInput').style.display = 'none';
-            document.getElementById('customTierText').value = '';
-            
-            // Save to localStorage
-            saveCustomTiers();
-            
-            // Update title
             updateSkateTitle();
         }
 
-        function cancelCustomTier() {
-            const select = document.getElementById('skateTier');
-            select.selectedIndex = 0;
-            document.getElementById('customTierInput').style.display = 'none';
-            document.getElementById('customTierText').value = '';
-        }
-
-        function saveCustomTiers() {
-            const select = document.getElementById('skateTier');
-            const tiers = [];
-            
-            // Get all options except the last one (+ Add Custom Tier)
-            for (let i = 0; i < select.options.length - 1; i++) {
-                if (select.options[i].value) {
-                    tiers.push(select.options[i].value);
-                }
-            }
-            
-            localStorage.setItem('customTiers', JSON.stringify(tiers));
-        }
-
-        function loadCustomTiers() {
-            const saved = localStorage.getItem('customTiers');
-            if (saved) {
-                const tiers = JSON.parse(saved);
-                const select = document.getElementById('skateTier');
-                
-                // Clear existing options except first and last
-                while (select.options.length > 2) {
-                    select.remove(1);
-                }
-                
-                // Add saved tiers
-                tiers.forEach(tier => {
-                    const option = document.createElement('option');
-                    option.value = tier;
-                    option.textContent = tier;
-                    select.insertBefore(option, select.lastElementChild);
-                });
-            }
-        }
-
-        function showCreateModal() {
+        async function showCreateModal() {
             isEditMode = false;
-            currentSkateId = null; // Clear any previous skate ID
-            console.log('showCreateModal - reset isEditMode to false');
-            
-            document.getElementById('modalTitle').textContent = 'Create New Skate';
-            document.getElementById('saveSkateBtn').textContent = 'Create Skate';
+            currentSkateId = null;
+
+            document.getElementById('modalTitle').textContent = 'Create a skate';
+            document.getElementById('saveSkateBtn').innerHTML = '<span>Create skate</span><span aria-hidden="true">→</span>';
             document.getElementById('skateNumber').value = '';
             document.getElementById('skateTitle').value = '';
-            document.getElementById('skateTier').selectedIndex = 0;
+            document.getElementById('skateDate').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+            document.getElementById('skateCapacity').value = '24';
+            document.getElementById('skateDuration').value = '90';
             document.getElementById('skateCost').value = '$25';
             document.getElementById('skateFree').checked = false;
-            document.getElementById('skateCost').disabled = false;
             document.getElementById('skateIceCost').value = '';
             document.getElementById('skateRefCost').value = '0';
             document.getElementById('skateOtherCost').value = '';
@@ -367,61 +427,33 @@
             document.getElementById('skateRevenue').value = '';
             document.getElementById('skateProfit').value = '';
             document.getElementById('iceCostLabel').textContent = '';
-            document.getElementById('skateCapacity').value = '24';
-            document.getElementById('skateLocation').selectedIndex = 0;
-            document.getElementById('customTierInput').style.display = 'none';
-            
-            // Populate dropdowns
-            populateDateDropdowns();
+
             populateTimeDropdowns();
-            
-            // Set defaults
-            const currentMonth = new Date().getMonth() + 1;
-            document.getElementById('skateMonth').value = currentMonth;
-            document.getElementById('skateYear').value = '2026'; // Auto-select 2026
-            
-            // Reset other date/time selections
-            document.getElementById('skateDay').selectedIndex = 0;
-            document.getElementById('skateStartTime').selectedIndex = 0;
-            document.getElementById('skateDuration').value = '90'; // Default 1:30
-            
-            loadCustomTiers();
+            document.getElementById('skateStartTime').value = '19:30';
+            await loadSkateOptions();
+            setSkateOptionSelects('', '');
             document.getElementById('skateModal').classList.add('active');
         }
 
-        function showEditSkateModal() {
+        async function showEditSkateModal() {
             if (!currentSkateId) return;
-            
-            console.log('showEditSkateModal - currentSkateId:', currentSkateId);
-            isEditMode = true;
-            console.log('Set isEditMode to:', isEditMode);
-            
-            const skate = allSkates.find(s => s.id === currentSkateId);
+            const skate = allSkates.find(item => item.id === currentSkateId);
             if (!skate) return;
-            
-            console.log('Editing skate:', skate);
-            console.log('time_start:', skate.time_start, 'time_end:', skate.time_end);
 
-            document.getElementById('modalTitle').textContent = 'Edit Skate';
-            document.getElementById('saveSkateBtn').textContent = 'Save Changes';
-            
-            // Populate dropdowns first
-            populateDateDropdowns();
+            isEditMode = true;
+            document.getElementById('modalTitle').textContent = 'Edit skate';
+            document.getElementById('saveSkateBtn').innerHTML = '<span>Save changes</span><span aria-hidden="true">→</span>';
             populateTimeDropdowns();
-            loadCustomTiers();
+            await loadSkateOptions();
 
-            // Parse skate number and tier from title
             let skateNumber = '';
             let tier = skate.tier || '';
-            
             if (skate.title) {
-                // Try "246 Tier 3" format (new format, number first)
                 let match = skate.title.match(/^(\d+)\s+(.+)$/);
                 if (match) {
                     skateNumber = match[1];
                     tier = match[2];
                 } else {
-                    // Try legacy "Skate 238: Breakfast" or "Skate 238 Breakfast" formats
                     match = skate.title.match(/^Skate\s+(\d+)[:\s]+(.+)$/i);
                     if (match) {
                         skateNumber = match[1];
@@ -432,107 +464,40 @@
 
             document.getElementById('skateNumber').value = skateNumber;
             document.getElementById('skateTitle').value = skate.title || '';
-            
-            // Set tier dropdown
-            const tierSelect = document.getElementById('skateTier');
-            let foundTier = false;
-            for (let i = 0; i < tierSelect.options.length; i++) {
-                if (tierSelect.options[i].value === tier) {
-                    tierSelect.selectedIndex = i;
-                    foundTier = true;
-                    break;
-                }
-            }
-            if (!foundTier && tier) {
-                tierSelect.selectedIndex = 0;
-            }
-
-            // Parse date
-            const dateParts = skate.date.split('-');
-            document.getElementById('skateYear').value = dateParts[0];
-            document.getElementById('skateMonth').value = parseInt(dateParts[1]);
-            document.getElementById('skateDay').value = parseInt(dateParts[2]);
-
-            // Set time with better matching
-            const timeSelect = document.getElementById('skateStartTime');
-            console.log('Time dropdown has', timeSelect.options.length, 'options');
-            console.log('Trying to set time to:', skate.time_start);
-            
-            if (skate.time_start) {
-                // Strip seconds if present (06:30:00 -> 06:30)
-                const timeValue = skate.time_start.substring(0, 5);
-                console.log('Time value after stripping seconds:', timeValue);
-                
-                // Try direct match
-                timeSelect.value = timeValue;
-                console.log('After direct assignment, selected value:', timeSelect.value);
-                
-                // If that didn't work, try to find it
-                if (!timeSelect.value || timeSelect.value === '') {
-                    console.log('Direct assignment failed, searching options...');
-                    for (let i = 0; i < timeSelect.options.length; i++) {
-                        if (timeSelect.options[i].value === timeValue) {
-                            console.log('Found match at index', i, ':', timeSelect.options[i].value);
-                            timeSelect.selectedIndex = i;
-                            break;
-                        }
-                    }
-                    console.log('After search, selected value:', timeSelect.value);
-                }
-            } else {
-                timeSelect.value = '19:00';
-            }
-            
-            // Calculate duration from start and end time
-            if (skate.time_start && skate.time_end) {
-                // Strip seconds if present
-                const startTime = skate.time_start.substring(0, 5);
-                const endTime = skate.time_end.substring(0, 5);
-                
-                const [startH, startM] = startTime.split(':').map(Number);
-                const [endH, endM] = endTime.split(':').map(Number);
-                const durationMins = (endH * 60 + endM) - (startH * 60 + startM);
-                document.getElementById('skateDuration').value = durationMins.toString();
-            } else {
-                document.getElementById('skateDuration').value = '90'; // Default 1:30
-            }
-
-            document.getElementById('skateCost').value = skate.cost || '$25';
+            document.getElementById('skateDate').value = skate.date || '';
             document.getElementById('skateCapacity').value = skate.capacity || 24;
+            setSkateOptionSelects(tier, skate.location || '');
+
+            const timeSelect = document.getElementById('skateStartTime');
+            const timeValue = skate.time_start ? skate.time_start.substring(0, 5) : '19:30';
+            if (!Array.from(timeSelect.options).some(option => option.value === timeValue)) {
+                const legacyTime = document.createElement('option');
+                legacyTime.value = timeValue;
+                legacyTime.textContent = timeValue + ' (existing time)';
+                timeSelect.appendChild(legacyTime);
+            }
+            timeSelect.value = timeValue;
+
+            let duration = 90;
+            if (skate.time_start && skate.time_end) {
+                const startParts = skate.time_start.substring(0, 5).split(':').map(Number);
+                const endParts = skate.time_end.substring(0, 5).split(':').map(Number);
+                const startMinutes = startParts[0] * 60 + startParts[1];
+                let endMinutes = endParts[0] * 60 + endParts[1];
+                if (endMinutes < startMinutes) endMinutes += 24 * 60;
+                duration = endMinutes - startMinutes;
+            }
+            document.getElementById('skateDuration').value = String(duration);
+            document.getElementById('skateCost').value = skate.cost || '$25';
             document.getElementById('skateFree').checked = skate.is_free || false;
             document.getElementById('skateCost').disabled = skate.is_free || false;
             document.getElementById('skateIceCost').value = skate.ice_cost || '';
             const refSelect = document.getElementById('skateRefCost');
             const refVal = skate.ref_cost ? String(Math.round(skate.ref_cost)) : '0';
-            refSelect.value = Array.from(refSelect.options).map(o => o.value).includes(refVal) ? refVal : '0';
+            refSelect.value = Array.from(refSelect.options).some(option => option.value === refVal) ? refVal : '0';
             document.getElementById('skateOtherCost').value = skate.other_cost || '';
             updateTotalCost(goalieSkaterCounts[skate.id]?.skaters || 0);
-            
-            // Set location
-            const locationSelect = document.getElementById('skateLocation');
-            const locationValue = skate.location || '';
-            // Try exact match first
-            let matched = false;
-            for (let i = 0; i < locationSelect.options.length; i++) {
-                if (locationSelect.options[i].value === locationValue) {
-                    locationSelect.selectedIndex = i;
-                    matched = true;
-                    break;
-                }
-            }
-            // Case-insensitive fallback
-            if (!matched) {
-                for (let i = 0; i < locationSelect.options.length; i++) {
-                    if (locationSelect.options[i].value.toLowerCase() === locationValue.toLowerCase()) {
-                        locationSelect.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
 
-            document.getElementById('customTierInput').style.display = 'none';
-            
-            // Close roster modal and open edit modal
             closeRosterModal();
             document.getElementById('skateModal').classList.add('active');
         }
@@ -544,20 +509,17 @@
 
         async function saveSkate() {
             const skateNumber = document.getElementById('skateNumber').value.trim();
-            const month = document.getElementById('skateMonth').value;
-            const day = document.getElementById('skateDay').value;
-            const year = document.getElementById('skateYear').value;
+            const date = document.getElementById('skateDate').value;
             const tierSelect = document.getElementById('skateTier');
-            const tier = tierSelect.value === 'custom' ? '' : tierSelect.value;
+            const tier = tierSelect.value;
             const timeStart = document.getElementById('skateStartTime').value;
             const duration = document.getElementById('skateDuration').value;
             const cost = document.getElementById('skateCost').value.trim();
             const capacity = parseInt(document.getElementById('skateCapacity').value);
             const location = document.getElementById('skateLocation').value;
 
-            // Only require date, time, cost - title/tier are optional
-            if (!month || !day || !year || !timeStart || !duration || !cost) {
-                alert('Please fill in date, start time, duration, and cost');
+            if (!date || !timeStart || !duration || !tier || !location) {
+                alert('Please choose a tier, location, date, start time, and duration.');
                 return;
             }
 
@@ -568,10 +530,7 @@
             const timeEnd = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
 
             // Build title (auto-generated or blank)
-            const title = document.getElementById('skateTitle').value.trim();
-
-            // Build date string (YYYY-MM-DD)
-            const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            const title = document.getElementById('skateTitle').value.trim() || [skateNumber, tier].filter(Boolean).join(' ') || 'Skate';
 
             const ice_cost = parseFloat(document.getElementById('skateIceCost').value) || null;
             const ref_cost = parseFloat(document.getElementById('skateRefCost').value) || null;

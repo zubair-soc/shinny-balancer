@@ -83,197 +83,61 @@
 
     <!-- Create/Edit Skate Modal -->
     <div id="skateModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modalTitle">Create New Skate</span>
-                <button class="close-modal" onclick="closeSkateModal()">×</button>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Skate Number</label>
-                    <input type="number" id="skateNumber" placeholder="e.g., 223" oninput="updateSkateTitle()">
+        <div class="modal-content create-skate-modal">
+            <div class="create-skate-heading">
+                <div>
+                    <span class="create-skate-eyebrow">SKATE SETUP</span>
+                    <h2 id="modalTitle">Create a skate</h2>
+                    <p>Set the essentials now. You can manage the roster after it’s created.</p>
                 </div>
-                <div class="form-group">
-                    <label>Tier/Format</label>
-                    <select id="skateTier" onchange="handleTierChange()">
-                        <option value="">Select tier/format</option>
-                        <option value="Tier 1">Tier 1</option>
-                        <option value="Tier 2">Tier 2</option>
-                        <option value="Tier 3">Tier 3</option>
-                        <option value="Mixed Skill">Mixed Skill</option>
-                        <option value="3v3">3v3</option>
-                        <option value="Breakfast of Champions">Breakfast of Champions</option>
-                        <option value="Skills Development">Skills Development</option>
-                        <option value="Stick n Puck">Stick n Puck</option>
-                        <option value="Ladies Elite Shinny - McAlpine">Ladies Elite Shinny - McAlpine</option>
-                        <option value="custom">+ Add Custom Tier</option>
-                    </select>
+                <button class="close-modal" onclick="closeSkateModal()" aria-label="Close">×</button>
+            </div>
+
+            <div class="create-skate-section">
+                <div class="create-skate-section-heading"><span class="create-skate-step">1</span><div><strong>What kind of skate?</strong><small>Choose a format and give it a name.</small></div></div>
+                <div class="create-skate-fields create-skate-identity">
+                    <div class="form-group"><label for="skateNumber">Skate number</label><input type="number" id="skateNumber" placeholder="e.g. 223" oninput="updateSkateTitle()"></div>
+                    <div class="form-group"><label for="skateTier">Tier or format</label><div class="create-skate-select-row"><select id="skateTier" onchange="handleTierChange()"><option value="">Select a format</option></select><button class="option-manage-button" type="button" onclick="openSkateOptions()" aria-label="Manage tiers and locations" title="Manage tiers and locations">⚙</button></div></div>
+                </div>
+                <p id="skateOptionsFormNotice" class="skate-options-status" role="status"></p>
+                <div class="form-group create-skate-name"><label for="skateTitle">Skate name <span>Auto-filled from number and format; you can change it.</span></label><input type="text" id="skateTitle" placeholder="e.g. 223 Tier 3"></div>
+            </div>
+
+            <div class="create-skate-section">
+                <div class="create-skate-section-heading"><span class="create-skate-step">2</span><div><strong>When and where?</strong><small>Pick the rink, date, and ice time.</small></div></div>
+                <div class="create-skate-fields create-skate-schedule">
+                    <div class="form-group"><label for="skateLocation">Location</label><select id="skateLocation" onchange="calcIceCost()"><option value="">Select a rink</option></select></div>
+                    <div class="form-group"><label for="skateDate">Date</label><input type="date" id="skateDate" onchange="calcIceCost()"></div>
+                    <div class="form-group"><label for="skateStartTime">Start time</label><select id="skateStartTime" onchange="calcIceCost()"><option value="">Select a time</option></select></div>
+                    <div class="form-group"><label for="skateDuration">Duration</label><select id="skateDuration" onchange="calcIceCost()"><option value="60">1 hour</option><option value="75">1 hour 15 min</option><option value="90" selected>1 hour 30 min</option><option value="105">1 hour 45 min</option><option value="120">2 hours</option><option value="135">2 hours 15 min</option><option value="150">2 hours 30 min</option></select></div>
                 </div>
             </div>
 
-            <div id="customTierInput" style="display: none; margin-bottom: 16px;">
-                <input type="text" id="customTierText" placeholder="Enter custom tier/format" style="width: calc(100% - 120px); margin-right: 8px; background: var(--card-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 12px 16px; color: var(--text); font-size: 14px;">
-                <button class="button" onclick="saveCustomTier()" style="padding: 12px 16px; display: inline-block;">Save</button>
-                <button class="button button-secondary" onclick="cancelCustomTier()" style="padding: 12px 16px; display: inline-block; margin-left: 4px;">Cancel</button>
+            <div class="create-skate-section create-skate-capacity-section">
+                <div class="create-skate-section-heading"><span class="create-skate-step">3</span><div><strong>How many players?</strong><small>Set the roster limit.</small></div></div>
+                <div class="create-skate-capacity"><div><strong>Roster capacity</strong><small>Players who can register for this skate</small></div><div class="capacity-stepper"><button type="button" onclick="adjustSkateCapacity(-1)" aria-label="Decrease capacity">−</button><input type="number" id="skateCapacity" value="24" min="1" max="100"><button type="button" onclick="adjustSkateCapacity(1)" aria-label="Increase capacity">+</button></div></div>
             </div>
 
-            <div class="form-group">
-                <label>Skate Title (auto-generated)</label>
-                <input type="text" id="skateTitle" placeholder="Auto-generated from number and tier">
+            <!-- Kept off this setup screen; financial details will move to Admin. -->
+            <div class="create-skate-hidden-fields" aria-hidden="true">
+                <input id="skateCost" value="$25"><input type="checkbox" id="skateFree">
+                <input id="skateIceCost"><select id="skateRefCost"><option value="0">0</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="70">70</option></select><input id="skateOtherCost">
+                <input id="skateTotalCost"><input id="skateRevenue"><input id="skateProfit"><span id="iceCostLabel"></span>
             </div>
 
-            <div class="form-group">
-                <label>Date</label>
-                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
-                    <select id="skateMonth" onchange="calcIceCost()" class="u-form-control">
-                        <option value="">Month</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                    <select id="skateDay" onchange="calcIceCost()" class="u-form-control">
-                        <option value="">Day</option>
-                    </select>
-                    <select id="skateYear" onchange="calcIceCost()" class="u-form-control">
-                        <option value="">Year</option>
-                    </select>
-                </div>
-            </div>
+            <div class="create-skate-footer"><button class="button button-secondary" onclick="closeSkateModal()">Cancel</button><button id="saveSkateBtn" class="button create-skate-submit" onclick="saveSkate()"><span>Create skate</span><span aria-hidden="true">→</span></button></div>
+        </div>
+    </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Start Time</label>
-                    <select id="skateStartTime" onchange="calcIceCost()" class="u-form-control-full">
-                        <option value="">Select time</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Duration</label>
-                    <select id="skateDuration" onchange="calcIceCost()" class="u-form-control-full">
-                        <option value="">Select duration</option>
-                        <option value="60">1:00</option>
-                        <option value="75">1:15</option>
-                        <option value="90" selected>1:30</option>
-                        <option value="105">1:45</option>
-                        <option value="120">2:00</option>
-                        <option value="135">2:15</option>
-                        <option value="150">2:30</option>
-                    </select>
-                </div>
+    <div id="skateOptionsModal" class="modal skate-options-modal" aria-hidden="true">
+        <div class="modal-content skate-options-content">
+            <div class="create-skate-heading"><div><span class="create-skate-eyebrow">YOUR SKATE OPTIONS</span><h2>Manage tiers &amp; locations</h2><p>Remove options from future skates; existing skate records stay as they are.</p></div><button class="close-modal" onclick="closeSkateOptions()" aria-label="Close">×</button></div>
+            <div class="skate-options-grid">
+                <section class="skate-option-group"><h3>Tiers &amp; formats</h3><form class="skate-option-add" onsubmit="addSkateOption(event, 'tier')"><input id="newTierOption" type="text" maxlength="60" placeholder="Add a tier or format" aria-label="New tier or format"><button class="button" type="submit">Add</button></form><div id="tierOptionsList" class="skate-options-list"></div></section>
+                <section class="skate-option-group"><h3>Locations</h3><form class="skate-option-add" onsubmit="addSkateOption(event, 'location')"><input id="newLocationOption" type="text" maxlength="80" placeholder="Add a rink or location" aria-label="New location"><button class="button" type="submit">Add</button></form><div id="locationOptionsList" class="skate-options-list"></div></section>
             </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Cost</label>
-                    <input type="text" id="skateCost" placeholder="e.g., $25" value="$25" oninput="updateTotalCost()">
-                    <label style="display:flex; align-items:center; gap:8px; margin-top:8px; cursor:pointer; font-weight:normal; font-size:13px; color:var(--text-muted);">
-                        <input type="checkbox" id="skateFree" onchange="handleFreeSkate()" style="width:15px; height:15px;">
-                        Free skate (no revenue)
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>Capacity</label>
-                    <input type="number" id="skateCapacity" value="24" min="1">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Location</label>
-                <select id="skateLocation" onchange="calcIceCost()">
-                    <option value="">-- Select Location --</option>
-                    <option value="Broadmoor">Broadmoor</option>
-                    <option value="Callingwood">Callingwood</option>
-                    <option value="Canadian Athletic Club">Canadian Athletic Club</option>
-                    <option value="Castledowns">Castledowns</option>
-                    <option value="Clareview">Clareview</option>
-                    <option value="Confederation">Confederation</option>
-                    <option value="Donnan">Donnan</option>
-                    <option value="Downtown Community Arena">Downtown Community Arena</option>
-                    <option value="Grand Trunk Arena">Grand Trunk Arena</option>
-                    <option value="Kenilworth">Kenilworth</option>
-                    <option value="Kinsmen">Kinsmen</option>
-                    <option value="Londonderry">Londonderry</option>
-                    <option value="Meadows Recreation Centre">Meadows Recreation Centre</option>
-                    <option value="Millenium Place">Millenium Place</option>
-                    <option value="Millwoods">Millwoods</option>
-                    <option value="NAIT">NAIT</option>
-                    <option value="NAIT - Parking: Honk App">NAIT - Parking: Honk App</option>
-                    <option value="Heavy Metal Place">Heavy Metal Place</option>
-                    <option value="Rivercree">Rivercree</option>
-                    <option value="Silent Ice Center">Silent Ice Center</option>
-                    <option value="Terwillegar Rink">Terwillegar Rink</option>
-                    <option value="Tipton">Tipton</option>
-                    <option value="ZerOne W.E.M.">ZerOne W.E.M.</option>
-                </select>
-            </div>
-
-            <!-- Financials Section -->
-            <div style="border-top: 1px solid var(--card-border); margin-top: 20px; padding-top: 20px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                    <label style="font-weight: 600; font-size: 14px; color: var(--text);">💰 Financials</label>
-                    <span id="iceCostLabel" style="font-size: 12px; color: var(--text-muted);"></span>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Ice Cost</label>
-                        <div class="u-flex-gap-8">
-                            <input type="number" id="skateIceCost" placeholder="Auto-calculated" step="0.01" min="0" oninput="updateTotalCost()"
-                                class="u-text-field">
-                            <button type="button" onclick="calcIceCost()" title="Recalculate" style="padding: 10px 12px; background: rgba(var(--primary-rgb),0.1); border: 1px solid rgba(var(--primary-rgb),0.3); border-radius: 8px; cursor: pointer; color: var(--primary); font-size: 13px;">↻</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Ref</label>
-                        <select id="skateRefCost" onchange="updateTotalCost()"
-                            class="u-text-field">
-                            <option value="0">No Ref — $0</option>
-                            <option value="40">1hr — $40</option>
-                            <option value="45">75min — $45</option>
-                            <option value="50">90min — $50</option>
-                            <option value="70">2hr — $70</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Other Cost</label>
-                        <input type="number" id="skateOtherCost" placeholder="e.g. 20" step="0.01" min="0" oninput="updateTotalCost()"
-                            class="u-text-field">
-                    </div>
-                    <div class="form-group">
-                        <label>Total Cost</label>
-                        <input type="text" id="skateTotalCost" readonly placeholder="—"
-                            style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: var(--primary); font-size: 14px; font-weight: 600;">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Revenue <span style="font-size:11px; color:var(--text-muted);">(skaters × cost)</span></label>
-                        <input type="text" id="skateRevenue" readonly placeholder="—"
-                            style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; color: #10b981; font-size: 14px; font-weight: 600;">
-                    </div>
-                    <div class="form-group">
-                        <label>Profit / Loss</label>
-                        <input type="text" id="skateProfit" readonly placeholder="—"
-                            style="width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-weight: 600;">
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-buttons">
-                <button class="button button-secondary" onclick="closeSkateModal()">Cancel</button>
-                <button id="saveSkateBtn" class="button" onclick="saveSkate()">Create Skate</button>
-            </div>
+            <p id="skateOptionsStatus" class="skate-options-status" role="status"></p>
+            <div class="create-skate-footer"><button class="button button-secondary" onclick="closeSkateOptions()">Done</button></div>
         </div>
     </div>
 

@@ -185,6 +185,7 @@
             if (e.target.classList.contains('modal')) {
                 // Close the appropriate modal
                 if (e.target.id === 'skateModal') closeSkateModal();
+                else if (e.target.id === 'skateOptionsModal') closeSkateOptions();
                 else if (e.target.id === 'benchAppSettingsModal') closeBenchAppSettings();
                 else if (e.target.id === 'rosterModal') closeRosterModal();
                 else if (e.target.id === 'csvPreviewModal') closeCSVPreviewModal();
