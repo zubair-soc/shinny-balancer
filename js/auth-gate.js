@@ -18,8 +18,9 @@
     #sm-auth-gate button:disabled { opacity: .65; cursor: wait; }
     #sm-auth-error { min-height: 1.4em; margin-top: 12px; color: #fca5a5; font-size: 14px; }
     #sm-auth-status { color: #cbd5e1; }
-    #sm-sign-out { position: fixed; z-index: 1000; right: 12px; bottom: 12px; padding: 9px 12px; border: 1px solid #94a3b8; border-radius: 8px; background: #0f172add; color: white; font: 13px system-ui, sans-serif; cursor: pointer; }
+    #sm-sign-out { position: static; flex: 0 0 auto; margin-left: 12px; padding: 9px 12px; border: 1px solid #94a3b8; border-radius: 8px; background: #0f172a; color: white; font: 13px system-ui, sans-serif; cursor: pointer; }
   `;
+  style.textContent += '@media (max-width: 700px) { #sm-sign-out { align-self: flex-end; margin: 0; } }';
   document.head.appendChild(style);
 
   const gate = document.createElement('div');
@@ -43,6 +44,13 @@
   const errorBox = gate.querySelector('#sm-auth-error');
   const status = gate.querySelector('#sm-auth-status');
 
+  function applyAdminVisibility(user) {
+    const appMetadata = user && user.app_metadata ? user.app_metadata : {};
+    const roles = Array.isArray(appMetadata.roles) ? appMetadata.roles : [];
+    const isAdmin = appMetadata.role === 'admin' || roles.includes('admin');
+    document.querySelectorAll('[data-admin-only]').forEach((element) => { element.hidden = !isAdmin; });
+  }
+
   function addSignOut() {
     if (document.getElementById('sm-sign-out')) return;
     const button = document.createElement('button');
@@ -65,6 +73,7 @@
     }
     if (data.session) {
       gate.hidden = true;
+      applyAdminVisibility(data.session.user);
       addSignOut();
       return;
     }

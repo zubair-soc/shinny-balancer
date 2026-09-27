@@ -26,7 +26,7 @@
             <a class="app-nav-link" href="index.html">Skates</a>
             <a class="app-nav-link is-active" href="balancer.html" aria-current="page">Team Balancer</a>
             <a class="app-nav-link" href="database.html">Players</a>
-            <details class="app-nav-admin"><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a></div></details>
+            <details class="app-nav-admin" data-admin-only hidden><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a></div></details>
         </div>
     </nav>
 
@@ -36,44 +36,12 @@
             <p>Balance teams, manage friend groups, export to WhatsApp • v1.2 • Updated Feb 11, 2026</p>
         </div>
 
-        <!-- Google Sheet Setup -->
-        <div class="setup-section">
-            <h2>Quick Import</h2>
-            <div style="margin-bottom: 32px; background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); border-radius: 12px; padding: 20px;">
-                <h3 style="color: var(--text); font-size: 16px; margin-bottom: 12px;">📋 Import Existing Skate</h3>
-                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">Paste your WhatsApp message to load teams and make adjustments</p>
-                <div class="form-group">
-                    <textarea id="importSkateData" placeholder="Paste your full WhatsApp message here..." style="min-height: 120px; font-family: 'Courier New', monospace;"></textarea>
-                </div>
-                <button class="button u-mt-12" onclick="importSkate()">
-                    Import Skate
-                </button>
-            </div>
-
-            <h2>1. Load Player Database</h2>
-            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Choose one method:</p>
-            
-            <div style="margin-bottom: 24px;">
-                <h3 style="color: var(--text); font-size: 14px; margin-bottom: 8px;">Method A: Paste Data (Easiest)</h3>
-                <div class="form-group">
-                    <label>Copy columns A & B from your sheet and paste here</label>
-                    <textarea id="pasteData" placeholder="Name&#9;Rating&#10;Nick Plaza&#9;17&#10;Anthony Estrada&#9;15&#10;..." style="min-height: 80px; font-family: 'Courier New', monospace;"></textarea>
-                </div>
-                <button class="button u-mt-12" onclick="loadFromPaste()">
-                    Load from Paste (<span id="playerCountPaste">0</span> loaded)
-                </button>
-            </div>
-            
-            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px;">
-                <h3 style="color: var(--text); font-size: 14px; margin-bottom: 8px;">Method B: Apps Script URL (Advanced)</h3>
-                <div class="form-group">
-                    <label>Apps Script Web App URL</label>
-                    <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
-                </div>
-                <button class="button u-mt-12" onclick="loadGoogleSheet()">
-                    Load from URL (<span id="playerCount">0</span> loaded)
-                </button>
-            </div>
+        <!-- Player database loads automatically from Supabase -->
+        <div class="setup-section database-status-card" aria-live="polite">
+            <h2>Player Database</h2>
+            <p id="playerDatabaseStatus">Loading players from Supabase…</p>
+            <span id="playerCountPaste" hidden>0</span>
+            <span id="playerCount" hidden>0</span>
         </div>
 
         <!-- Skate Info -->

@@ -1,5 +1,6 @@
         // Supabase configuration
         let supabaseClient;
+        let playerDatabaseReady = Promise.resolve();
         
         // Wait for page to load before initializing
         window.addEventListener('DOMContentLoaded', () => {
@@ -11,7 +12,7 @@
                 supabaseClient = window.SKATE_MANAGER_CLIENT;
                 console.log('Supabase client created');
                 console.log('Client has .from?', typeof supabaseClient.from);
-                loadPlayersFromSupabase();
+                playerDatabaseReady = loadPlayersFromSupabase();
             } else {
                 console.error('Supabase library failed to load or createClient not found');
                 console.log('Available methods:', Object.keys(window.supabase || {}));
@@ -68,11 +69,14 @@
                 playerDatabase = data.map(p => ({ name: p.name, rating: p.rating }));
                 document.getElementById('playerCountPaste').textContent = playerDatabase.length;
                 document.getElementById('playerCount').textContent = playerDatabase.length;
+                const databaseStatus = document.getElementById('playerDatabaseStatus');
+                if (databaseStatus) databaseStatus.textContent = 'Ready · ' + playerDatabase.length + ' players loaded';
                 console.log(`Loaded ${playerDatabase.length} players from Supabase`);
             } catch (error) {
                 console.error('Error loading players:', error);
                 console.error('Full error:', JSON.stringify(error, null, 2));
-                alert('Failed to load player database. Check console for details.');
+                const databaseStatus = document.getElementById('playerDatabaseStatus');
+                if (databaseStatus) databaseStatus.textContent = 'Could not load the player database';
             }
         }
 
@@ -282,6 +286,7 @@
         // Auto-load roster from skates page
         async function autoLoadFromSkates() {
             console.log('autoLoadFromSkates called');
+            await playerDatabaseReady;
             const rosterData = localStorage.getItem('importedRoster');
             const skateDetails = localStorage.getItem('importedSkateDetails');
             
@@ -333,16 +338,19 @@
             localStorage.removeItem('importedRoster');
             localStorage.removeItem('importedSkateDetails');
 
-            // Try to load saved teams for this skate
+            // Keep saved teams if the user chooses to load them; otherwise build fresh teams.
             if (currentBalancerSkateId) {
                 const loaded = await loadSavedTeams(currentBalancerSkateId);
-                if (loaded) return; // Skip the alert if we loaded saved teams
+                if (loaded) return;
             }
 
-            // Scroll to section 3
-            playerInputBox.scrollIntoView({ behavior: 'smooth' });
-
-            alert(`✓ Loaded ${rosterData.split('\n').length} players into paste box!\n\nNow click "Match Players" then "Balance Teams".`);
+            matchPlayers({ silent: true });
+            if (matchedPlayers.length > 0) {
+                balanceTeams();
+                document.getElementById('teamsDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                playerInputBox.scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         // Load from pasted data
@@ -479,7 +487,7 @@
         }
 
         // Match players
-        function matchPlayers() {
+        function matchPlayers({ silent = false } = {}) {
             const input = document.getElementById('playerInput').value;
             const lines = input.split('\n').filter(line => line.trim());
             
@@ -546,7 +554,7 @@
                 document.getElementById('warningDiv').innerHTML = '';
             }
 
-            alert(`Matched ${matchedPlayers.length} players`);
+            if (!silent) alert(`Matched ${matchedPlayers.length} players`);
         }
 
         // Balance teams

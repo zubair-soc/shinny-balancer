@@ -28,7 +28,7 @@
             <a class="app-nav-link is-active" href="index.html" aria-current="page">Skates</a>
             <a class="app-nav-link" href="balancer.html">Team Balancer</a>
             <a class="app-nav-link" href="database.html">Players</a>
-            <details class="app-nav-admin"><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a></div></details>
+            <details class="app-nav-admin" data-admin-only hidden><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a></div></details>
         </div>
     </nav>
 
@@ -37,7 +37,6 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
-                <button class="add-button" onclick="showImportModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--secondary);">📄 Import CSV/ICS</button>
                 <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>

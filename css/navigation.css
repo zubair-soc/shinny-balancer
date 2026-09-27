@@ -136,3 +136,5 @@
 @media (prefers-reduced-motion: reduce) {
     .app-nav-link { transition: none; }
 }
+
+.app-nav-admin[hidden] { display: none !important; }
