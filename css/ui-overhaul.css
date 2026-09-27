@@ -1,0 +1,222 @@
+/* Skate Manager visual system: familiar SOC green, clearer hierarchy, calmer surfaces. */
+:root {
+    --ui-page: #f3f7f5;
+    --ui-surface: #ffffff;
+    --ui-soft: #f7faf8;
+    --ui-shadow: 0 10px 30px rgba(20, 50, 39, 0.07);
+    --ui-shadow-raised: 0 16px 38px rgba(20, 50, 39, 0.12);
+    --ui-radius: 18px;
+}
+
+body.dark-mode,
+[data-theme="dark"] {
+    --ui-page: #101a18;
+    --ui-surface: #1b2925;
+    --ui-soft: #22332e;
+    --ui-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    --ui-shadow-raised: 0 16px 38px rgba(0, 0, 0, 0.28);
+}
+
+html { scroll-behavior: smooth; }
+body {
+    background-color: var(--ui-page) !important;
+    background-image: radial-gradient(ellipse at 12% 0%, rgba(var(--primary-rgb), 0.075), transparent 34%),
+        linear-gradient(180deg, var(--ui-page), var(--bg-end, var(--ui-page)) 55%, var(--ui-page)) !important;
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
+}
+
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 3px solid rgba(var(--primary-rgb), 0.32);
+    outline-offset: 2px;
+}
+
+.app-nav {
+    width: min(1400px, calc(100vw - 40px));
+    margin-top: 16px;
+    margin-bottom: 24px;
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--ui-surface) 94%, transparent);
+    box-shadow: var(--ui-shadow);
+    backdrop-filter: blur(14px);
+}
+
+.container, .main { max-width: 1400px; }
+.container { margin-bottom: 36px; }
+
+.header {
+    border: 1px solid var(--card-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow);
+}
+
+.header h1, .header-title {
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+}
+.header h1 { font-size: clamp(23px, 2.4vw, 30px); }
+.header p { line-height: 1.65; }
+
+.header-buttons, .benchapp-sync-actions { align-items: center; }
+.back-button, .add-button, .button, .header-button, .back-btn, .theme-btn {
+    min-height: 42px;
+    border-radius: 12px;
+    font-weight: 650;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+.back-button, .add-button, .button, .header-button, .back-btn { box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04); }
+.add-button, .button:not(.button-secondary), .header-button {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark, #059669));
+    box-shadow: 0 5px 14px rgba(var(--primary-rgb), 0.2);
+}
+.back-button:hover, .add-button:hover, .button:hover, .header-button:hover, .back-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.16);
+}
+.button-danger, .btn-delete { box-shadow: none !important; }
+
+.skate-card, .setup-section, .team, .export-section, .summary-card, .credit-card,
+.table-container, .table-card, .benchapp-sync-toolbar {
+    border: 1px solid var(--card-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow);
+}
+.skate-card { padding: 22px; }
+.skate-card:hover { box-shadow: var(--ui-shadow-raised); transform: translateY(-3px); }
+.skate-title { letter-spacing: -0.02em; }
+.benchapp-sync-toolbar { padding: 16px 20px; margin-bottom: 24px; }
+
+.setup-section, .export-section { padding: clamp(18px, 2.5vw, 28px); }
+.setup-section h2 { font-size: 19px; letter-spacing: -0.02em; }
+.team { padding: 22px; }
+.team-header { border-bottom-color: var(--card-border); }
+.player-item, .roster-item { border-radius: 12px; }
+
+.toolbar, .actions {
+    padding: 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow);
+}
+.search-box, input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    border-radius: 11px;
+}
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.table-container { overflow: hidden; }
+table { border-collapse: separate; border-spacing: 0; }
+thead { background: var(--ui-soft); }
+thead th { padding-top: 13px; padding-bottom: 13px; }
+tbody tr { transition: background 120ms ease; }
+tbody tr:hover { background: rgba(var(--primary-rgb), 0.045); }
+td, th { border-color: var(--card-border); }
+
+.summary-card { padding: 21px; }
+.summary-label, .summary-card .label { letter-spacing: 0.07em; }
+.summary-value, .summary-card .value { letter-spacing: -0.035em; }
+.credit-card { padding: 20px; }
+.filter-btn, .status-badge { border-radius: 999px; }
+
+.modal {
+    background: rgba(10, 22, 18, 0.58);
+    backdrop-filter: blur(5px);
+}
+.modal-content {
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+}
+.modal-header { letter-spacing: -0.02em; }
+.close-modal { border-radius: 10px; }
+
+.theme-toggle, .theme-btn {
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    box-shadow: var(--ui-shadow);
+}
+.theme-toggle { backdrop-filter: blur(12px); }
+.theme-toggle:hover { transform: translateY(-2px); }
+
+/* Financials has a full-width legacy toolbar. Keep its controls together under the app nav. */
+body:has(.app-nav) > .header {
+    position: static;
+    width: min(1400px, calc(100vw - 40px));
+    margin: 0 auto 22px;
+    padding: 16px 20px;
+}
+body:has(.app-nav) > .header .header-left { min-width: 160px; }
+body:has(.app-nav) > .header .header-title { font-size: 24px; }
+body:has(.app-nav) > .main { padding-top: 8px; }
+
+@media (max-width: 760px) {
+    body { padding: 12px; }
+    .app-nav {
+        width: calc(100vw - 24px);
+        margin-top: 12px;
+        margin-bottom: 16px;
+    }
+    .container { width: 100%; }
+    .header {
+        padding: 18px 16px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .header h1 { font-size: 24px; }
+    .header-buttons { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .header-buttons > * { min-width: 0; padding: 10px 8px; text-align: center; }
+    .benchapp-sync-toolbar { padding: 14px; align-items: flex-start; flex-direction: column; gap: 12px; }
+    .benchapp-sync-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .skates-grid { grid-template-columns: 1fr; gap: 12px; }
+    .skate-card { padding: 17px; }
+    .toolbar, .actions { padding: 11px; gap: 9px; }
+    .toolbar .search-box, .search-box { min-width: 100%; width: 100%; }
+    .toolbar .button, .actions > .button { flex: 1; }
+    .stats { width: 100%; margin-left: 0; justify-content: space-between; }
+    .summary-cards, .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .summary-card { padding: 15px; }
+    .summary-value { font-size: 26px; }
+    .credits-list { gap: 12px; }
+    .credit-card { padding: 16px; }
+    .teams-container { gap: 12px; }
+    .team { padding: 16px; }
+    .setup-section, .export-section { padding: 17px; border-radius: 16px; }
+    body:has(.app-nav) > .header {
+        width: calc(100vw - 24px);
+        padding: 13px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    body:has(.app-nav) > .header > div { width: 100%; justify-content: space-between; }
+    body:has(.app-nav) > .header .header-title { font-size: 21px; }
+    .month-nav { gap: 5px; }
+    .month-nav select { min-width: 0; padding: 6px 5px !important; font-size: 12px !important; }
+    .main { padding: 14px 0; }
+}
+
+@media (max-width: 420px) {
+    .header-buttons { grid-template-columns: 1fr 1fr; }
+    .header-buttons > * { font-size: 12px; }
+    .summary-label { font-size: 11px; }
+    .summary-value { font-size: 23px; }
+    .credit-header { align-items: flex-start; gap: 10px; }
+    .credit-amount { white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

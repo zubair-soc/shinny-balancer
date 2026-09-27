@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skate-manager-shell-v5';
+const CACHE_NAME = 'skate-manager-shell-v6';
 const APP_FILES = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const APP_FILES = [
   './credits.html',
   './financials.html',
   './css/base.css',
+  './css/navigation.css',
+  './css/ui-overhaul.css',
   './css/manager-components.css',
   './css/balancer.css',
   './css/credits.css',
