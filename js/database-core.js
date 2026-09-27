@@ -23,7 +23,7 @@
         async function loadPlayers() {
             try {
                 const { data, error } = await supabaseClient
-                    .from('players')
+                    .from('skate_manager_players')
                     .select('id, name, rating, rating_v2, rating_v2b, rating_v2_anchored, is_pillar, lower_pillar_id, upper_pillar_id')
                     .order('name');
 
@@ -105,10 +105,10 @@
                     <td class="rating-cell" style="color:#10b981">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
                     <td class="actions">
                         <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                            <button class="icon-button" onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>
+                            <button class="icon-button" data-admin-only onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>
                             <button class="icon-button" onclick="editRating(${player.id}, ${safeName}, ${player.rating})" title="Edit rating">✏️</button>
                             <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="Rate Player" style="color:#10b981;">📊</button>
-                            <button class="icon-button delete" onclick="confirmDelete(${player.id}, ${safeName})" title="Delete">🗑️</button>
+                            <button class="icon-button delete" data-admin-only onclick="confirmDelete(${player.id}, ${safeName})" title="Delete">🗑️</button>
                         </div>
                     </td>
                 </tr>`;
@@ -154,6 +154,7 @@
 
         // Add Player
         function showAddModal() {
+            if (!window.isSkateAdmin?.()) return;
             document.getElementById('addModal').classList.add('active');
             document.getElementById('newPlayerName').value = '';
             document.getElementById('newPlayerRating').value = '';
@@ -165,6 +166,7 @@
         }
 
         async function addPlayer() {
+            if (!window.isSkateAdmin?.()) return;
             const name = document.getElementById('newPlayerName').value.trim();
             const rating = parseFloat(document.getElementById('newPlayerRating').value);
 
@@ -233,6 +235,7 @@
 
         // Edit Name
         async function editName(id, currentName) {
+            if (!window.isSkateAdmin?.()) return;
             const newName = prompt(`Edit name:`, currentName);
             if (newName === null) return;
             const trimmed = newName.trim();
@@ -259,6 +262,7 @@
 
         // Delete Player
         function confirmDelete(id, name) {
+            if (!window.isSkateAdmin?.()) return;
             if (!confirm(`Delete ${name}?\n\nThis cannot be undone.`)) {
                 return;
             }
@@ -266,6 +270,7 @@
         }
 
         async function deletePlayer(id, name) {
+            if (!window.isSkateAdmin?.()) return;
             try {
                 // Check for active credits first
                 const { data: credits } = await supabaseClient

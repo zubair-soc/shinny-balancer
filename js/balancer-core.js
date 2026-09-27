@@ -55,7 +55,7 @@
         async function loadPlayersFromSupabase() {
             try {
                 const { data, error } = await supabaseClient
-                    .from('players')
+                    .from('skate_manager_players')
                     .select('name, rating')
                     .order('name');
 

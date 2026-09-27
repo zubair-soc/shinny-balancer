@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="css/financials.css">
     <link rel="stylesheet" href="css/ui-overhaul.css">
 </head>
-<body>
+<body data-admin-page="true">
 
 <nav class="app-nav" aria-label="Primary">
     <a class="app-nav-brand" href="index.html"><span class="app-nav-mark">🏒</span><span><strong>Skate Manager</strong><small>Shinny of Champions</small></span></a>
@@ -25,6 +25,7 @@
         <a class="app-nav-link" href="index.html">Skates</a>
         <a class="app-nav-link" href="balancer.html">Team Balancer</a>
         <a class="app-nav-link" href="database.html">Players</a>
+            <a class="app-nav-link" data-skate-manager-only hidden href="manager-credits.html">Credit balances</a>
         <details class="app-nav-admin" data-admin-only hidden open><summary class="app-nav-link is-active" aria-current="page">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a class="is-active" href="financials.html" aria-current="page">Financials</a><a href="admin-settings.html">Settings</a></div></details>
     </div>
 </nav>

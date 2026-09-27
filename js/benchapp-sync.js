@@ -46,6 +46,7 @@
     }
 
     window.openBenchAppSettings = async function () {
+        if (!window.isSkateAdmin?.()) return;
         try {
             if (!syncSettings) {
                 await withTimeout(loadBenchAppSettings(), 15000, 'Loading calendar settings took too long. Try again.');
@@ -64,6 +65,7 @@
     };
 
     window.saveBenchAppSettings = async function () {
+        if (!window.isSkateAdmin?.()) return;
         const input = document.getElementById('benchAppFeedUrl');
         const feedUrl = input.value.trim();
         if (!validBenchAppUrl(feedUrl)) {
@@ -92,6 +94,7 @@
     };
 
     window.syncBenchAppNow = async function ({ silent = false } = {}) {
+        if (!window.isSkateAdmin?.()) return;
         if (syncInProgress) return;
         syncInProgress = true;
         const button = document.getElementById('benchAppSyncButton');
@@ -151,6 +154,7 @@
     };
 
     window.syncBenchAppOnOpen = async function () {
+        if (!window.isSkateAdmin?.()) return;
         try {
             await loadBenchAppSettings();
             const lastSync = Number(localStorage.getItem('benchappLastSyncAt') || 0);

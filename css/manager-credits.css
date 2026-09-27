@@ -1,0 +1,25 @@
+.manager-credits-page { width: min(900px, calc(100vw - 32px)); margin: 32px auto 80px; }
+.manager-credits-heading { margin-bottom: 22px; }
+.manager-credits-eyebrow { color: var(--primary-dark); font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+.manager-credits-heading h1 { margin: 7px 0 8px; color: var(--text); font-size: clamp(26px, 4vw, 34px); letter-spacing: -.04em; }
+.manager-credits-heading p { margin: 0; color: var(--text-muted); }
+.manager-credits-search { margin-bottom: 14px; }
+.manager-credits-search input { box-sizing: border-box; width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid var(--card-border); border-radius: 12px; background: var(--card-bg); color: var(--text); font: inherit; }
+.manager-credit-list { display: grid; gap: 10px; }
+.manager-credit-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 17px 19px; border: 1px solid var(--card-border); border-radius: 15px; background: var(--card-bg); box-shadow: var(--ui-shadow); }
+.manager-credit-player { color: var(--text); font-weight: 700; }
+.manager-credit-amount { margin-top: 4px; color: var(--primary-dark); font-size: 14px; font-weight: 700; }
+.manager-credit-row .button { flex: 0 0 auto; }
+.manager-credit-empty { padding: 26px; border: 1px dashed var(--card-border); border-radius: 15px; color: var(--text-muted); text-align: center; background: var(--ui-soft, var(--card-bg)); }
+.manager-credit-modal { max-width: 520px; }
+.manager-credit-summary { padding: 13px 15px; border-radius: 12px; color: var(--text); background: var(--ui-soft, var(--card-bg)); line-height: 1.5; }
+.manager-credit-status { min-height: 20px; color: var(--text-muted); font-size: 13px; }
+.manager-credit-status.is-error { color: #dc2626; }
+.manager-credit-status.is-success { color: var(--primary-dark); }
+@media (max-width: 560px) {
+  .manager-credits-page { margin-top: 20px; }
+  .manager-credit-row { align-items: flex-start; padding: 14px; }
+  .manager-credit-row .button { align-self: center; }
+}
+
+.manager-credit-none { color: var(--text-muted); font-size: 13px; }

@@ -38,7 +38,7 @@
 
                 // Ensure player exists in players table
                 const { data: existingPlayer } = await supabaseClient
-                    .from('players').select('id').ilike('name', playerName).maybeSingle();
+                    .from('skate_manager_players').select('id').ilike('name', playerName).maybeSingle();
                 if (!existingPlayer) {
                     await supabaseClient.from('players').insert({ name: playerName });
                     allPlayers.push({ name: playerName, rating: null });
@@ -138,7 +138,7 @@
 
             // Show skate cost in the credit option
             const skate = allSkates.find(s => s.id === currentSkateId);
-            const cost = skate ? skate.cost : '$25';
+            const cost = window.isSkateAdmin?.() ? (skate ? skate.cost : '$25') : '';
             document.getElementById('replaceCreditAmount').textContent = cost;
 
             document.getElementById('replacePlayerModal').classList.add('active');
@@ -184,7 +184,7 @@
                 return;
             }
 
-            const giveCredit = document.getElementById('replaceCreditYes').checked;
+            const giveCredit = window.isSkateAdmin?.() && document.getElementById('replaceCreditYes').checked;
             const skate = allSkates.find(s => s.id === currentSkateId);
 
             try {
@@ -201,7 +201,7 @@
 
                     // Look up player ID
                     const { data: playerData } = await supabaseClient
-                        .from('players')
+                        .from('skate_manager_players')
                         .select('id')
                         .ilike('name', replacingPlayerName)
                         .limit(1);
@@ -234,7 +234,7 @@
                 }
                 // Ensure new player in DB
                 const { data: existingNewPlayer } = await supabaseClient
-                    .from('players').select('id').ilike('name', newName).maybeSingle();
+                    .from('skate_manager_players').select('id').ilike('name', newName).maybeSingle();
                 if (!existingNewPlayer) {
                     await supabaseClient.from('players').insert({ name: newName });
                     allPlayers.push({ name: newName, rating: null });
@@ -419,6 +419,7 @@
 
         // ========== GIVE CREDIT FUNCTION ==========
         async function giveCredit(registrationId, playerName) {
+            if (!window.isSkateAdmin?.()) return;
             if (!currentSkateId) return;
 
             // Get the skate cost
@@ -539,7 +540,7 @@
                 
                 // Check if player exists in players table (team balancer)
                 const { data: existing } = await supabaseClient
-                    .from('players')
+                    .from('skate_manager_players')
                     .select('id')
                     .ilike('name', registration.player_name)
                     .single();
@@ -586,6 +587,7 @@
         }
 
         async function confirmDeleteSkate() {
+            if (!window.isSkateAdmin?.()) return;
             if (!confirm('Delete this entire skate? This cannot be undone.')) return;
 
             try {

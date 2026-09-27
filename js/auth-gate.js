@@ -20,7 +20,14 @@
     #sm-auth-status { color: #cbd5e1; }
     #sm-sign-out { position: static; flex: 0 0 auto; margin-left: 12px; padding: 9px 12px; border: 1px solid #94a3b8; border-radius: 8px; background: #0f172a; color: white; font: 13px system-ui, sans-serif; cursor: pointer; }
   `;
-  style.textContent += '@media (max-width: 700px) { #sm-sign-out { align-self: flex-end; margin: 0; } }';
+  style.textContent += `
+    html[data-skate-role='skate_manager'] [data-admin-only],
+    html[data-skate-role='unassigned'] [data-admin-only] { display: none !important; }
+    html[data-skate-role='admin'] [data-skate-manager-only],
+    html[data-skate-role='unassigned'] [data-skate-manager-only] { display: none !important; }
+    [hidden] { display: none !important; }
+    @media (max-width: 700px) { #sm-sign-out { align-self: flex-end; margin: 0; } }
+  `;
   document.head.appendChild(style);
 
   const gate = document.createElement('div');
@@ -48,8 +55,31 @@
     const appMetadata = user && user.app_metadata ? user.app_metadata : {};
     const roles = Array.isArray(appMetadata.roles) ? appMetadata.roles : [];
     const isAdmin = appMetadata.role === 'admin' || roles.includes('admin');
+    const isSkateManager = appMetadata.role === 'skate_manager' || roles.includes('skate_manager');
+    const role = isAdmin ? 'admin' : isSkateManager ? 'skate_manager' : null;
+    window.SKATE_MANAGER_ROLE = role;
+    document.documentElement.dataset.skateRole = role || 'unassigned';
     document.querySelectorAll('[data-admin-only]').forEach((element) => { element.hidden = !isAdmin; });
+    document.querySelectorAll('[data-skate-manager-only]').forEach((element) => { element.hidden = !isSkateManager; });
+    if (!role) {
+      gate.hidden = false;
+      status.textContent = 'Your account is signed in, but an Admin or Skate Manager role has not been assigned yet.';
+      return false;
+    }
+    if (document.body.dataset.adminPage === 'true' && !isAdmin) {
+      location.replace('index.html');
+      return false;
+    }
+    if (document.body.dataset.managerPage === 'true' && !isAdmin && !isSkateManager) {
+      location.replace('index.html');
+      return false;
+    }
+    document.dispatchEvent(new CustomEvent('skate-manager:role-ready', { detail: { role } }));
+    return true;
   }
+
+  window.isSkateAdmin = () => window.SKATE_MANAGER_ROLE === 'admin';
+  window.isSkateManager = () => window.SKATE_MANAGER_ROLE === 'skate_manager';
 
   function addSignOut() {
     if (document.getElementById('sm-sign-out')) return;
@@ -72,8 +102,8 @@
       return;
     }
     if (data.session) {
+      if (!applyAdminVisibility(data.session.user)) return;
       gate.hidden = true;
-      applyAdminVisibility(data.session.user);
       addSignOut();
       return;
     }

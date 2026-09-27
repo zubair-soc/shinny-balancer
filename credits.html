@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="css/credits.css">
     <link rel="stylesheet" href="css/ui-overhaul.css">
 </head>
-<body>
+<body data-admin-page="true">
     <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</div>
 
     <nav class="app-nav" aria-label="Primary">
@@ -25,6 +25,7 @@
             <a class="app-nav-link" href="index.html">Skates</a>
             <a class="app-nav-link" href="balancer.html">Team Balancer</a>
             <a class="app-nav-link" href="database.html">Players</a>
+            <a class="app-nav-link" data-skate-manager-only hidden href="manager-credits.html">Credit balances</a>
             <details class="app-nav-admin" data-admin-only hidden open><summary class="app-nav-link is-active" aria-current="page">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a class="is-active" href="credits.html" aria-current="page">Credits</a><a href="financials.html">Financials</a><a href="admin-settings.html">Settings</a></div></details>
         </div>
     </nav>

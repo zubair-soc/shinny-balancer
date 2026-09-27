@@ -28,6 +28,7 @@
             <a class="app-nav-link is-active" href="index.html" aria-current="page">Skates</a>
             <a class="app-nav-link" href="balancer.html">Team Balancer</a>
             <a class="app-nav-link" href="database.html">Players</a>
+            <a class="app-nav-link" data-skate-manager-only hidden href="manager-credits.html">Credit balances</a>
             <details class="app-nav-admin" data-admin-only hidden><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a><a href="admin-settings.html">Settings</a></div></details>
         </div>
     </nav>
@@ -37,11 +38,11 @@
             <h1>📅 Skate Manager</h1>
             <div class="header-buttons">
                 <button class="back-button" onclick="showAtAGlance()">👁️ At a Glance</button>
-                <button class="add-button" onclick="showCreateModal()">+ Create Skate</button>
+                <button class="add-button" data-admin-only hidden onclick="showCreateModal()">+ Create Skate</button>
             </div>
         </div>
 
-        <div class="benchapp-sync-toolbar">
+        <div class="benchapp-sync-toolbar" data-admin-only hidden>
             <div>
                 <strong>BenchApp Calendar</strong>
                 <span id="benchAppSyncStatus" role="status" aria-live="polite">Connect a BenchApp calendar to sync</span>
@@ -97,7 +98,7 @@
                 <div class="create-skate-section-heading"><span class="create-skate-step">1</span><div><strong>What kind of skate?</strong><small>Choose a format and give it a name.</small></div></div>
                 <div class="create-skate-fields create-skate-identity">
                     <div class="form-group"><label for="skateNumber">Skate number</label><input type="number" id="skateNumber" placeholder="e.g. 223" oninput="updateSkateTitle()"></div>
-                    <div class="form-group"><label for="skateTier">Tier or format</label><div class="create-skate-select-row"><select id="skateTier" onchange="handleTierChange()"><option value="">Select a format</option></select><button class="option-manage-button" type="button" onclick="openSkateOptions()" aria-label="Manage tiers and locations" title="Manage tiers and locations">⚙</button></div></div>
+                    <div class="form-group"><label for="skateTier">Tier or format</label><div class="create-skate-select-row"><select id="skateTier" onchange="handleTierChange()"><option value="">Select a format</option></select><button class="option-manage-button" data-admin-only hidden type="button" onclick="openSkateOptions()" aria-label="Manage tiers and locations" title="Manage tiers and locations">⚙</button></div></div>
                 </div>
                 <p id="skateOptionsFormNotice" class="skate-options-status" role="status"></p>
                 <div class="form-group create-skate-name"><label for="skateTitle">Skate name <span>Auto-filled from number and format; you can change it.</span></label><input type="text" id="skateTitle" placeholder="e.g. 223 Tier 3"></div>
@@ -231,8 +232,8 @@
 
             <div class="modal-buttons">
                 <button class="button" onclick="copyForWhatsApp(event)" style="background: #25D366; color: white; border: none;">📋 Copy for WhatsApp</button>
-                <button class="button" onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
-                <button class="button button-danger" onclick="confirmDeleteSkate()">Delete Skate</button>
+                <button class="button" data-admin-only hidden onclick="showEditSkateModal()" style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--primary);">✏️ Edit Skate</button>
+                <button class="button button-danger" data-admin-only hidden onclick="confirmDeleteSkate()">Delete Skate</button>
                 <button class="button button-secondary" onclick="closeRosterModal()">Close</button>
             </div>
         </div>
@@ -322,7 +323,7 @@
                 <input type="text" id="replacePlayerInput" placeholder="Enter new player name..." class="u-form-control-full" oninput="filterReplaceSuggestions(this.value)">
                 <div id="replaceSuggestions" style="max-height: 200px; overflow-y: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 4px; display: none;"></div>
             </div>
-            <div class="form-group">
+            <div class="form-group" data-admin-only hidden>
                 <label>Credit for outgoing player?</label>
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
                     <label class="u-inline-label">

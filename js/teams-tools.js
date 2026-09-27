@@ -66,7 +66,7 @@
         async function nudgePlayer(playerName, skateId, direction) {
             try {
                 const { data: player } = await supabaseClient
-                    .from('players')
+                    .from('skate_manager_players')
                     .select('id, rating_v2')
                     .ilike('name', playerName)
                     .maybeSingle();

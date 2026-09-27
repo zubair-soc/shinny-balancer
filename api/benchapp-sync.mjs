@@ -144,6 +144,12 @@ async function runBenchAppSync(request, setStage) {
     headers: { apikey: SUPABASE_PUBLISHABLE_KEY, authorization: `Bearer ${accessToken}` }
   });
   if (!authResponse.ok) return json({ error: 'Your session expired. Sign in again.' }, 401);
+  const signedInUser = await authResponse.json();
+  const appMetadata = signedInUser?.app_metadata || {};
+  const roles = Array.isArray(appMetadata.roles) ? appMetadata.roles : [];
+  if (appMetadata.role !== 'admin' && !roles.includes('admin')) {
+    return json({ error: 'Admin access is required to sync the BenchApp calendar.' }, 403);
+  }
 
   setStage('reading the sync request');
   let body;

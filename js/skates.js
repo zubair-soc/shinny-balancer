@@ -35,7 +35,7 @@
         async function loadAllPlayers() {
             try {
                 const { data, error } = await supabaseClient
-                    .from('players')
+                    .from('skate_manager_players')
                     .select('id, name, rating')
                     .order('name');
                 if (!error && data) allPlayers = data;
@@ -47,7 +47,7 @@
         async function loadSkates() {
             try {
                 const { data, error } = await supabaseClient
-                    .from('skates')
+                    .from('skate_manager_skates')
                     .select('*')
                     .order('date', { ascending: true })
                     .order('time_start', { ascending: true });
@@ -334,6 +334,7 @@
         }
 
         function openSkateOptions() {
+            if (!window.isSkateAdmin?.()) return;
             const modal = document.getElementById('skateOptionsModal');
             modal.classList.add('active');
             modal.setAttribute('aria-hidden', 'false');
@@ -355,6 +356,7 @@
         }
 
         async function addSkateOption(event, type) {
+            if (!window.isSkateAdmin?.()) return;
             event.preventDefault();
             const inputId = type === 'tier' ? 'newTierOption' : 'newLocationOption';
             const input = document.getElementById(inputId);
@@ -399,6 +401,7 @@
         }
 
         async function archiveSkateOption(id) {
+            if (!window.isSkateAdmin?.()) return;
             const option = skateOptionRows.find(item => Number(item.id) === Number(id));
             if (!option) return;
             const typeName = option.option_type === 'tier' ? 'tier' : 'location';
@@ -426,6 +429,7 @@
         }
 
         async function showCreateModal() {
+            if (!window.isSkateAdmin?.()) return;
             isEditMode = false;
             currentSkateId = null;
 
@@ -454,6 +458,7 @@
         }
 
         async function showEditSkateModal() {
+            if (!window.isSkateAdmin?.()) return;
             if (!currentSkateId) return;
             const skate = allSkates.find(item => item.id === currentSkateId);
             if (!skate) return;
@@ -526,6 +531,7 @@
         }
 
         async function saveSkate() {
+            if (!window.isSkateAdmin?.()) return;
             const skateNumber = document.getElementById('skateNumber').value.trim();
             const date = document.getElementById('skateDate').value;
             const tierSelect = document.getElementById('skateTier');
@@ -622,7 +628,7 @@
                 <div class="roster-details-grid">
                     <div><strong>Date:</strong> ${formatDate(skate.date)}</div>
                     <div><strong>Time:</strong> ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}</div>
-                    <div><strong>Cost:</strong> ${escapeHTML(skate.cost)}</div>
+                    ${window.isSkateAdmin?.() ? `<div><strong>Cost:</strong> ${escapeHTML(skate.cost || '')}</div>` : ''}
                     <div><strong>Location:</strong> ${escapeHTML(skate.location)}</div>
                     ${skate.tier ? `<div><strong>Tier:</strong> ${escapeHTML(skate.tier)}</div>` : ''}
                     <div><strong>Capacity:</strong> ${skate.capacity}</div>
@@ -720,7 +726,7 @@
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
                                         }
                                         <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${escapeHTML(player.friend_group)}]` : ''} ›</div>
-                                        <div class="menu-item" onclick="giveCredit(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">💳 Give Credit</div>
+                                        <div class="menu-item" data-admin-only onclick="giveCredit(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">💳 Give Credit</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
                                         <div class="menu-item" onclick="window.open('database.html?player=${encodeURIComponent(player.player_name)}', '_blank'); closeMenu(${player.id})">📊 View in Database</div>
