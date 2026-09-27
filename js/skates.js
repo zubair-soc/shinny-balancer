@@ -699,7 +699,7 @@
                 // Render roster
                 const rosterList = document.getElementById('rosterList');
                 if (sortedRoster.length === 0) {
-                    rosterList.innerHTML = '<div class="roster-empty-state"><span aria-hidden="true">🏒</span><span>No players yet. Add the first player above.</span></div>';
+                    rosterList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">No players yet</div>';
                 } else {
                     let skaterNumber = 1; // Counter for skaters only
                     rosterList.innerHTML = sortedRoster.map(player => {
