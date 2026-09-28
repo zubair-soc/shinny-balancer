@@ -31,6 +31,24 @@
             status.style.color = success ? 'var(--text-muted)' : '#dc2626';
         }
 
+        function normalizeBalancerPlayerName(name) {
+            return String(name || '').trim().toLocaleLowerCase();
+        }
+
+        function teamRatingTotal(team) {
+            return team.reduce((total, player) => total + (!player.isGoalie && Number.isFinite(Number(player.rating)) ? Number(player.rating) : 0), 0);
+        }
+
+        function teamWithRoomFor(player) {
+            const darkGoalies = darkTeam.filter(item => item.isGoalie).length;
+            const lightGoalies = lightTeam.filter(item => item.isGoalie).length;
+            if (player.isGoalie && darkGoalies !== lightGoalies) return darkGoalies < lightGoalies ? 'dark' : 'light';
+            if (darkTeam.length !== lightTeam.length) return darkTeam.length < lightTeam.length ? 'dark' : 'light';
+            const darkRating = teamRatingTotal(darkTeam);
+            const lightRating = teamRatingTotal(lightTeam);
+            return darkRating <= lightRating ? 'dark' : 'light';
+        }
+
         async function loadSavedTeams(skateId) {
             if (!skateId || !supabaseClient) return false;
             try {
@@ -38,17 +56,48 @@
                     .from('skate_teams')
                     .select('dark_team, light_team, saved_at')
                     .eq('skate_id', skateId)
-                    .single();
+                    .maybeSingle();
 
                 if (error || !data) return false;
 
-                const savedAt = new Date(data.saved_at).toLocaleString();
-                const load = confirm(`Saved teams found for this skate (last saved ${savedAt}).\n\nLoad saved teams?`);
-                if (!load) return false;
+                const rosterByName = new Map(matchedPlayers.map(player => [normalizeBalancerPlayerName(player.name), player]));
+                const assignedNames = new Set();
+                const keepCurrentRoster = team => (team || []).flatMap(savedPlayer => {
+                    const key = normalizeBalancerPlayerName(savedPlayer.name);
+                    const currentPlayer = rosterByName.get(key);
+                    if (!currentPlayer) return [];
+                    assignedNames.add(key);
+                    // Keep saved player edits and team placement, while syncing
+                    // goalie and friend-group details from the current roster.
+                    return [{ ...currentPlayer, ...savedPlayer, name: currentPlayer.name,
+                        isGoalie: currentPlayer.isGoalie,
+                        friendGroup: currentPlayer.friendGroup || savedPlayer.friendGroup || null }];
+                });
 
-                darkTeam = data.dark_team || [];
-                lightTeam = data.light_team || [];
+                darkTeam = keepCurrentRoster(data.dark_team);
+                lightTeam = keepCurrentRoster(data.light_team);
+                const droppedCount = (data.dark_team || []).concat(data.light_team || [])
+                    .filter(player => !rosterByName.has(normalizeBalancerPlayerName(player.name))).length;
+                const newPlayers = matchedPlayers.filter(player => !assignedNames.has(normalizeBalancerPlayerName(player.name)));
+                const additions = { dark: 0, light: 0 };
+                newPlayers.forEach(player => {
+                    const target = teamWithRoomFor(player);
+                    (target === 'dark' ? darkTeam : lightTeam).push(player);
+                    additions[target]++;
+                });
+
                 renderTeams();
+                if (newPlayers.length || droppedCount) {
+                    const addSummary = [
+                        additions.dark ? `+${additions.dark} to Dark` : '',
+                        additions.light ? `+${additions.light} to Light` : '',
+                        droppedCount ? `−${droppedCount} removed` : ''
+                    ].filter(Boolean).join(' · ');
+                    const saved = await saveTeams();
+                    if (saved) setTeamSaveStatus(`Roster updated: ${addSummary}. Existing team placements kept.`);
+                } else {
+                    setTeamSaveStatus('Saved teams loaded. Roster unchanged.');
+                }
                 return true;
             } catch (err) {
                 console.error('Failed to load saved teams:', err);

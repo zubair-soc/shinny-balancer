@@ -381,13 +381,18 @@
             localStorage.removeItem('importedRoster');
             localStorage.removeItem('importedSkateDetails');
 
-            // Keep saved teams if the user chooses to load them; otherwise build fresh teams.
+            // Reconcile saved assignments with the current roster. Existing
+            // players stay on their teams; only roster changes are applied.
+            matchPlayers({ silent: true });
             if (currentBalancerSkateId) {
                 const loaded = await loadSavedTeams(currentBalancerSkateId);
-                if (loaded) return;
+                if (loaded) {
+                    updateRosterAutoSummary();
+                    document.getElementById('teamsDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    return;
+                }
             }
 
-            matchPlayers({ silent: true });
             if (matchedPlayers.length > 0) {
                 balanceTeams();
                 updateRosterAutoSummary();
