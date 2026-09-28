@@ -203,7 +203,7 @@ async function runBenchAppSync(request, setStage) {
   }
 
   setStage('checking existing skates in Supabase');
-  const existingResponse = await supabaseRequest('/rest/v1/skates?select=id,benchapp_event_uid,title,date,time_start,time_end,location,is_archived,created_at&benchapp_event_uid=not.is.null', accessToken);
+  const existingResponse = await supabaseRequest('/rest/v1/skates?select=id,benchapp_event_uid,title,date,time_start,time_end,location,cost,capacity,is_archived,created_at&benchapp_event_uid=not.is.null', accessToken);
   if (!existingResponse.ok) return json({ error: 'Could not read existing imported skates. No skates were changed.' }, 502);
   const existingSkates = await existingResponse.json();
   const existingByUid = new Map(existingSkates.map(skate => [skate.benchapp_event_uid, skate]));
@@ -246,12 +246,15 @@ async function runBenchAppSync(request, setStage) {
     const item = usableByKey.get(skateSyncKey(skate));
     const existing = item && matchedExisting.get(item);
     return existing
-      ? { ...skate, benchapp_event_uid: existing.benchapp_event_uid, cost: undefined, capacity: undefined }
+      ? {
+          ...skate,
+          benchapp_event_uid: existing.benchapp_event_uid,
+          // Keep the admin-entered values unchanged while satisfying the
+          // table's required columns during PostgREST's insert-or-update.
+          cost: existing.cost,
+          capacity: existing.capacity
+        }
       : skate;
-  }).map(skate => {
-    if (skate.cost === undefined) delete skate.cost;
-    if (skate.capacity === undefined) delete skate.capacity;
-    return skate;
   });
 
   const upsertUrl = new URL('/rest/v1/skates', SUPABASE_URL);

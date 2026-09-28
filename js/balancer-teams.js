@@ -1,7 +1,11 @@
         async function saveTeams() {
-            if (!currentBalancerSkateId || !supabaseClient) return;
+            if (!currentBalancerSkateId || !supabaseClient) {
+                setTeamSaveStatus('Teams are not linked to a skate yet.', false);
+                return false;
+            }
+            setTeamSaveStatus('Saving teams…');
             try {
-                await supabaseClient
+                const { error } = await supabaseClient
                     .from('skate_teams')
                     .upsert({
                         skate_id: currentBalancerSkateId,
@@ -9,9 +13,22 @@
                         light_team: lightTeam,
                         saved_at: new Date().toISOString()
                     }, { onConflict: 'skate_id' });
+                if (error) throw error;
+                setTeamSaveStatus('Teams saved');
+                return true;
             } catch (err) {
                 console.error('Failed to save teams:', err);
+                setTeamSaveStatus('Teams could not be saved. Apply the staging database update, then try again.', false);
+                return false;
             }
+        }
+
+        function setTeamSaveStatus(message, success = true) {
+            const status = document.getElementById('teamSaveStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.dataset.state = success ? 'success' : 'error';
+            status.style.color = success ? 'var(--text-muted)' : '#dc2626';
         }
 
         async function loadSavedTeams(skateId) {
@@ -437,6 +454,12 @@
             banner.style.display = 'flex';
         }
 
+        function clearSelectedPlayer() {
+            selectedPlayer = null;
+            renderTeams();
+            showMoveBanner();
+        }
+
         function moveSelectedPlayer() {
             if (!selectedPlayer) return;
             const { team, index, player } = selectedPlayer;
@@ -476,4 +499,3 @@
                 skaters: skaters.length
             };
         }
-
