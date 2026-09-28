@@ -1,4 +1,11 @@
-        function generateExport() {
+        let currentNaitParkingCode = null;
+        let naitParkingCodeLoad = null;
+
+        function isNaitBalancingLocation() {
+            return String(document.getElementById('location')?.value || '').trim().toLowerCase().startsWith('nait');
+        }
+
+        function generateExport(parkingCodeOverride) {
             const skateTitle = document.getElementById('skateTitle').value;
             const dateTime = document.getElementById('dateTime').value;
             const cost = document.getElementById('cost').value;
@@ -8,7 +15,15 @@
             let output = `${skateTitle}\n`;
             if (dateTime) output += `Date & Time: ${dateTime}\n`;
             if (cost) output += `Cost: ${cost} — ${email}\n`;
-            if (location) output += `Location: ${location}\n`;
+            if (location && isNaitBalancingLocation()) {
+                const parkingCode = parkingCodeOverride === undefined ? currentNaitParkingCode : parkingCodeOverride;
+                const parkingDetail = parkingCode === null
+                    ? 'Loading current code…'
+                    : (parkingCode || 'Code not set in Admin → Settings');
+                output += `Location: NAIT — Parking code: ${parkingDetail} in Honk app (Lot E)\n`;
+            } else if (location) {
+                output += `Location: ${location}\n`;
+            }
 
             output += `\nDark ⚫️\n`;
             darkTeam.forEach((player, i) => {
@@ -20,30 +35,71 @@
                 output += `${i + 1}. ${player.name}${player.isGoalie ? ' 🥅' : ''}\n`;
             });
 
+            output += '\nPlease make sure everyone has signed the waiver before playing: https://shinnyofchampions.com/waiver\n';
+
             return output;
         }
 
         function renderExport() {
-            const html = `
+            const root = document.getElementById('exportSection');
+            root.innerHTML = `
                 <div class="export-section">
                     <h2>Share teams</h2>
-                    <div class="export-preview">${generateExport()}</div>
+                    <div id="balancerExportPreview" class="export-preview"></div>
                     <button class="button" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
-                </div>
-            `;
-            document.getElementById('exportSection').innerHTML = html;
+                </div>`;
+            const preview = document.getElementById('balancerExportPreview');
+            preview.textContent = generateExport();
+
+            if (isNaitBalancingLocation() && currentNaitParkingCode === null && !naitParkingCodeLoad) {
+                if (!window.getNaitParkingCode) {
+                    currentNaitParkingCode = '';
+                    preview.textContent = generateExport();
+                    return;
+                }
+                naitParkingCodeLoad = window.getNaitParkingCode()
+                    .then(code => { currentNaitParkingCode = code; })
+                    .catch(error => {
+                        console.error('Could not load the NAIT parking code:', error);
+                        currentNaitParkingCode = '';
+                    })
+                    .finally(() => {
+                        naitParkingCodeLoad = null;
+                        if (document.getElementById('balancerExportPreview')) {
+                            document.getElementById('balancerExportPreview').textContent = generateExport();
+                        }
+                    });
+            }
         }
 
         async function copyToClipboard() {
+            let messageText;
+            let parkingCode;
             try {
-                const text = generateExport();
-                await navigator.clipboard.writeText(text);
+                if (isNaitBalancingLocation()) {
+                    try {
+                        parkingCode = await window.getNaitParkingCode();
+                    } catch (error) {
+                        console.error('Could not load the NAIT parking code:', error);
+                        alert('Could not load the NAIT parking code. Check Admin → Settings, then try again.');
+                        return;
+                    }
+                    if (!parkingCode) {
+                        currentNaitParkingCode = '';
+                        renderExport();
+                        alert('Add the current NAIT parking code under Admin → Settings before copying this roster.');
+                        return;
+                    }
+                    currentNaitParkingCode = parkingCode;
+                }
+                messageText = generateExport(parkingCode);
+                await navigator.clipboard.writeText(messageText);
                 alert('✓ Copied to clipboard! Ready to paste into WhatsApp.');
             } catch (error) {
                 console.error('Copy failed:', error);
                 // Fallback method
                 const textArea = document.createElement('textarea');
-                textArea.value = generateExport();
+                textArea.value = messageText || generateExport(parkingCode);
                 textArea.style.position = 'fixed';
                 textArea.style.left = '-999999px';
                 document.body.appendChild(textArea);
