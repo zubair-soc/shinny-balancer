@@ -5,7 +5,7 @@
             const email = document.getElementById('email').value;
             const location = document.getElementById('location').value;
 
-            let output = `🏒 ${skateTitle}\n`;
+            let output = `${skateTitle}\n`;
             if (dateTime) output += `Date & Time: ${dateTime}\n`;
             if (cost) output += `Cost: ${cost} — ${email}\n`;
             if (location) output += `Location: ${location}\n`;

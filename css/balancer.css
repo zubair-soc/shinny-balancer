@@ -299,17 +299,23 @@
         }
 
         .export-preview {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 16px;
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.08), rgba(var(--primary-rgb), 0.025));
+            border: 1px solid rgba(var(--primary-rgb), 0.2);
+            border-radius: 14px;
+            padding: 20px;
             margin-bottom: 16px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.75;
             white-space: pre-wrap;
             max-height: 400px;
             overflow-y: auto;
-            color: #d1d5db;
+            color: var(--text);
+        }
+
+        body.dark-mode .export-preview {
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14), rgba(var(--primary-rgb), 0.06));
+            border-color: rgba(var(--primary-rgb), 0.3);
         }
 
         @media (max-width: 768px) {
