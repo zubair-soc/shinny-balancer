@@ -323,22 +323,24 @@
                 <input type="text" id="replacePlayerInput" placeholder="Enter new player name..." class="u-form-control-full" oninput="filterReplaceSuggestions(this.value)">
                 <div id="replaceSuggestions" style="max-height: 200px; overflow-y: auto; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 4px; display: none;"></div>
             </div>
-            <div class="form-group" data-admin-only hidden>
-                <label>Credit for outgoing player?</label>
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-                    <label class="u-inline-label">
-                        <input type="radio" name="replaceCredit" id="replaceCreditNo" value="no" checked class="u-checkbox">
-                        No credit needed
-                    </label>
-                    <label class="u-inline-label">
-                        <input type="radio" name="replaceCredit" id="replaceCreditYes" value="yes" class="u-checkbox">
-                        Give credit <span id="replaceCreditAmount" style="color: var(--primary); font-weight: 600; margin-left: 4px;"></span>
-                    </label>
-                </div>
-            </div>
             <div class="modal-buttons">
                 <button class="button button-secondary" onclick="closeReplacePlayerModal()">Cancel</button>
                 <button class="button" onclick="confirmReplacePlayer()">Replace</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="removePlayerModal" class="modal">
+        <div class="modal-content u-modal-max-500">
+            <div class="modal-header">
+                <span>Remove Player</span>
+                <button class="close-modal" onclick="closeRemovePlayerModal()">×</button>
+            </div>
+            <p id="removePlayerPrompt" style="margin: 0 0 18px;"></p>
+            <div class="modal-buttons" style="flex-wrap: wrap;">
+                <button class="button button-secondary" onclick="closeRemovePlayerModal()">Cancel</button>
+                <button class="button button-secondary" onclick="confirmRemovePlayer(false)">Remove without credit</button>
+                <button class="button" onclick="confirmRemovePlayer(true)">Remove + issue credit</button>
             </div>
         </div>
     </div>

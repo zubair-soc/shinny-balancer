@@ -13,7 +13,7 @@
             
             const futureSkates = allSkates.filter(skate => {
                 const skateDate = new Date(skate.date + 'T00:00:00');
-                return skateDate >= now;
+                return !skate.is_archived && skateDate >= now;
             });
 
             if (futureSkates.length === 0) {

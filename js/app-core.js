@@ -192,6 +192,7 @@
                 else if (e.target.id === 'quickAddModal') closeQuickAdd();
                 else if (e.target.id === 'moveToSkateModal') closeMoveToSkateModal();
                 else if (e.target.id === 'replacePlayerModal') closeReplacePlayerModal();
+                else if (e.target.id === 'removePlayerModal') closeRemovePlayerModal();
                 else if (e.target.id === 'manualCopyModal') document.getElementById('manualCopyModal').classList.remove('active');
                 else if (e.target.id === 'atAGlanceModal') closeAtAGlance();
             }

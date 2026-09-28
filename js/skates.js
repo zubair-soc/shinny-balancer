@@ -726,9 +726,7 @@
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`
                                         }
                                         <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${escapeHTML(player.friend_group)}]` : ''} ›</div>
-                                        <div class="menu-item" data-admin-only onclick="giveCredit(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">💳 Give Credit</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔄 Move to Another Skate</div>
-                                        <div class="menu-item" onclick="moveToWaitlist(${player.id}); closeMenu(${player.id})">⏸️ Move to Waitlist</div>
                                         <div class="menu-item" onclick="window.open('database.html?player=${encodeURIComponent(player.player_name)}', '_blank'); closeMenu(${player.id})">📊 View in Database</div>
                                         <div class="menu-item danger" onclick="deletePlayer(${player.id}); closeMenu(${player.id})">🗑️ Remove Player</div>
                                     </div>

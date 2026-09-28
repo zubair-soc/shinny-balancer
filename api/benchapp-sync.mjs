@@ -121,6 +121,17 @@ function parseBenchAppEvents(icsText) {
   return { eventCount: events.length, results };
 }
 
+function skateSyncKey(skate) {
+  const normalize = value => String(value || '').normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ');
+  return [
+    normalize(skate.title),
+    normalize(skate.date),
+    normalize(skate.time_start).slice(0, 5),
+    normalize(skate.time_end).slice(0, 5),
+    normalize(skate.location)
+  ].join('|');
+}
+
 async function supabaseRequest(path, accessToken, options = {}) {
   return fetch(`${SUPABASE_URL}${path}`, {
     ...options,
@@ -181,20 +192,62 @@ async function runBenchAppSync(request, setStage) {
 
   const { eventCount, results } = parseBenchAppEvents(icsText);
   setStage('reading the calendar events');
-  const usable = results.filter(item => !item.cancelled);
+  const usableByKey = new Map();
+  for (const item of results.filter(item => !item.cancelled)) {
+    const key = skateSyncKey(item.skate);
+    if (!usableByKey.has(key)) usableByKey.set(key, item);
+  }
+  const usable = [...usableByKey.values()];
   if (eventCount === 0 || results.length === 0 || usable.length === 0) {
     return json({ error: 'The calendar contained no usable skate events. No skates were changed.' }, 422);
   }
 
   setStage('checking existing skates in Supabase');
-  const existingResponse = await supabaseRequest('/rest/v1/skates?select=id,benchapp_event_uid,date,is_archived&benchapp_event_uid=not.is.null', accessToken);
+  const existingResponse = await supabaseRequest('/rest/v1/skates?select=id,benchapp_event_uid,title,date,time_start,time_end,location,is_archived,created_at&benchapp_event_uid=not.is.null', accessToken);
   if (!existingResponse.ok) return json({ error: 'Could not read existing imported skates. No skates were changed.' }, 502);
   const existingSkates = await existingResponse.json();
   const existingByUid = new Map(existingSkates.map(skate => [skate.benchapp_event_uid, skate]));
 
+  // Some ICS refreshes assign a new UID to an otherwise unchanged event. Match
+  // those against the event details and retain the database row's original UID.
+  // Prefer an active row, then the most recently created archived copy.
+  existingSkates.sort((a, b) => {
+    if (a.is_archived !== b.is_archived) return a.is_archived ? 1 : -1;
+    return Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0) || Number(b.id) - Number(a.id);
+  });
+  const existingByKey = new Map();
+  for (const skate of existingSkates) {
+    const key = skateSyncKey(skate);
+    if (!existingByKey.has(key)) existingByKey.set(key, []);
+    existingByKey.get(key).push(skate);
+  }
+
+  const usedExistingIds = new Set();
+  const matchedExisting = new Map();
+  const findExisting = item => {
+    const exactUidMatch = existingByUid.get(item.uid);
+    if (exactUidMatch && !usedExistingIds.has(exactUidMatch.id)) return exactUidMatch;
+    const matches = existingByKey.get(skateSyncKey(item.skate)) || [];
+    return matches.find(skate => !usedExistingIds.has(skate.id)) || null;
+  };
+
+  // Match active and cancelled feed events so removals can archive the right
+  // record even when BenchApp rotates an event UID.
+  const activeExistingIds = new Set();
+  for (const item of results) {
+    const existing = findExisting(item);
+    if (!existing) continue;
+    usedExistingIds.add(existing.id);
+    matchedExisting.set(item, existing);
+    if (!item.cancelled) activeExistingIds.add(existing.id);
+  }
+
   const incoming = usable.map(({ skate }) => {
-    const existing = existingByUid.get(skate.benchapp_event_uid);
-    return existing ? { ...skate, cost: undefined, capacity: undefined } : skate;
+    const item = usableByKey.get(skateSyncKey(skate));
+    const existing = item && matchedExisting.get(item);
+    return existing
+      ? { ...skate, benchapp_event_uid: existing.benchapp_event_uid, cost: undefined, capacity: undefined }
+      : skate;
   }).map(skate => {
     if (skate.cost === undefined) delete skate.cost;
     if (skate.capacity === undefined) delete skate.capacity;
@@ -211,11 +264,9 @@ async function runBenchAppSync(request, setStage) {
   });
   if (!upsertResponse.ok) return json({ error: 'Could not save imported skates. Check that the database update has been applied.' }, 502);
 
-  const incomingUids = new Set(usable.map(item => item.uid));
-  const cancelledUids = new Set(results.filter(item => item.cancelled).map(item => item.uid));
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: EDMONTON_TZ }).format(new Date());
   const archiveIds = existingSkates
-    .filter(skate => !skate.is_archived && skate.date >= today && (!incomingUids.has(skate.benchapp_event_uid) || cancelledUids.has(skate.benchapp_event_uid)))
+    .filter(skate => !skate.is_archived && skate.date >= today && !activeExistingIds.has(skate.id))
     .map(skate => skate.id);
 
   if (archiveIds.length) {
@@ -230,7 +281,7 @@ async function runBenchAppSync(request, setStage) {
     if (!archiveResponse.ok) return json({ error: 'Skates synced, but removed skates could not be archived. Try syncing again.' }, 502);
   }
 
-  const newCount = usable.filter(item => !existingByUid.has(item.uid)).length;
+  const newCount = usable.filter(item => !matchedExisting.has(item)).length;
   const updatedCount = usable.length - newCount;
   return json({
     ok: true,

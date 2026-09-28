@@ -14,6 +14,27 @@
             }
 
             try {
+                // Reuse an existing player record where possible so goalie
+                // history and future credits stay attached to the right person.
+                let { data: playerRecord, error: playerLookupError } = await supabaseClient
+                    .from('skate_manager_players')
+                    .select('id, name')
+                    .ilike('name', playerName)
+                    .maybeSingle();
+                if (playerLookupError) throw playerLookupError;
+                if (!playerRecord) {
+                    const { data, error } = await supabaseClient
+                        .from('players')
+                        .insert({ name: playerName })
+                        .select('id, name')
+                        .single();
+                    if (error) throw error;
+                    playerRecord = data;
+                    allPlayers.push({ name: playerRecord.name, rating: null, id: playerRecord.id });
+                }
+
+                const usuallyGoalie = await isUsuallyGoalie(playerName);
+
                 // Get current max position
                 const { data: existing } = await supabaseClient
                     .from('skate_registrations')
@@ -28,7 +49,9 @@
                     .from('skate_registrations')
                     .insert([{
                         skate_id: currentSkateId,
+                        player_id: playerRecord.id,
                         player_name: playerName,
+                        is_goalie: usuallyGoalie,
                         is_paid: true,
                         is_waitlist: false,
                         position: nextPosition
@@ -36,13 +59,6 @@
 
                 if (error) throw error;
 
-                // Ensure player exists in players table
-                const { data: existingPlayer } = await supabaseClient
-                    .from('skate_manager_players').select('id').ilike('name', playerName).maybeSingle();
-                if (!existingPlayer) {
-                    await supabaseClient.from('players').insert({ name: playerName });
-                    allPlayers.push({ name: playerName, rating: null });
-                }
                 document.getElementById('newPlayerName').value = '';
                 document.getElementById('newPlayerSuggestions').style.display = 'none';
                 const skate = allSkates.find(s => s.id === currentSkateId);
@@ -52,6 +68,21 @@
                 console.error('Error adding player:', error);
                 alert('Failed to add player');
             }
+        }
+
+        async function isUsuallyGoalie(playerName) {
+            const { data, error } = await supabaseClient
+                .from('skate_registrations')
+                .select('is_goalie')
+                .ilike('player_name', playerName)
+                .eq('is_waitlist', false)
+                .order('created_at', { ascending: false })
+                .limit(6);
+            if (error) throw error;
+            if (!data || data.length < 2) return false;
+
+            const goalieCount = data.filter(registration => registration.is_goalie).length;
+            return goalieCount >= 2 && goalieCount / data.length >= 0.6;
         }
 
         async function addToWaitlist() {
@@ -134,13 +165,6 @@
             document.getElementById('replacePlayerName').textContent = playerName;
             document.getElementById('replacePlayerInput').value = '';
             document.getElementById('replaceSuggestions').style.display = 'none';
-            document.getElementById('replaceCreditNo').checked = true;
-
-            // Show skate cost in the credit option
-            const skate = allSkates.find(s => s.id === currentSkateId);
-            const cost = window.isSkateAdmin?.() ? (skate ? skate.cost : '$25') : '';
-            document.getElementById('replaceCreditAmount').textContent = cost;
-
             document.getElementById('replacePlayerModal').classList.add('active');
             setTimeout(() => document.getElementById('replacePlayerInput').focus(), 100);
         }
@@ -184,43 +208,28 @@
                 return;
             }
 
-            const giveCredit = window.isSkateAdmin?.() && document.getElementById('replaceCreditYes').checked;
             const skate = allSkates.find(s => s.id === currentSkateId);
 
             try {
-                // Replace the player
+                // Resolve the incoming player first so the roster's player_id stays
+                // aligned with the replacement. Payment belongs to the sold spot.
+                let { data: newPlayer, error: playerLookupError } = await supabaseClient
+                    .from('players').select('id').ilike('name', newName).maybeSingle();
+                if (playerLookupError) throw playerLookupError;
+                if (!newPlayer) {
+                    const { data, error } = await supabaseClient
+                        .from('players').insert({ name: newName }).select('id').single();
+                    if (error) throw error;
+                    newPlayer = data;
+                }
+
+                // Replacing means the spot was sold; preserve its paid status and
+                // do not issue credit to the outgoing player.
                 const { error } = await supabaseClient
                     .from('skate_registrations')
-                    .update({ player_name: newName })
+                    .update({ player_name: newName, player_id: newPlayer.id })
                     .eq('id', replacingRegistrationId);
                 if (error) throw error;
-
-                // Issue credit if requested
-                if (giveCredit && skate) {
-                    const costNum = parseFloat((skate.cost || '$25').replace('$', '')) || 25;
-
-                    // Look up player ID
-                    const { data: playerData } = await supabaseClient
-                        .from('skate_manager_players')
-                        .select('id')
-                        .ilike('name', replacingPlayerName)
-                        .limit(1);
-
-                    if (playerData && playerData.length > 0) {
-                        const now = new Date().toISOString();
-                        await supabaseClient.from('player_credits').insert({
-                            player_id: playerData[0].id,
-                            amount: costNum,
-                            reason: `Replaced from ${skate.title}`,
-                            status: 'active',
-                            created_by: 'Manual',
-                            created_at: now,
-                            last_activity_at: now
-                        });
-                    } else {
-                        alert(`⚠️ Player replaced but couldn't find "${replacingPlayerName}" in the players database to issue credit. Add manually in Credits Manager.`);
-                    }
-                }
 
                 // Update saved teams if they exist
                 const { data: savedTeams } = await supabaseClient
@@ -232,11 +241,7 @@
                         light_team: updateTeam(savedTeams.light_team || [])
                     }).eq('id', savedTeams.id);
                 }
-                // Ensure new player in DB
-                const { data: existingNewPlayer } = await supabaseClient
-                    .from('skate_manager_players').select('id').ilike('name', newName).maybeSingle();
-                if (!existingNewPlayer) {
-                    await supabaseClient.from('players').insert({ name: newName });
+                if (!allPlayers.some(player => player.name.toLowerCase() === newName.toLowerCase())) {
                     allPlayers.push({ name: newName, rating: null });
                 }
                 closeReplacePlayerModal();
@@ -291,22 +296,91 @@
             }
         }
 
+        let pendingRosterRemoval = null;
+
         async function deletePlayer(registrationId) {
-            if (!confirm('Remove this player?')) return;
-
             try {
-                const { error } = await supabaseClient
+                const { data: registration, error } = await supabaseClient
                     .from('skate_registrations')
-                    .delete()
-                    .eq('id', registrationId);
-
+                    .select('id, player_id, player_name, is_paid, is_waitlist')
+                    .eq('id', registrationId)
+                    .single();
                 if (error) throw error;
 
-                const skate = allSkates.find(s => s.id === currentSkateId);
-                await loadRoster(currentSkateId, skate.capacity);
-                loadSkates(); // Refresh card counts in background
+                const skate = allSkates.find(item => item.id === currentSkateId);
+                const canOfferCredit = window.isSkateAdmin?.() && registration.is_paid && !registration.is_waitlist;
+                if (canOfferCredit) {
+                    pendingRosterRemoval = { registration, skate };
+                    document.getElementById('removePlayerPrompt').textContent =
+                        `Remove ${registration.player_name} from ${skate?.title || 'this skate'}? Since they paid, choose whether to issue them a skate credit.`;
+                    document.getElementById('removePlayerModal').classList.add('active');
+                    return;
+                }
+
+                if (!confirm(`Remove ${registration.player_name} from this skate?`)) return;
+                await finishRosterRemoval(registration, skate, false);
             } catch (error) {
-                console.error('Error deleting player:', error);
+                console.error('Error preparing player removal:', error);
+                alert(`Could not remove player: ${error.message}`);
+            }
+        }
+
+        function closeRemovePlayerModal() {
+            document.getElementById('removePlayerModal').classList.remove('active');
+            pendingRosterRemoval = null;
+        }
+
+        async function confirmRemovePlayer(issueCredit) {
+            if (!pendingRosterRemoval) return;
+            const { registration, skate } = pendingRosterRemoval;
+            closeRemovePlayerModal();
+            await finishRosterRemoval(registration, skate, issueCredit);
+        }
+
+        async function finishRosterRemoval(registration, skate, issueCredit) {
+            let createdCreditId = null;
+            try {
+                if (issueCredit) {
+                    let playerId = registration.player_id;
+                    if (!playerId) {
+                        const { data: player, error } = await supabaseClient
+                            .from('players').select('id').ilike('name', registration.player_name).maybeSingle();
+                        if (error) throw error;
+                        playerId = player?.id;
+                    }
+                    if (!playerId) throw new Error(`Could not find ${registration.player_name} in the player database.`);
+
+                    const amount = Number(String(skate?.cost || '$25').replace(/[^0-9.]/g, '')) || 25;
+                    const { data: credit, error } = await supabaseClient
+                        .from('player_credits')
+                        .insert({
+                            player_id: playerId,
+                            amount,
+                            reason: `Removed from ${skate?.title || 'skate'}`,
+                            source_skate_id: currentSkateId,
+                            status: 'active',
+                            created_by: 'Roster removal',
+                            created_at: new Date().toISOString()
+                        })
+                        .select('id')
+                        .single();
+                    if (error) throw error;
+                    createdCreditId = credit.id;
+                }
+
+                const { error: deleteError } = await supabaseClient
+                    .from('skate_registrations').delete().eq('id', registration.id);
+                if (deleteError) {
+                    if (createdCreditId) await supabaseClient.from('player_credits').delete().eq('id', createdCreditId);
+                    throw deleteError;
+                }
+
+                if (navigator.vibrate) navigator.vibrate(50);
+                await loadRoster(currentSkateId, skate?.capacity || 24);
+                loadSkates();
+            } catch (error) {
+                console.error('Error removing player:', error);
+                alert(`Could not remove player${issueCredit ? ' and issue credit' : ''}: ${error.message}`);
             }
         }
 
@@ -415,95 +489,6 @@
         function closeMoveToSkateModal() {
             document.getElementById('moveToSkateModal').classList.remove('active');
             playerToMove = null;
-        }
-
-        // ========== GIVE CREDIT FUNCTION ==========
-        async function giveCredit(registrationId, playerName) {
-            if (!window.isSkateAdmin?.()) return;
-            if (!currentSkateId) return;
-
-            // Get the skate cost
-            const skate = allSkates.find(s => s.id === currentSkateId);
-            if (!skate) return;
-
-            const creditAmount = parseFloat(skate.cost.replace('$', ''));
-            
-            if (!confirm(`Give ${playerName} a $${creditAmount} credit and remove them from ${skate.title}?`)) {
-                return;
-            }
-
-            try {
-                // Get registration details to find player_id
-                const { data: registration, error: regError } = await supabaseClient
-                    .from('skate_registrations')
-                    .select('player_id, player_name')
-                    .eq('id', registrationId)
-                    .single();
-
-                if (regError) throw regError;
-
-                // Find or create player in players table
-                let playerId = registration.player_id;
-                
-                if (!playerId) {
-                    // Try to find player by name
-                    const { data: existingPlayer } = await supabaseClient
-                        .from('players')
-                        .select('id')
-                        .ilike('name', registration.player_name)
-                        .single();
-
-                    if (existingPlayer) {
-                        playerId = existingPlayer.id;
-                    } else {
-                        // Create new player
-                        const { data: newPlayer, error: createError } = await supabaseClient
-                            .from('players')
-                            .insert({ name: registration.player_name })
-                            .select('id')
-                            .single();
-
-                        if (createError) throw createError;
-                        playerId = newPlayer.id;
-                    }
-                }
-
-                // Create credit
-                const { error: creditError } = await supabaseClient
-                    .from('player_credits')
-                    .insert({
-                        player_id: playerId,
-                        amount: creditAmount,
-                        reason: `Dropped from ${skate.title}`,
-                        source_skate_id: currentSkateId,
-                        status: 'active',
-                        created_by: 'System',
-                        created_at: new Date().toISOString()
-                    });
-
-                if (creditError) throw creditError;
-
-                // Delete player from skate
-                const { error: deleteError } = await supabaseClient
-                    .from('skate_registrations')
-                    .delete()
-                    .eq('id', registrationId);
-
-                if (deleteError) throw deleteError;
-
-                // Haptic feedback
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
-                }
-
-                // Refresh roster and skate counts
-                await loadRoster(currentSkateId, skate.capacity);
-                await loadSkates();
-
-            } catch (error) {
-                console.error('Error giving credit:', error);
-                alert('Failed to give credit: ' + error.message);
-            }
         }
 
         // ========== EDIT RATING FUNCTION ==========
@@ -678,6 +663,8 @@
                     const emoji = player.is_goalie ? ' 🥅' : '';
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
+
+                message += `\nAll players must sign the waiver before playing: https://shinnyofchampions.com/waiver\n`;
 
                 let copied = false;
 
