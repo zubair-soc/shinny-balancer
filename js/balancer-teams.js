@@ -1,3 +1,6 @@
+        let openPlayerMenu = null;
+        let playerMenuListenerInstalled = false;
+
         async function saveTeams() {
             if (!currentBalancerSkateId || !supabaseClient) {
                 setTeamSaveStatus('Teams are not linked to a skate yet.', false);
@@ -253,10 +256,19 @@
 
         // Render teams
         function renderTeams() {
+            if (!playerMenuListenerInstalled) {
+                document.addEventListener('click', event => {
+                    if (openPlayerMenu && !event.target.closest('.player-item-actions')) {
+                        openPlayerMenu = null;
+                        renderTeams();
+                    }
+                });
+                playerMenuListenerInstalled = true;
+            }
             const darkStats = getTeamStats(darkTeam);
             const lightStats = getTeamStats(lightTeam);
 
-            let html = '<div class="teams-container">';
+            let html = '<p class="team-interaction-hint">Select two players to swap them. Use ⋮ for one-player moves and other actions.</p><div class="teams-container">';
             
             // Dark team
             html += '<div class="team">';
@@ -292,8 +304,11 @@
         function renderPlayer(player, index, team) {
             const isSelected = selectedPlayer && selectedPlayer.team === team && selectedPlayer.index === index;
             const isEditing = selectedPlayer && selectedPlayer.team === team && selectedPlayer.index === index && selectedPlayer.editing;
+            const isMenuOpen = openPlayerMenu && openPlayerMenu.team === team && openPlayerMenu.index === index;
+            const destination = team === 'dark' ? 'light' : 'dark';
+            const destinationLabel = destination === 'dark' ? 'Dark' : 'Light';
             
-            let html = `<div class="player-item${isSelected ? ' selected' : ''}" onclick="selectPlayer('${team}', ${index})" style="cursor: pointer; ${isSelected ? 'background: rgba(var(--primary-rgb), 0.3); border-color: var(--primary);' : ''}">`;
+            let html = `<div class="player-item${isSelected ? ' selected' : ''}${isMenuOpen ? ' has-open-menu' : ''}" onclick="selectPlayer('${team}', ${index})" style="cursor: pointer; ${isSelected ? 'background: rgba(var(--primary-rgb), 0.12); border-color: var(--primary);' : ''}">`;
             html += '<div class="player-info">';
             html += `<span class="player-number">${index + 1}.</span>`;
             html += `<span class="player-name">${escapeHTML(player.name)}</span>`;
@@ -303,7 +318,7 @@
             }
             
             html += '</div>';
-            html += '<div style="display: flex; align-items: center; gap: 4px;">';
+            html += '<div class="player-item-actions" onclick="event.stopPropagation()">';
             
             // Don't show rating for goalies
             if (!player.isGoalie) {
@@ -321,20 +336,55 @@
                         html += `<span class="player-rating" style="color: #fbbf24;">???</span>`;
                     }
                     
-                    // Edit rating button (show for all players now)
-                    html += `<button class="icon-button" onclick="startEditRating(event, '${team}', ${index})" title="Edit rating">✏️</button>`;
                 }
             }
-            
-            html += `<button class="icon-button" onclick="event.stopPropagation(); toggleGoalie('${team}', ${index})">${player.isGoalie ? '🥅' : '👤'}</button>`;
+
+            html += `<button class="player-menu-trigger" type="button" aria-label="More actions for ${escapeHTML(player.name)}" aria-haspopup="menu" aria-expanded="${Boolean(isMenuOpen)}" onclick="togglePlayerActions(event, '${team}', ${index})">⋮</button>`;
+            if (isMenuOpen) {
+                html += '<div class="player-actions-menu" role="menu">';
+                if (!player.isGoalie && !isEditing) {
+                    html += `<button type="button" role="menuitem" onclick="startEditRating(event, '${team}', ${index})">✏️ <span>${player.rating === null ? 'Set rating' : 'Edit rating'}</span></button>`;
+                }
+                html += `<button type="button" role="menuitem" onclick="toggleGoalieFromMenu(event, '${team}', ${index})">${player.isGoalie ? '👤' : '🥅'} <span>${player.isGoalie ? 'Mark as skater' : 'Mark as goalie'}</span></button>`;
+                html += `<button type="button" role="menuitem" onclick="movePlayerToTeam(event, '${team}', ${index}, '${destination}')">→ <span>Move to ${destinationLabel}</span></button>`;
+                html += '</div>';
+            }
             html += '</div>';
             html += '</div>';
             
             return html;
         }
 
+        function togglePlayerActions(event, team, index) {
+            event.stopPropagation();
+            const isSameMenu = openPlayerMenu && openPlayerMenu.team === team && openPlayerMenu.index === index;
+            openPlayerMenu = isSameMenu ? null : { team, index };
+            renderTeams();
+        }
+
+        function toggleGoalieFromMenu(event, team, index) {
+            event.stopPropagation();
+            openPlayerMenu = null;
+            toggleGoalie(team, index);
+        }
+
+        function movePlayerToTeam(event, team, index, destination) {
+            event.stopPropagation();
+            const sourceTeam = team === 'dark' ? darkTeam : lightTeam;
+            const targetTeam = destination === 'dark' ? darkTeam : lightTeam;
+            const [player] = sourceTeam.splice(index, 1);
+            if (!player) return;
+            targetTeam.push(player);
+            selectedPlayer = null;
+            openPlayerMenu = null;
+            sortTeams();
+            renderTeams();
+            saveTeams();
+        }
+
         function startEditRating(event, team, index) {
             event.stopPropagation();
+            openPlayerMenu = null;
             selectedPlayer = { team, index, editing: true };
             renderTeams();
             
@@ -448,13 +498,13 @@
         }
 
         function selectPlayer(team, index) {
+            openPlayerMenu = null;
             const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
             
             // If no player selected yet, select this one
             if (!selectedPlayer) {
                 selectedPlayer = { team, index, player };
                 renderTeams();
-                showMoveBanner();
                 return;
             }
             
@@ -462,7 +512,6 @@
             if (selectedPlayer.team === team && selectedPlayer.index === index) {
                 selectedPlayer = null;
                 renderTeams();
-                showMoveBanner();
                 return;
             }
             
@@ -470,7 +519,6 @@
             if (selectedPlayer.team === team) {
                 selectedPlayer = { team, index, player };
                 renderTeams();
-                showMoveBanner();
                 return;
             }
             
@@ -491,39 +539,6 @@
                 renderTeams();
                 saveTeams();
             }
-        }
-
-        function showMoveBanner() {
-            const banner = document.getElementById('moveBanner');
-            if (!banner) return;
-            if (!selectedPlayer) { banner.style.display = 'none'; return; }
-            const destTeam = selectedPlayer.team === 'dark' ? 'Light ⚪️' : 'Dark ⚫️';
-            document.getElementById('moveBannerText').textContent = `${selectedPlayer.player.name} selected`;
-            document.getElementById('moveBannerBtn').textContent = `→ Move to ${destTeam}`;
-            banner.style.display = 'flex';
-        }
-
-        function clearSelectedPlayer() {
-            selectedPlayer = null;
-            renderTeams();
-            showMoveBanner();
-        }
-
-        function moveSelectedPlayer() {
-            if (!selectedPlayer) return;
-            const { team, index, player } = selectedPlayer;
-            if (team === 'dark') {
-                darkTeam.splice(index, 1);
-                lightTeam.push(player);
-            } else {
-                lightTeam.splice(index, 1);
-                darkTeam.push(player);
-            }
-            selectedPlayer = null;
-            sortTeams();
-            renderTeams();
-            saveTeams();
-            showMoveBanner();
         }
 
         function getTeamStats(team) {
