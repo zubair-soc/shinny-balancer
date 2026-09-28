@@ -34,8 +34,17 @@
     <div class="container">
         <div class="header">
             <h1>🏒 Shinny Team Balancer</h1>
-            <p>Balance teams, manage friend groups, export to WhatsApp • v1.2 • Updated Feb 11, 2026</p>
+            <p>Build balanced teams from a skate roster and copy them to WhatsApp.</p>
         </div>
+
+        <section id="balancerSkateContext" class="setup-section" hidden style="display:none; align-items:center; justify-content:space-between; gap:16px;">
+            <div>
+                <div style="font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--primary); text-transform:uppercase;">Balancing skate</div>
+                <h2 id="balancerSkateTitle" style="margin:5px 0;">Skate roster</h2>
+                <p id="balancerRosterSummary" style="margin:0; color:var(--text-muted);">Matching roster players to the database…</p>
+            </div>
+            <button id="toggleBalancerSetup" class="button button-secondary" type="button" aria-expanded="false" onclick="toggleBalancerSetupPanel()">Edit setup</button>
+        </section>
 
         <!-- Player database loads automatically from Supabase -->
         <div class="setup-section database-status-card" aria-live="polite" hidden>
@@ -45,9 +54,10 @@
             <span id="playerCount" hidden>0</span>
         </div>
 
+        <div id="balancerSetupPanel">
         <!-- Skate Info -->
         <div class="setup-section">
-            <h2>2. Skate Details</h2>
+            <h2>Skate details</h2>
             <div class="form-grid">
                 <div class="form-group">
                     <label>Skate Title</label>
@@ -97,7 +107,8 @@
 
         <!-- Player Input -->
         <div class="setup-section">
-            <h2>3. Paste Players (add 'g' for goalie, a-f or h for friend groups)</h2>
+            <h2>Manual player list</h2>
+            <p style="margin:-6px 0 16px; color:var(--text-muted); font-size:14px;">Only needed when you aren’t balancing from a skate roster. Add “g” for goalie, or a–h for friend groups.</p>
             <div class="form-group">
                 <label>Player Names (one per line)</label>
                 <textarea id="playerInput" placeholder="Player One g&#10;Player Two g&#10;Player Three a&#10;Player Four a&#10;Player Five b&#10;Player Six"></textarea>
@@ -109,6 +120,7 @@
                 Balance Teams
             </button>
             <div id="warningDiv"></div>
+        </div>
         </div>
 
         <!-- Teams Display -->

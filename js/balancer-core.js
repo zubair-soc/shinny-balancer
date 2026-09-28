@@ -45,6 +45,7 @@
         let lightTeam = [];
         let selectedPlayer = null; // For swapping
         let currentBalancerSkateId = null;
+        let rosterAutoMode = false;
 
         const FRIEND_GROUP_COLORS = {
             'A': '#ef4444', 'B': 'var(--primary-dark)', 'C': '#10b981', 'D': '#f59e0b',
@@ -77,6 +78,46 @@
                 console.error('Full error:', JSON.stringify(error, null, 2));
                 const databaseStatus = document.getElementById('playerDatabaseStatus');
                 if (databaseStatus) databaseStatus.textContent = 'Could not load the player database';
+            }
+        }
+
+        function toggleBalancerSetupPanel() {
+            const panel = document.getElementById('balancerSetupPanel');
+            const button = document.getElementById('toggleBalancerSetup');
+            if (!panel || !button) return;
+            panel.hidden = !panel.hidden;
+            button.textContent = panel.hidden ? 'Edit setup' : 'Hide setup';
+            button.setAttribute('aria-expanded', String(!panel.hidden));
+        }
+
+        function showRosterAutoMode() {
+            rosterAutoMode = true;
+            const context = document.getElementById('balancerSkateContext');
+            const panel = document.getElementById('balancerSetupPanel');
+            if (context) {
+                context.hidden = false;
+                context.style.display = 'flex';
+            }
+            if (panel) panel.hidden = true;
+            const button = document.getElementById('toggleBalancerSetup');
+            if (button) {
+                button.textContent = 'Edit setup';
+                button.setAttribute('aria-expanded', 'false');
+            }
+            updateRosterAutoSummary();
+        }
+
+        function updateRosterAutoSummary() {
+            if (!rosterAutoMode) return;
+            const title = document.getElementById('balancerSkateTitle');
+            const summary = document.getElementById('balancerRosterSummary');
+            const skateTitle = document.getElementById('skateTitle')?.value;
+            const dateTime = document.getElementById('dateTime')?.value;
+            const rosterText = document.getElementById('playerInput')?.value.trim() || '';
+            const count = rosterText ? rosterText.split(/\r?\n/).filter(line => line.trim()).length : 0;
+            if (title) title.textContent = skateTitle || 'Skate roster';
+            if (summary) {
+                summary.textContent = `${count} ${count === 1 ? 'player' : 'players'} · teams balanced automatically` + (dateTime ? ` · ${dateTime}` : '');
             }
         }
 
@@ -321,7 +362,7 @@
                 }
             }
 
-            // Paste roster data into section 3 textarea
+            // Populate the optional manual list so the roster can be reviewed or adjusted.
             const playerInputBox = document.getElementById('playerInput');
             console.log('playerInputBox element:', playerInputBox);
             playerInputBox.value = rosterData;
@@ -333,6 +374,8 @@
                 currentBalancerSkateId = parseInt(skateId);
                 localStorage.removeItem('currentSkateId');
             }
+
+            showRosterAutoMode();
 
             // Clean up localStorage
             localStorage.removeItem('importedRoster');
@@ -347,6 +390,7 @@
             matchPlayers({ silent: true });
             if (matchedPlayers.length > 0) {
                 balanceTeams();
+                updateRosterAutoSummary();
                 document.getElementById('teamsDisplay').scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
                 playerInputBox.scrollIntoView({ behavior: 'smooth' });

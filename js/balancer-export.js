@@ -26,7 +26,7 @@
         function renderExport() {
             const html = `
                 <div class="export-section">
-                    <h2>4. Export to WhatsApp</h2>
+                    <h2>Share teams</h2>
                     <div class="export-preview">${generateExport()}</div>
                     <button class="button" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
                 </div>
