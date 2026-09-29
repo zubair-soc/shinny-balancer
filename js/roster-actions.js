@@ -293,12 +293,17 @@
                 if (error) throw error;
 
                 const skate = allSkates.find(item => item.id === currentSkateId);
-                const canOfferCredit = registration.is_paid && !registration.is_waitlist;
+                const creditAmount = Number(String(skate?.cost ?? '').replace(/[^0-9.]/g, ''));
+                const canOfferCredit = registration.is_paid && !registration.is_waitlist && Number.isFinite(creditAmount) && creditAmount > 0;
+                const creditLabel = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(creditAmount || 0);
                 pendingRosterRemoval = { registration, skate };
                 document.getElementById('removePlayerPrompt').textContent = canOfferCredit
                     ? `Remove ${registration.player_name} from ${skate?.title || 'this skate'}? Choose whether to issue their skate fee as credit.`
-                    : `Remove ${registration.player_name} from this skate? This unpaid or waitlisted spot is not eligible for credit.`;
-                document.querySelector('#removePlayerModal button[onclick="confirmRemovePlayer(true)"]').hidden = !canOfferCredit;
+                    : `Remove ${registration.player_name} from this skate? Credit is unavailable for unpaid or waitlisted spots, or skates without a positive fee.`;
+                const creditButton = document.querySelector('#removePlayerModal button[onclick="confirmRemovePlayer(true)"]');
+                creditButton.hidden = !canOfferCredit;
+                creditButton.querySelector('.removal-choice-title').textContent = `Remove + issue ${creditLabel} credit`;
+                creditButton.querySelector('.removal-choice-description').textContent = `${creditLabel} will be added to ${registration.player_name}’s available credit.`;
                 document.getElementById('removePlayerModal').classList.add('active');
             } catch (error) {
                 console.error('Error preparing player removal:', error);
