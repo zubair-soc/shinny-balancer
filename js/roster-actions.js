@@ -67,14 +67,14 @@
                 .ilike('player_name', playerName)
                 .eq('is_waitlist', false)
                 .order('created_at', { ascending: false })
-                .limit(6);
+                .limit(4);
             if (error) throw error;
-            if (!data || data.length < 5) return false;
+            if (!data || data.length < 3) return false;
 
-            // Avoid guessing: auto-mark only with five goalie appearances
-            // among at least five of the player's six most recent skates.
+            // Auto-mark only when at least three of the player's four most
+            // recent non-waitlist skates were played as goalie.
             const goalieCount = data.filter(registration => registration.is_goalie).length;
-            return goalieCount >= 5;
+            return goalieCount >= 3;
         }
 
         async function addToWaitlist() {
