@@ -123,17 +123,22 @@
 
             try {
                 const selectedSkateIds = Array.from(selectedSkatesForQuickAdd);
+                const eligibleSkateIds = [];
+                for (const skateId of selectedSkateIds) {
+                    if (!(await checkDuplicate(skateId, playerName))) eligibleSkateIds.push(skateId);
+                }
+                if (eligibleSkateIds.length === 0) {
+                    showToast(`${playerName} is already on the selected skate${selectedSkateIds.length === 1 ? '' : 's'}.`);
+                    return;
+                }
+
+                // Create or reuse the player once, then link every selected
+                // roster registration to the same database record.
+                const playerRecord = await getOrCreatePlayerRecord(playerName);
                 let successCount = 0;
 
-                for (const skateId of selectedSkateIds) {
+                for (const skateId of eligibleSkateIds) {
                     try {
-                        // Duplicate check
-                        const isDup = await checkDuplicate(skateId, playerName);
-                        if (isDup) {
-                            console.log(`${playerName} already on skate ${skateId}, skipping`);
-                            continue;
-                        }
-
                         // Get current roster for position
                         const { data: roster } = await supabaseClient
                             .from('skate_registrations')
@@ -149,6 +154,7 @@
                             .from('skate_registrations')
                             .insert({
                                 skate_id: skateId,
+                                player_id: playerRecord.player_id,
                                 player_name: playerName,
                                 position: nextPosition,
                                 is_waitlist: false,
@@ -157,6 +163,7 @@
                             });
 
                         if (!error) successCount++;
+                        else console.error(`Error adding to skate ${skateId}:`, error);
                     } catch (error) {
                         console.error(`Error adding to skate ${skateId}:`, error);
                     }
@@ -197,6 +204,7 @@
 
             } catch (error) {
                 console.error('Error in quickAddPlayer:', error);
+                alert(`Could not add ${playerName}: ${error?.message || 'Unexpected database error'}`);
             }
         }
 

@@ -329,6 +329,7 @@
             console.log('autoLoadFromSkates called');
             await playerDatabaseReady;
             const rosterData = localStorage.getItem('importedRoster');
+            const rosterDetailsData = localStorage.getItem('importedRosterDetails');
             const skateDetails = localStorage.getItem('importedSkateDetails');
             
             console.log('rosterData:', rosterData);
@@ -384,6 +385,26 @@
             // Reconcile saved assignments with the current roster. Existing
             // players stay on their teams; only roster changes are applied.
             matchPlayers({ silent: true });
+            if (rosterDetailsData) {
+                try {
+                    const rosterDetails = JSON.parse(rosterDetailsData);
+                    const normalizeName = name => String(name || '').replace(/\s*\([FD/]+\)\s*🏒?/gi, '').trim().toLocaleLowerCase();
+                    const detailsByName = new Map(rosterDetails.map(player => [
+                        normalizeName(player.name), player
+                    ]));
+                    matchedPlayers = matchedPlayers.map(player => {
+                        const rosterPlayer = detailsByName.get(normalizeName(player.name));
+                        return rosterPlayer ? {
+                            ...player,
+                            isGoalie: Boolean(rosterPlayer.isGoalie),
+                            friendGroup: rosterPlayer.friendGroup || player.friendGroup || null
+                        } : player;
+                    });
+                } catch (error) {
+                    console.error('Could not read structured roster details:', error);
+                }
+                localStorage.removeItem('importedRosterDetails');
+            }
             if (currentBalancerSkateId) {
                 const loaded = await loadSavedTeams(currentBalancerSkateId);
                 if (loaded) {

@@ -388,6 +388,11 @@
 
             // Store in localStorage to pass to balancer
             localStorage.setItem('importedRoster', playerList);
+            localStorage.setItem('importedRosterDetails', JSON.stringify(sortedData.map(player => ({
+                name: player.player_name,
+                isGoalie: Boolean(player.is_goalie),
+                friendGroup: player.friend_group || null
+            }))));
             
             // Get skate details
             const skate = allSkates.find(s => s.id === currentSkateId);

@@ -16,41 +16,8 @@
             try {
                 // Reuse an existing player record where possible so goalie
                 // history and future credits stay attached to the right person.
-                let { data: playerRecord, error: playerLookupError } = await supabaseClient
-                    .from('skate_manager_players')
-                    .select('id, name')
-                    .ilike('name', playerName)
-                    .order('id', { ascending: true })
-                    .limit(1)
-                    .maybeSingle();
-                if (playerLookupError) {
-                    // Admin accounts can safely use the base table as a fallback
-                    // if the sanitized manager view has not been granted yet.
-                    const { data: authData } = await supabaseClient.auth.getUser();
-                    const appMetadata = authData?.user?.app_metadata || {};
-                    const isAdmin = appMetadata.role === 'admin' || appMetadata.roles?.includes?.('admin');
-                    if (!isAdmin) throw playerLookupError;
-
-                    const fallback = await supabaseClient
-                        .from('players')
-                        .select('id, name')
-                        .ilike('name', playerName)
-                        .order('id', { ascending: true })
-                        .limit(1)
-                        .maybeSingle();
-                    if (fallback.error) throw fallback.error;
-                    playerRecord = fallback.data;
-                }
-                if (!playerRecord) {
-                    const { data, error } = await supabaseClient
-                        .from('players')
-                        .insert({ name: playerName })
-                        .select('id, name')
-                        .single();
-                    if (error) throw error;
-                    playerRecord = data;
-                    allPlayers.push({ name: playerRecord.name, rating: null, id: playerRecord.id });
-                }
+                const playerRecord = await getOrCreatePlayerRecord(playerName);
+                if (!playerRecord) throw new Error('Supabase did not return the player record.');
 
                 const usuallyGoalie = await isUsuallyGoalie(playerName);
 
@@ -68,7 +35,7 @@
                     .from('skate_registrations')
                     .insert([{
                         skate_id: currentSkateId,
-                        player_id: playerRecord.id,
+                        player_id: playerRecord.player_id,
                         player_name: playerName,
                         is_goalie: usuallyGoalie,
                         is_paid: true,
@@ -77,6 +44,10 @@
                     }]);
 
                 if (error) throw error;
+
+                if (!allPlayers.some(player => player.name?.toLowerCase() === playerName.toLowerCase())) {
+                    allPlayers.push({ name: playerRecord.player_name, rating: null, id: playerRecord.player_id });
+                }
 
                 document.getElementById('newPlayerName').value = '';
                 document.getElementById('newPlayerSuggestions').style.display = 'none';

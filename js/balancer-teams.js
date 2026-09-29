@@ -312,6 +312,10 @@
             html += '<div class="player-info">';
             html += `<span class="player-number">${index + 1}.</span>`;
             html += `<span class="player-name">${escapeHTML(player.name)}</span>`;
+
+            if (player.isGoalie) {
+                html += '<span class="player-goalie-badge" title="Goalie">🥅 Goalie</span>';
+            }
             
             if (player.friendGroup) {
                 html += `<span class="player-group-badge" style="background-color: ${FRIEND_GROUP_COLORS[player.friendGroup]}">${escapeHTML(player.friendGroup)}</span>`;
