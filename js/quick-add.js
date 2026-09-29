@@ -135,6 +135,7 @@
                 // Create or reuse the player once, then link every selected
                 // roster registration to the same database record.
                 const playerRecord = await getOrCreatePlayerRecord(playerName);
+                const usuallyGoalie = await isUsuallyGoalie(playerName);
                 let successCount = 0;
 
                 for (const skateId of eligibleSkateIds) {
@@ -158,7 +159,7 @@
                                 player_name: playerName,
                                 position: nextPosition,
                                 is_waitlist: false,
-                                is_goalie: false,
+                                is_goalie: usuallyGoalie,
                                 is_paid: true
                             });
 
