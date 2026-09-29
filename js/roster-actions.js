@@ -205,21 +205,14 @@
             try {
                 // Resolve the incoming player first so the roster's player_id stays
                 // aligned with the replacement. Payment belongs to the sold spot.
-                let { data: newPlayer, error: playerLookupError } = await supabaseClient
-                    .from('players').select('id').ilike('name', newName).maybeSingle();
-                if (playerLookupError) throw playerLookupError;
-                if (!newPlayer) {
-                    const { data, error } = await supabaseClient
-                        .from('players').insert({ name: newName }).select('id').single();
-                    if (error) throw error;
-                    newPlayer = data;
-                }
+                const playerRecord = await getOrCreatePlayerRecord(newName);
+                if (!playerRecord?.player_id) throw new Error('Supabase did not return the player record.');
 
                 // Replacing means the spot was sold; preserve its paid status and
                 // do not issue credit to the outgoing player.
                 const { error } = await supabaseClient
                     .from('skate_registrations')
-                    .update({ player_name: newName, player_id: newPlayer.id })
+                    .update({ player_name: newName, player_id: playerRecord.player_id })
                     .eq('id', replacingRegistrationId);
                 if (error) throw error;
 
@@ -234,13 +227,13 @@
                     }).eq('id', savedTeams.id);
                 }
                 if (!allPlayers.some(player => player.name.toLowerCase() === newName.toLowerCase())) {
-                    allPlayers.push({ name: newName, rating: null });
+                    allPlayers.push({ name: playerRecord.player_name, rating: null, id: playerRecord.player_id });
                 }
                 closeReplacePlayerModal();
                 await loadRoster(currentSkateId, skate?.capacity || 24);
             } catch (err) {
                 console.error('Replace failed:', err);
-                alert('Failed to replace player');
+                alert(`Failed to replace player: ${err.message || 'Please try again.'}`);
             }
         }
 
