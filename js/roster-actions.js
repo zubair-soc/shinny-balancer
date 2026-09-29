@@ -29,27 +29,22 @@
                     const { data: authData } = await supabaseClient.auth.getUser();
                     const appMetadata = authData?.user?.app_metadata || {};
                     const isAdmin = appMetadata.role === 'admin' || appMetadata.roles?.includes?.('admin');
-                    if (!isAdmin) throw playerLookupError;
-
-                    const fallback = await supabaseClient
-                        .from('players')
-                        .select('id, name')
-                        .ilike('name', playerName)
-                        .order('id', { ascending: true })
-                        .limit(1)
-                        .maybeSingle();
-                    if (fallback.error) throw fallback.error;
-                    playerRecord = fallback.data;
-                }
-                if (!playerRecord) {
-                    const { data, error } = await supabaseClient
-                        .from('players')
-                        .insert({ name: playerName })
-                        .select('id, name')
-                        .single();
-                    if (error) throw error;
-                    playerRecord = data;
-                    allPlayers.push({ name: playerRecord.name, rating: null, id: playerRecord.id });
+                    if (isAdmin) {
+                        const fallback = await supabaseClient
+                            .from('players')
+                            .select('id, name')
+                            .ilike('name', playerName)
+                            .order('id', { ascending: true })
+                            .limit(1)
+                            .maybeSingle();
+                        if (fallback.error) throw fallback.error;
+                        playerRecord = fallback.data;
+                    } else {
+                        // Like Quick Add, a roster entry can exist without a
+                        // players-table record. Do not block roster management
+                        // when the limited lookup view is unavailable.
+                        console.warn('Could not link the new roster entry to a player record:', playerLookupError);
+                    }
                 }
 
                 const usuallyGoalie = await isUsuallyGoalie(playerName);
@@ -68,7 +63,7 @@
                     .from('skate_registrations')
                     .insert([{
                         skate_id: currentSkateId,
-                        player_id: playerRecord.id,
+                        player_id: playerRecord?.id || null,
                         player_name: playerName,
                         is_goalie: usuallyGoalie,
                         is_paid: true,
@@ -77,6 +72,10 @@
                     }]);
 
                 if (error) throw error;
+
+                if (!allPlayers.some(player => player.name?.toLowerCase() === playerName.toLowerCase())) {
+                    allPlayers.push({ name: playerName, rating: null, id: playerRecord?.id || null });
+                }
 
                 document.getElementById('newPlayerName').value = '';
                 document.getElementById('newPlayerSuggestions').style.display = 'none';
