@@ -43,7 +43,7 @@
         <div class="modal-content manager-credit-modal">
             <div class="modal-header"><span>Apply player credit</span><button class="close-modal" type="button" onclick="closeManagerCreditModal()" aria-label="Close">×</button></div>
             <p id="managerCreditPlayerSummary" class="manager-credit-summary"></p>
-            <div class="form-group"><label for="managerCreditSkateSelect">Choose an upcoming skate</label><select id="managerCreditSkateSelect"></select></div>
+            <div class="form-group"><label for="managerCreditSkateSearch">Choose an upcoming skate</label><input id="managerCreditSkateSearch" class="manager-skate-search" type="search" placeholder="Search skates or rinks…"><input id="managerCreditSkateSelect" type="hidden"><div id="managerCreditSkateOptions" class="manager-skate-options" role="group" aria-label="Upcoming skates"></div></div>
             <p id="managerCreditApplyStatus" class="manager-credit-status" role="status"></p>
             <div class="modal-buttons"><button class="button button-secondary" type="button" onclick="closeManagerCreditModal()">Cancel</button><button id="managerCreditApplyButton" class="button" type="button" onclick="applyManagerCredit()">Apply credit</button></div>
         </div>

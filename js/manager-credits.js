@@ -7,6 +7,14 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('creditPlayerSearch').addEventListener('input', renderBalances);
+    document.getElementById('managerCreditSkateSearch').addEventListener('input', renderSkateOptions);
+    document.getElementById('managerCreditSkateOptions').addEventListener('change', event => {
+      document.getElementById('managerCreditSkateSelect').value = event.target.value;
+      document.getElementById('managerCreditApplyButton').disabled = false;
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && selectedPlayerId) closeManagerCreditModal();
+    });
     loadManagerCredits();
   });
 
@@ -53,16 +61,26 @@
     }).join('');
   }
 
+  function renderSkateOptions() {
+    const term = document.getElementById('managerCreditSkateSearch').value.trim().toLowerCase();
+    const selected = document.getElementById('managerCreditSkateSelect').value;
+    const shown = skates.filter(skate => `${skate.title} ${skate.location} ${skate.date}`.toLowerCase().includes(term));
+    document.getElementById('managerCreditSkateOptions').innerHTML = shown.map(skate => {
+      const date = new Date(skate.date + 'T00:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+      return `<label class="manager-skate-option"><input type="radio" name="creditSkate" value="${escapeHTML(skate.id)}" ${String(skate.id) === selected ? 'checked' : ''}><span><strong>${escapeHTML(skate.title)}</strong><small>${date} · ${escapeHTML(skate.location || 'Location TBD')}</small></span></label>`;
+    }).join('') || '<p class="manager-skate-empty">No upcoming skates match.</p>';
+  }
+
   window.openManagerCreditModal = function (playerId) {
     selectedPlayerId = Number(playerId);
     const player = playersById.get(selectedPlayerId);
     const balance = balances.find(row => row.playerId === selectedPlayerId)?.amount || 0;
     document.getElementById('managerCreditPlayerSummary').textContent = `${player.name} has $${balance.toFixed(2)} in available credit.`;
     const select = document.getElementById('managerCreditSkateSelect');
-    select.innerHTML = '<option value="">Select a skate</option>' + skates.map(skate => {
-      const date = new Date(skate.date + 'T00:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
-      return `<option value="${skate.id}">${escapeHTML(skate.title)} · ${date} · ${escapeHTML(skate.location)}</option>`;
-    }).join('');
+    select.value = '';
+    document.getElementById('managerCreditSkateSearch').value = '';
+    document.getElementById('managerCreditApplyButton').disabled = true;
+    renderSkateOptions();
     const status = document.getElementById('managerCreditApplyStatus');
     status.textContent = '';
     status.className = 'manager-credit-status';
