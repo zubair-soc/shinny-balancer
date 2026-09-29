@@ -37,16 +37,19 @@
     const list = document.getElementById('managerCreditList');
     const term = document.getElementById('creditPlayerSearch').value.trim().toLowerCase();
     const shown = balances.filter(row => playersById.get(row.playerId).name.toLowerCase().includes(term));
+    const creditCount = balances.filter(row => row.amount > 0).length;
+    document.getElementById('managerCreditCount').textContent = `${creditCount} with credit`;
     if (!shown.length) {
       list.innerHTML = '<div class="manager-credit-empty">No players with available credit match that search.</div>';
       return;
     }
     list.innerHTML = shown.map(row => {
       const player = playersById.get(row.playerId);
+      const initials = player.name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase();
       const action = row.amount > 0
-        ? `<button class="button" type="button" onclick="openManagerCreditModal(${row.playerId})">Apply to skate</button>`
+        ? `<button class="button" type="button" onclick="openManagerCreditModal(${row.playerId})">Use credit</button>`
         : '<span class="manager-credit-none">No available credit</span>';
-      return `<article class="manager-credit-row"><div><div class="manager-credit-player">${escapeHTML(player.name)}</div><div class="manager-credit-amount">${row.amount > 0 ? `$${row.amount.toFixed(2)} available` : 'No available credit'}</div></div>${action}</article>`;
+      return `<article class="manager-credit-row"><div class="manager-credit-person"><span class="manager-credit-avatar" aria-hidden="true">${escapeHTML(initials)}</span><div class="manager-credit-person-copy"><div class="manager-credit-player">${escapeHTML(player.name)}</div><div class="manager-credit-amount ${row.amount > 0 ? 'has-credit' : ''}">${row.amount > 0 ? `$${row.amount.toFixed(2)} available` : 'No available credit'}</div></div></div>${action}</article>`;
     }).join('');
   }
 
