@@ -20,8 +20,27 @@
                     .from('skate_manager_players')
                     .select('id, name')
                     .ilike('name', playerName)
+                    .order('id', { ascending: true })
+                    .limit(1)
                     .maybeSingle();
-                if (playerLookupError) throw playerLookupError;
+                if (playerLookupError) {
+                    // Admin accounts can safely use the base table as a fallback
+                    // if the sanitized manager view has not been granted yet.
+                    const { data: authData } = await supabaseClient.auth.getUser();
+                    const appMetadata = authData?.user?.app_metadata || {};
+                    const isAdmin = appMetadata.role === 'admin' || appMetadata.roles?.includes?.('admin');
+                    if (!isAdmin) throw playerLookupError;
+
+                    const fallback = await supabaseClient
+                        .from('players')
+                        .select('id, name')
+                        .ilike('name', playerName)
+                        .order('id', { ascending: true })
+                        .limit(1)
+                        .maybeSingle();
+                    if (fallback.error) throw fallback.error;
+                    playerRecord = fallback.data;
+                }
                 if (!playerRecord) {
                     const { data, error } = await supabaseClient
                         .from('players')
@@ -66,7 +85,7 @@
                 loadSkates(); // Refresh card counts in background
             } catch (error) {
                 console.error('Error adding player:', error);
-                alert('Failed to add player');
+                alert(`Could not add ${playerName}: ${error?.message || 'Unexpected database error'}`);
             }
         }
 
