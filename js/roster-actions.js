@@ -293,17 +293,13 @@
                 if (error) throw error;
 
                 const skate = allSkates.find(item => item.id === currentSkateId);
-                const canOfferCredit = window.isSkateAdmin?.() && registration.is_paid && !registration.is_waitlist;
-                if (canOfferCredit) {
-                    pendingRosterRemoval = { registration, skate };
-                    document.getElementById('removePlayerPrompt').textContent =
-                        `Remove ${registration.player_name} from ${skate?.title || 'this skate'}? Since they paid, choose whether to issue them a skate credit.`;
-                    document.getElementById('removePlayerModal').classList.add('active');
-                    return;
-                }
-
-                if (!confirm(`Remove ${registration.player_name} from this skate?`)) return;
-                await finishRosterRemoval(registration, skate, false);
+                const canOfferCredit = registration.is_paid && !registration.is_waitlist;
+                pendingRosterRemoval = { registration, skate };
+                document.getElementById('removePlayerPrompt').textContent = canOfferCredit
+                    ? `Remove ${registration.player_name} from ${skate?.title || 'this skate'}? Choose whether to issue their skate fee as credit.`
+                    : `Remove ${registration.player_name} from this skate? This unpaid or waitlisted spot is not eligible for credit.`;
+                document.querySelector('#removePlayerModal button[onclick="confirmRemovePlayer(true)"]').hidden = !canOfferCredit;
+                document.getElementById('removePlayerModal').classList.add('active');
             } catch (error) {
                 console.error('Error preparing player removal:', error);
                 alert(`Could not remove player: ${error.message}`);
@@ -323,42 +319,12 @@
         }
 
         async function finishRosterRemoval(registration, skate, issueCredit) {
-            let createdCreditId = null;
             try {
-                if (issueCredit) {
-                    let playerId = registration.player_id;
-                    if (!playerId) {
-                        const { data: player, error } = await supabaseClient
-                            .from('players').select('id').ilike('name', registration.player_name).maybeSingle();
-                        if (error) throw error;
-                        playerId = player?.id;
-                    }
-                    if (!playerId) throw new Error(`Could not find ${registration.player_name} in the player database.`);
-
-                    const amount = Number(String(skate?.cost || '$25').replace(/[^0-9.]/g, '')) || 25;
-                    const { data: credit, error } = await supabaseClient
-                        .from('player_credits')
-                        .insert({
-                            player_id: playerId,
-                            amount,
-                            reason: `Removed from ${skate?.title || 'skate'}`,
-                            source_skate_id: currentSkateId,
-                            status: 'active',
-                            created_by: 'Roster removal',
-                            created_at: new Date().toISOString()
-                        })
-                        .select('id')
-                        .single();
-                    if (error) throw error;
-                    createdCreditId = credit.id;
-                }
-
-                const { error: deleteError } = await supabaseClient
-                    .from('skate_registrations').delete().eq('id', registration.id);
-                if (deleteError) {
-                    if (createdCreditId) await supabaseClient.from('player_credits').delete().eq('id', createdCreditId);
-                    throw deleteError;
-                }
+                const { error } = await supabaseClient.rpc('remove_skate_player', {
+                    p_registration_id: registration.id,
+                    p_issue_credit: issueCredit
+                });
+                if (error) throw error;
 
                 if (navigator.vibrate) navigator.vibrate(50);
                 await loadRoster(currentSkateId, skate?.capacity || 24);

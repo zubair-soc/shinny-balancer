@@ -708,43 +708,15 @@
             background: rgba(239, 68, 68, 0.1);
         }
 
-        /* Friend group submenu */
+        /* Keep group choices within the scrollable player menu. */
         .friend-group-submenu {
-            position: absolute;
-            right: 100%;
-            top: 0;
+            position: static;
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 180px;
-            margin-right: 4px;
+            border-radius: 10px;
+            margin-top: 8px;
             display: none;
-            z-index: 10000;
-        }
-
-        @media (max-width: 768px) {
-            .friend-group-submenu {
-                position: fixed;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                margin: 0;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                border: 2px solid var(--primary);
-                min-width: 240px;
-            }
-            
-            .friend-group-submenu::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: -1;
-            }
+            width: 100%;
         }
 
         .friend-group-submenu.active {
