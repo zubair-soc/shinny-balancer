@@ -330,18 +330,24 @@
         </div>
     </div>
 
-    <div id="removePlayerModal" class="modal">
-        <div class="modal-content u-modal-max-500">
+    <div id="removePlayerModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="removePlayerTitle">
+        <div class="modal-content u-modal-max-500 removal-dialog">
             <div class="modal-header">
-                <span>Remove Player</span>
-                <button class="close-modal" onclick="closeRemovePlayerModal()">×</button>
+                <span id="removePlayerTitle">Remove player</span>
+                <button class="close-modal" type="button" onclick="closeRemovePlayerModal()" aria-label="Close">×</button>
             </div>
-            <p id="removePlayerPrompt" style="margin: 0 0 18px;"></p>
-            <div class="modal-buttons" style="flex-wrap: wrap;">
-                <button class="button button-secondary" onclick="closeRemovePlayerModal()">Cancel</button>
-                <button class="button button-secondary" onclick="confirmRemovePlayer(false)">Remove without credit</button>
-                <button class="button" onclick="confirmRemovePlayer(true)">Remove + issue credit</button>
+            <p id="removePlayerPrompt" class="removal-prompt"></p>
+            <div class="removal-choices">
+                <button class="removal-choice removal-primary" type="button" onclick="confirmRemovePlayer(false)">
+                    <span class="removal-choice-title">Remove without credit <span aria-hidden="true">→</span></span>
+                    <span class="removal-choice-description">Remove the player from the skate. No credit issued.</span>
+                </button>
+                <button class="removal-choice removal-credit" type="button" onclick="confirmRemovePlayer(true)">
+                    <span class="removal-choice-title">Remove + issue credit <span aria-hidden="true">→</span></span>
+                    <span class="removal-choice-description">Return the skate fee as player credit.</span>
+                </button>
             </div>
+            <div class="removal-footer"><button class="removal-cancel" type="button" onclick="closeRemovePlayerModal()">Cancel</button></div>
         </div>
     </div>
 

@@ -531,3 +531,22 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
     #rosterModal .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     #rosterModal .modal-buttons .button { min-height: 44px; padding: 9px 7px; font-size: 12px; }
 }
+
+/* Clear removal hierarchy: the usual action first, credit as an alternative. */
+#removePlayerModal .removal-dialog { width: min(500px, 94vw); padding: 28px; }
+#removePlayerModal .modal-header { margin-bottom: 14px; }
+#removePlayerModal .removal-prompt { margin: 0 0 22px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+#removePlayerModal .removal-choices { display: grid; gap: 10px; }
+#removePlayerModal .removal-choice { width: 100%; padding: 16px 18px; border-radius: 13px; text-align: left; cursor: pointer; transition: background .15s, box-shadow .15s; }
+#removePlayerModal .removal-choice-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 750; }
+#removePlayerModal .removal-choice-description { display: block; margin-top: 5px; font-size: 12px; line-height: 1.5; font-weight: 450; }
+#removePlayerModal .removal-primary { color: #fff; border: 1px solid var(--primary-dark); background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: 0 5px 14px rgba(var(--primary-rgb), .2); }
+#removePlayerModal .removal-primary:hover { background: var(--primary-dark); box-shadow: 0 7px 18px rgba(var(--primary-rgb), .3); }
+#removePlayerModal .removal-credit { color: var(--text); border: 1px solid rgba(var(--primary-rgb), .35); background: var(--ui-surface); }
+#removePlayerModal .removal-credit .removal-choice-description { color: var(--text-muted); }
+#removePlayerModal .removal-credit:hover { background: rgba(var(--primary-rgb), .08); border-color: var(--primary); }
+#removePlayerModal .removal-choice[hidden] { display: none; }
+#removePlayerModal .removal-footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+#removePlayerModal .removal-cancel { padding: 9px 16px; color: var(--text); border: 1px solid var(--card-border); border-radius: 10px; background: var(--ui-soft); font-size: 13px; font-weight: 650; cursor: pointer; }
+#removePlayerModal .removal-cancel:hover { background: rgba(var(--primary-rgb), .09); }
+@media (max-width: 600px) { #removePlayerModal .removal-dialog { padding: 22px; } }
