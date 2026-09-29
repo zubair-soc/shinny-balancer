@@ -35,7 +35,7 @@
                 output += `${i + 1}. ${player.name}${player.isGoalie ? ' 🥅' : ''}\n`;
             });
 
-            output += '\nPlease make sure everyone has signed the waiver before playing: https://shinnyofchampions.com/waiver\n';
+            output += '\nPlease make sure everyone has signed the waiver before playing: shinnyofchampions.com/waiver\n';
 
             return output;
         }

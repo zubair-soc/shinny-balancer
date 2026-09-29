@@ -324,7 +324,18 @@
                     p_registration_id: registration.id,
                     p_issue_credit: issueCredit
                 });
-                if (error) throw error;
+                if (error) {
+                    const missingFunction = error.code === 'PGRST202' || error.code === '42883';
+                    if (missingFunction && !issueCredit) {
+                        const { error: deleteError } = await supabaseClient
+                            .from('skate_registrations').delete().eq('id', registration.id);
+                        if (deleteError) throw deleteError;
+                    } else if (missingFunction) {
+                        throw new Error('Credit removal is not enabled yet. The staging database needs the removal-credit migration. The player has not been removed.');
+                    } else {
+                        throw error;
+                    }
+                }
 
                 if (navigator.vibrate) navigator.vibrate(50);
                 await loadRoster(currentSkateId, skate?.capacity || 24);
@@ -615,7 +626,7 @@
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
 
-                message += `\nAll players must sign the waiver before playing: https://shinnyofchampions.com/waiver\n`;
+                message += `\nAll players must sign the waiver before playing: shinnyofchampions.com/waiver\n`;
 
                 let copied = false;
 
