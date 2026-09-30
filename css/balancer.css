@@ -1,0 +1,408 @@
+
+
+        :root {
+            --bg-start: #f8fafc;
+            --bg-end: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.08);
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --count-text: #047857;
+            --count-zero: #1e293b;
+            --primary-rgb: 16, 185, 129;
+        }
+
+        body.dark-mode {
+            --bg-start: #0f172a;
+            --bg-end: #1e293b;
+            --card-bg: #1e293b;
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --count-text: #34d399;
+            --count-zero: #cbd5e1;
+        }
+
+        body.dark-mode .header,
+        body.dark-mode .setup-section {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        body.dark-mode .theme-toggle {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .header-button {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+        }
+
+        .header-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4);
+        }
+
+        .setup-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--card-border);
+        }
+
+        .setup-section h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .teams-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .team {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            border: 2px solid var(--card-border);
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--card-border);
+        }
+
+        .team-title {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .team-stats {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .player-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .player-number {
+            font-weight: 700;
+            color: var(--text-muted);
+            min-width: 24px;
+        }
+
+        .player-group-badge {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 20px;
+        }
+
+        .player-goalie-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 7px;
+            border: 1px solid rgba(14, 116, 144, 0.2);
+            border-radius: 999px;
+            background: rgba(14, 116, 144, 0.1);
+            color: #0e7490;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .player-rating {
+            font-weight: 600;
+            color: var(--primary);
+            margin-right: 8px;
+        }
+
+        .icon-button {
+            background: var(--card-border);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
+        .icon-button:hover {
+            background: var(--card-border);
+        }
+
+        .warning {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            color: #fbbf24;
+            font-size: 13px;
+        }
+
+        .export-section {
+            margin-top: 24px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--card-border);
+        }
+
+        .export-preview {
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.08), rgba(var(--primary-rgb), 0.025));
+            border: 1px solid rgba(var(--primary-rgb), 0.2);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            color: var(--text);
+        }
+
+        body.dark-mode .export-preview {
+            background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.14), rgba(var(--primary-rgb), 0.06));
+            border-color: rgba(var(--primary-rgb), 0.3);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .header {
+                padding: 20px 16px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            /* Nav buttons in header wrap and fill width */
+            .header > div[style*="flex"] {
+                flex-wrap: wrap !important;
+            }
+
+            .header-button {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            /* Setup sections */
+            .setup-section {
+                padding: 16px;
+            }
+
+            /* Form grid stacks to single column */
+            .form-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Reset any span-2 items so they don't overflow */
+            .form-grid .form-group[style*="grid-column"] {
+                grid-column: span 1 !important;
+            }
+
+            /* Teams side by side -> stacked */
+            .teams-container {
+                grid-template-columns: 1fr;
+            }
+
+            .team {
+                padding: 16px;
+            }
+
+            /* Export section */
+            .export-section {
+                padding: 16px;
+            }
+
+            .export-preview {
+                font-size: 12px;
+                padding: 12px;
+            }
+
+            /* Buttons full width on mobile */
+            .export-section .button,
+            .setup-section > .button {
+                width: 100%;
+            }
+
+            .theme-toggle {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                bottom: 16px;
+                left: 16px;
+            }
+        }

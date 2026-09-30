@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Credit Balances — Skate Manager</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Skate Manager">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/manager-components.css">
+    <link rel="stylesheet" href="css/manager-credits.css">
+    <link rel="stylesheet" href="css/ui-overhaul.css">
+</head>
+<body data-manager-page="true">
+    <nav class="app-nav" aria-label="Primary">
+        <a class="app-nav-brand" href="index.html"><span class="app-nav-mark">🏒</span><span><strong>Skate Manager</strong><small>Shinny of Champions</small></span></a>
+        <div class="app-nav-links">
+            <a class="app-nav-link" href="index.html">Skates</a>
+            <a class="app-nav-link" href="balancer.html">Team Balancer</a>
+            <a class="app-nav-link" href="database.html">Players</a>
+            <a class="app-nav-link is-active" data-skate-manager-only hidden href="manager-credits.html" aria-current="page">Credit balances</a>
+            <details class="app-nav-admin" data-admin-only hidden><summary class="app-nav-link">Admin <span aria-hidden="true">⌄</span></summary><div class="app-nav-menu"><a href="credits.html">Credits</a><a href="financials.html">Financials</a><a href="admin-settings.html">Settings</a></div></details>
+        </div>
+    </nav>
+
+    <main class="manager-credits-page">
+        <header class="manager-credits-heading">
+            <span class="manager-credits-eyebrow">SKATE MANAGER TOOLS</span>
+            <h1>Player credits</h1>
+            <p>Check a player’s available credit and use it when adding them to an upcoming skate.</p>
+        </header>
+        <div class="manager-credits-toolbar"><span class="manager-credits-label">Player balances</span><span id="managerCreditCount" class="manager-credits-count"></span></div>
+        <div class="manager-credits-search"><input id="creditPlayerSearch" type="search" placeholder="Search players…" aria-label="Search players with credit"></div>
+        <div id="managerCreditList" class="manager-credit-list"><div class="loading">Loading credit balances…</div></div>
+    </main>
+
+    <div id="applyManagerCreditModal" class="modal">
+        <div class="modal-content manager-credit-modal">
+            <div class="modal-header"><span>Apply player credit</span><button class="close-modal" type="button" onclick="closeManagerCreditModal()" aria-label="Close">×</button></div>
+            <p id="managerCreditPlayerSummary" class="manager-credit-summary"></p>
+            <div class="form-group"><label for="managerCreditSkateSearch">Choose an upcoming skate</label><input id="managerCreditSkateSearch" class="manager-skate-search" type="search" placeholder="Search skates or rinks…"><input id="managerCreditSkateSelect" type="hidden"><div id="managerCreditSkateOptions" class="manager-skate-options" role="group" aria-label="Upcoming skates"></div></div>
+            <p id="managerCreditApplyStatus" class="manager-credit-status" role="status"></p>
+            <div class="modal-buttons"><button class="button button-secondary" type="button" onclick="closeManagerCreditModal()">Cancel</button><button id="managerCreditApplyButton" class="button" type="button" onclick="applyManagerCredit()">Apply credit</button></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/manager-credits.js"></script>
+    <script src="js/auth-gate.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>

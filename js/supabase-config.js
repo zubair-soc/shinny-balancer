@@ -1,0 +1,43 @@
+// Staging project configuration. The publishable key is intended for browser use.
+window.SKATE_MANAGER_CONFIG = Object.freeze({
+  url: 'https://jabumqdjahkprjmntmkz.supabase.co',
+  publishableKey: 'sb_publishable_Zcp8wGkFBcR67tR7GGXh2w_5ozRV1uB'
+});
+
+// Share one browser client across the five pages so auth state and API setup
+// stay consistent throughout the app.
+window.SKATE_MANAGER_CLIENT = window.supabase?.createClient(
+  window.SKATE_MANAGER_CONFIG.url,
+  window.SKATE_MANAGER_CONFIG.publishableKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+
+window.escapeHTML = function (value) {
+  return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[character]);
+};
+
+// JSON-encode values used as arguments inside inline HTML event handlers,
+// then escape the resulting attribute text for the HTML parser.
+window.inlineJSString = function (value) {
+  return window.escapeHTML(JSON.stringify(String(value ?? '')));
+};
+
+// V2 is the active score. Legacy test values used a 100-point scale.
+window.getV2Score = function(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const raw = Number(value);
+  const score = raw > 5 && raw <= 100 ? Math.round(raw / 20 * 10) / 10 : raw;
+  return Number.isFinite(score) && score >= 1 && score <= 5 ? score : null;
+};

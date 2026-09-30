@@ -1,0 +1,293 @@
+/* Match the manager theme without importing unrelated page layout rules. */
+:root {
+  --bg-start: #f8fafc; --bg-end: #f1f5f9;
+  --card-bg: #fff; --card-border: rgba(0,0,0,.08);
+  --primary: #10b981; --primary-dark: #059669; --primary-rgb: 16,185,129;
+  --text: #1e293b; --text-muted: #64748b;
+}
+body.dark-mode, [data-theme="dark"] {
+  --bg-start: #0f172a; --bg-end: #1e293b; --card-bg: #1e293b;
+  --card-border: rgba(255,255,255,.1); --text: #f1f5f9; --text-muted: #94a3b8;
+}
+.manager-credits-page {
+  width: min(880px, calc(100vw - 40px));
+  margin: 34px auto 80px;
+}
+.manager-credits-heading { margin-bottom: 25px; }
+.manager-credits-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.manager-credits-eyebrow::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  content: "";
+}
+.manager-credits-heading h1 {
+  margin: 8px 0 7px;
+  color: var(--text);
+  font-size: clamp(27px, 4vw, 36px);
+  letter-spacing: -.045em;
+  line-height: 1.15;
+}
+.manager-credits-heading p { max-width: 560px; color: var(--text-muted); line-height: 1.6; }
+.manager-credits-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.manager-credits-label { color: var(--text); font-size: 15px; font-weight: 750; }
+.manager-credits-count {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid rgba(var(--primary-rgb), .17);
+  border-radius: 999px;
+  color: var(--primary-dark);
+  background: rgba(var(--primary-rgb), .075);
+  font-size: 12px;
+  font-weight: 700;
+}
+.manager-credits-search { position: relative; margin-bottom: 15px; }
+.manager-credits-search::before {
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  color: var(--text-muted);
+  content: "⌕";
+  font-size: 22px;
+  line-height: 1;
+  transform: translateY(-55%);
+  pointer-events: none;
+}
+.manager-credits-search input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px 10px 43px;
+  border: 1px solid var(--card-border);
+  border-radius: 13px;
+  background: var(--ui-surface, var(--card-bg));
+  color: var(--text);
+  font: inherit;
+  box-shadow: 0 3px 12px rgba(20, 50, 39, .035);
+}
+.manager-credits-search input::placeholder { color: var(--text-muted); }
+.manager-credit-list {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--card-border);
+  border-radius: 19px;
+  background: color-mix(in srgb, var(--ui-surface, var(--card-bg)) 72%, var(--ui-page, #f3f7f5));
+  box-shadow: var(--ui-shadow);
+}
+.manager-credit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+  padding: 12px 15px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: var(--ui-surface, var(--card-bg));
+  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+.manager-credit-row:hover {
+  border-color: rgba(var(--primary-rgb), .15);
+  box-shadow: 0 5px 16px rgba(20, 50, 39, .055);
+  transform: translateY(-1px);
+}
+.manager-credit-person { display: flex; min-width: 0; align-items: center; gap: 12px; }
+.manager-credit-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(var(--primary-rgb), .14);
+  border-radius: 13px;
+  color: var(--primary-dark);
+  background: rgba(var(--primary-rgb), .09);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.manager-credit-person-copy { min-width: 0; }
+.manager-credit-player { overflow: hidden; color: var(--text); font-size: 14px; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+.manager-credit-amount { margin-top: 3px; color: var(--text-muted); font-size: 12px; font-weight: 550; }
+.manager-credit-amount.has-credit { color: var(--primary-dark); font-size: 13px; font-weight: 750; }
+.manager-credit-row .button {
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 1px solid rgba(var(--primary-rgb), .2);
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark, #059669));
+  box-shadow: 0 4px 11px rgba(var(--primary-rgb), .18);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.manager-credit-row .button:hover { box-shadow: 0 7px 16px rgba(var(--primary-rgb), .23); transform: translateY(-1px); }
+.manager-credit-none { color: var(--text-muted); font-size: 12px; }
+.manager-credit-empty {
+  padding: 34px 20px;
+  border: 1px dashed var(--card-border);
+  border-radius: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  background: var(--ui-surface, var(--card-bg));
+}
+
+/* Focused credit application dialog. */
+#applyManagerCreditModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(9, 20, 16, .66);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+#applyManagerCreditModal.active { display: flex; }
+#applyManagerCreditModal .manager-credit-modal {
+  width: min(100%, 480px);
+  max-height: min(88vh, 680px);
+  overflow-y: auto;
+  margin: auto;
+  padding: 26px;
+  border: 1px solid var(--card-border);
+  border-radius: 22px;
+  color: var(--text);
+  background: var(--ui-surface, var(--card-bg));
+  box-shadow: 0 32px 90px rgba(0, 0, 0, .32);
+}
+.manager-credit-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 17px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 780;
+  letter-spacing: -.03em;
+}
+.manager-credit-modal .close-modal {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  background: var(--ui-soft, #f7faf8);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.manager-credit-modal .close-modal:hover { color: var(--text); background: rgba(var(--primary-rgb), .1); }
+.manager-credit-summary {
+  margin: 0 0 21px;
+  padding: 15px 16px;
+  border: 1px solid rgba(var(--primary-rgb), .15);
+  border-radius: 14px;
+  color: var(--text);
+  background: rgba(var(--primary-rgb), .075);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.manager-credit-modal .form-group { margin-bottom: 0; }
+.manager-credit-modal .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.manager-credit-modal .form-group select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 40px 10px 13px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--ui-surface, var(--card-bg));
+  font: inherit;
+}
+.manager-credit-status { min-height: 20px; margin: 12px 0 0; color: var(--text-muted); font-size: 13px; line-height: 1.45; }
+.manager-credit-status.is-error { color: #dc2626; }
+.manager-credit-status.is-success { color: var(--primary-dark); font-weight: 650; }
+.manager-credit-modal .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 21px; }
+.manager-credit-modal .modal-buttons .button {
+  min-height: 44px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.manager-credit-modal .modal-buttons .button-secondary {
+  border-color: var(--card-border);
+  color: var(--text);
+  background: var(--ui-soft, #f7faf8);
+}
+.manager-credit-modal .modal-buttons #managerCreditApplyButton {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark, #059669));
+  box-shadow: 0 5px 14px rgba(var(--primary-rgb), .2);
+}
+.manager-credit-modal .modal-buttons button:disabled { opacity: .6; cursor: wait; }
+
+@media (max-width: 600px) {
+  .manager-credits-page { width: calc(100vw - 28px); margin-top: 23px; }
+  .manager-credits-heading { margin-bottom: 21px; }
+  .manager-credits-toolbar { margin-bottom: 10px; }
+  .manager-credit-list { gap: 6px; padding: 6px; border-radius: 16px; }
+  .manager-credit-row { min-height: 66px; gap: 10px; padding: 10px; }
+  .manager-credit-person { gap: 9px; }
+  .manager-credit-avatar { width: 36px; height: 36px; flex-basis: 36px; border-radius: 11px; }
+  .manager-credit-row .button { min-height: 38px; padding: 7px 10px; font-size: 11px; }
+  #applyManagerCreditModal { align-items: flex-end; padding: 12px; }
+  #applyManagerCreditModal .manager-credit-modal {
+    width: 100%;
+    max-height: min(86vh, 620px);
+    padding: 23px 19px max(19px, env(safe-area-inset-bottom));
+    border-radius: 22px;
+  }
+  .manager-credit-modal .modal-buttons { display: grid; grid-template-columns: 1fr 1.25fr; }
+  .manager-credit-modal .modal-buttons .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .manager-credit-row, .manager-credit-row .button { transition: none; }
+}
+
+.manager-skate-search { width: 100%; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; background: var(--ui-soft); color: var(--text); }
+.manager-skate-options { display: grid; gap: 6px; max-height: 240px; overflow-y: auto; margin-top: 10px; padding: 2px; }
+.manager-skate-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--card-border); border-radius: 10px; background: var(--ui-soft); cursor: pointer; min-width: 0; }
+.manager-skate-option:has(input:checked) { border-color: var(--primary); background: rgba(var(--primary-rgb),.1); }
+.manager-skate-option input { accent-color: var(--primary-dark); flex: 0 0 auto; }
+.manager-skate-option span { min-width: 0; overflow-wrap: anywhere; }
+.manager-skate-option strong { display: block; font-size: 13px; color: var(--text); }
+.manager-skate-option small { display: block; font-size: 12px; color: var(--text-muted); }
+.manager-skate-option:focus-within { outline: 2px solid var(--primary); outline-offset: 1px; }
+.manager-skate-empty { padding: 14px; color: var(--text-muted); font-size: 13px; }

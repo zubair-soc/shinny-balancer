@@ -1,0 +1,571 @@
+/* Skate Manager visual system: familiar SOC green, clearer hierarchy, calmer surfaces. */
+:root {
+    --ui-page: #f3f7f5;
+    --ui-surface: #ffffff;
+    --ui-soft: #f7faf8;
+    --ui-shadow: 0 10px 30px rgba(20, 50, 39, 0.07);
+    --ui-shadow-raised: 0 16px 38px rgba(20, 50, 39, 0.12);
+    --ui-radius: 18px;
+}
+
+body.dark-mode,
+[data-theme="dark"] {
+    --ui-page: #101a18;
+    --ui-surface: #1b2925;
+    --ui-soft: #22332e;
+    --ui-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    --ui-shadow-raised: 0 16px 38px rgba(0, 0, 0, 0.28);
+}
+
+html { scroll-behavior: smooth; }
+body {
+    background-color: var(--ui-page) !important;
+    background-image: radial-gradient(ellipse at 12% 0%, rgba(var(--primary-rgb), 0.075), transparent 34%),
+        linear-gradient(180deg, var(--ui-page), var(--bg-end, var(--ui-page)) 55%, var(--ui-page)) !important;
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
+}
+
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 3px solid rgba(var(--primary-rgb), 0.32);
+    outline-offset: 2px;
+}
+
+.app-nav {
+    width: min(1400px, calc(100vw - 40px));
+    margin-top: 16px;
+    margin-bottom: 24px;
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--ui-surface) 94%, transparent);
+    box-shadow: var(--ui-shadow);
+    backdrop-filter: blur(14px);
+}
+.app-nav #sm-sign-out {
+    position: static;
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid rgba(var(--primary-rgb), .22);
+    border-radius: 11px;
+    color: var(--text-muted);
+    background: rgba(var(--primary-rgb), .07);
+    box-shadow: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.app-nav #sm-sign-out:hover { color: var(--primary); background: rgba(var(--primary-rgb), .13); }
+
+.container, .main { max-width: 1400px; }
+.container { margin-bottom: 36px; }
+
+.header {
+    border: 1px solid var(--card-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow);
+}
+
+.header h1, .header-title {
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+}
+.header h1 { font-size: clamp(23px, 2.4vw, 30px); }
+.header p { line-height: 1.65; }
+
+.header-buttons, .benchapp-sync-actions { align-items: center; }
+.back-button, .add-button, .button, .header-button, .back-btn, .theme-btn {
+    min-height: 42px;
+    border-radius: 12px;
+    font-weight: 650;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+.back-button, .add-button, .button, .header-button, .back-btn { box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04); }
+.add-button, .button:not(.button-secondary), .header-button {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark, #059669));
+    box-shadow: 0 5px 14px rgba(var(--primary-rgb), 0.2);
+}
+.back-button:hover, .add-button:hover, .button:hover, .header-button:hover, .back-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.16);
+}
+.button-danger, .btn-delete { box-shadow: none !important; }
+
+.skate-card, .setup-section, .team, .export-section, .summary-card, .credit-card,
+.table-container, .table-card, .benchapp-sync-toolbar {
+    border: 1px solid var(--card-border);
+    border-radius: var(--ui-radius);
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow);
+}
+.skate-card { padding: 22px; }
+.skate-card:hover { box-shadow: var(--ui-shadow-raised); transform: translateY(-3px); }
+.skate-title { letter-spacing: -0.02em; }
+.benchapp-sync-toolbar { padding: 16px 20px; margin-bottom: 24px; }
+
+.setup-section, .export-section { padding: clamp(18px, 2.5vw, 28px); }
+.setup-section h2 { font-size: 19px; letter-spacing: -0.02em; }
+.team { padding: 22px; }
+.team-header { border-bottom-color: var(--card-border); }
+.player-item, .roster-item { border-radius: 12px; }
+.team-interaction-hint { margin: 18px 2px -10px; color: var(--text-muted); font-size: 13px; }
+.player-item.has-open-menu { position: relative; z-index: 20; overflow: visible; }
+.player-item-actions { position: relative; display: flex; align-items: center; gap: 5px; }
+.player-menu-trigger {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border: 1px solid var(--card-border);
+    border-radius: 10px; background: var(--ui-surface); color: var(--text-muted);
+    font-size: 21px; line-height: 1; cursor: pointer; transition: .15s ease;
+}
+.player-menu-trigger:hover, .player-menu-trigger[aria-expanded="true"] {
+    background: rgba(var(--primary-rgb), .1); border-color: rgba(var(--primary-rgb), .35); color: var(--primary-dark, var(--primary));
+}
+.player-actions-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+    display: flex; flex-direction: column; gap: 3px; min-width: 190px; padding: 6px;
+    border: 1px solid var(--card-border); border-radius: 12px;
+    background: var(--ui-surface); box-shadow: 0 12px 28px rgba(15, 23, 42, .18);
+}
+.player-actions-menu button {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px;
+    padding: 8px 10px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--text); text-align: left; font: inherit; cursor: pointer;
+}
+.player-actions-menu button:hover { background: rgba(var(--primary-rgb), .1); }
+
+.toolbar, .actions {
+    padding: 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--ui-surface);
+    box-shadow: var(--ui-shadow);
+}
+.search-box, input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    border-radius: 11px;
+}
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.table-container { overflow: hidden; }
+table { border-collapse: separate; border-spacing: 0; }
+thead { background: var(--ui-soft); }
+thead th { padding-top: 13px; padding-bottom: 13px; }
+tbody tr { transition: background 120ms ease; }
+tbody tr:hover { background: rgba(var(--primary-rgb), 0.045); }
+td, th { border-color: var(--card-border); }
+
+.summary-card { padding: 21px; }
+.summary-label, .summary-card .label { letter-spacing: 0.07em; }
+.summary-value, .summary-card .value { letter-spacing: -0.035em; }
+.credit-card { padding: 20px; }
+.filter-btn, .status-badge { border-radius: 999px; }
+
+.modal {
+    background: rgba(10, 22, 18, 0.58);
+    backdrop-filter: blur(5px);
+}
+.modal-content {
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+}
+.modal-header { letter-spacing: -0.02em; }
+.close-modal { border-radius: 10px; }
+
+.theme-toggle, .theme-btn {
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    box-shadow: var(--ui-shadow);
+}
+.theme-toggle { backdrop-filter: blur(12px); }
+.theme-toggle:hover { transform: translateY(-2px); }
+
+/* Financials has a full-width legacy toolbar. Keep its controls together under the app nav. */
+body:has(.app-nav) > .header {
+    position: static;
+    width: min(1400px, calc(100vw - 40px));
+    margin: 0 auto 22px;
+    padding: 16px 20px;
+}
+body:has(.app-nav) > .header .header-left { min-width: 160px; }
+body:has(.app-nav) > .header .header-title { font-size: 24px; }
+body:has(.app-nav) > .main { padding-top: 8px; }
+
+@media (max-width: 760px) {
+    body { padding: 12px; }
+    .app-nav {
+        width: calc(100vw - 24px);
+        margin-top: 12px;
+        margin-bottom: 16px;
+    }
+    .app-nav #sm-sign-out { align-self: flex-end; min-height: 34px; margin-top: -3px; padding: 6px 10px; }
+    .container { width: 100%; }
+    .header {
+        padding: 18px 16px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .header h1 { font-size: 24px; }
+    .header-buttons { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .header-buttons > * { min-width: 0; padding: 10px 8px; text-align: center; }
+    .benchapp-sync-toolbar { padding: 14px; align-items: flex-start; flex-direction: column; gap: 12px; }
+    .benchapp-sync-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .skates-grid { grid-template-columns: 1fr; gap: 12px; }
+    .skate-card { padding: 17px; }
+    .toolbar, .actions { padding: 11px; gap: 9px; }
+    .toolbar .search-box, .search-box { min-width: 100%; width: 100%; }
+    .toolbar .button, .actions > .button { flex: 1; }
+    .stats { width: 100%; margin-left: 0; justify-content: space-between; }
+    .summary-cards, .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .summary-card { padding: 15px; }
+    .summary-value { font-size: 26px; }
+    .credits-list { gap: 12px; }
+    .credit-card { padding: 16px; }
+    .teams-container { gap: 12px; }
+    .team { padding: 16px; }
+    .setup-section, .export-section { padding: 17px; border-radius: 16px; }
+    body:has(.app-nav) > .header {
+        width: calc(100vw - 24px);
+        padding: 13px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    body:has(.app-nav) > .header > div { width: 100%; justify-content: space-between; }
+    body:has(.app-nav) > .header .header-title { font-size: 21px; }
+    .month-nav { gap: 5px; }
+    .month-nav select { min-width: 0; padding: 6px 5px !important; font-size: 12px !important; }
+    .main { padding: 14px 0; }
+}
+
+@media (max-width: 420px) {
+    .header-buttons { grid-template-columns: 1fr 1fr; }
+    .header-buttons > * { font-size: 12px; }
+    .summary-label { font-size: 11px; }
+    .summary-value { font-size: 23px; }
+    .credit-header { align-items: flex-start; gap: 10px; }
+    .credit-amount { white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* Stronger visual hierarchy for page entry points. */
+.container > .header {
+    position: relative;
+    overflow: hidden;
+    min-height: 112px;
+    padding: 25px 28px;
+    border-radius: 22px;
+}
+.container > .header h1::before {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--primary);
+    content: "SKATE MANAGER";
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+}
+body:has(.app-nav-link[href="index.html"].is-active) .container > .header {
+    display: flex;
+    min-height: 154px;
+    padding: 30px 34px;
+    border: 0;
+    background: linear-gradient(118deg, #075e46 0%, #07845e 56%, #13a878 100%);
+    box-shadow: 0 18px 40px rgba(5, 94, 70, 0.2);
+}
+body:has(.app-nav-link[href="index.html"].is-active) .container > .header::after {
+    position: absolute;
+    top: -72px;
+    right: 16%;
+    width: 260px;
+    height: 260px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 50%;
+    box-shadow: 0 0 0 28px rgba(255,255,255,.035), 0 0 0 58px rgba(255,255,255,.025);
+    content: "";
+    pointer-events: none;
+}
+body:has(.app-nav-link[href="index.html"].is-active) .container > .header h1,
+body:has(.app-nav-link[href="index.html"].is-active) .container > .header h1::before {
+    color: #fff;
+}
+body:has(.app-nav-link[href="index.html"].is-active) .container > .header h1::before { opacity: .76; }
+body:has(.app-nav-link[href="index.html"].is-active) .header-buttons { position: relative; z-index: 1; }
+body:has(.app-nav-link[href="index.html"].is-active) .header-buttons .back-button {
+    color: #fff;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.28);
+}
+body:has(.app-nav-link[href="index.html"].is-active) .header-buttons .add-button {
+    color: #075e46;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
+body:has(.app-nav-link[href="index.html"].is-active) .header-buttons .add-button:first-of-type {
+    color: #fff;
+    background: rgba(255,255,255,.12) !important;
+    border: 1px solid rgba(255,255,255,.28) !important;
+}
+
+body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header,
+body:has(.app-nav-link[href="database.html"].is-active) .container > .header,
+body:has(.app-nav-admin[open]) .container > .header {
+    border-left: 5px solid var(--primary);
+    background: linear-gradient(110deg, var(--ui-surface), rgba(var(--primary-rgb), .07));
+}
+body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header h1::before { content: "TEAM BUILDER"; }
+body:has(.app-nav-link[href="database.html"].is-active) .container > .header h1::before { content: "PLAYER DATABASE"; }
+body:has(.app-nav-admin[open]) .container > .header h1::before { content: "CREDIT MANAGEMENT"; }
+body:has(.app-nav-admin[open]) .container > .header h1 { color: var(--text); }
+body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p { margin-bottom: 0; }
+
+.skates-grid { gap: 18px; }
+.skate-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 190px;
+    border-radius: 18px;
+    border-top: 1px solid var(--card-border);
+    border-right: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    border-left: 5px solid var(--primary);
+    background: linear-gradient(145deg, var(--ui-surface), rgba(var(--primary-rgb), .025));
+}
+.skate-card::after {
+    position: absolute;
+    right: 17px;
+    bottom: -46px;
+    width: 120px;
+    height: 120px;
+    border: 1px solid rgba(var(--primary-rgb), .09);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+}
+.skate-card > * { position: relative; z-index: 1; }
+.skate-title { font-size: 20px; }
+.skate-detail { font-size: 13px; }
+.skate-count { color: var(--primary); }
+
+/* Delete always reads as destructive, including shared button classes. */
+.button.button-danger,
+.button-danger,
+.btn-delete,
+.icon-button.delete {
+    color: #fff !important;
+    background: #dc2626 !important;
+    border: 1px solid #dc2626 !important;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, .16) !important;
+}
+.button.button-danger:hover,
+.button-danger:hover,
+.btn-delete:hover,
+.icon-button.delete:hover {
+    color: #fff !important;
+    background: #b91c1c !important;
+    border-color: #b91c1c !important;
+    box-shadow: 0 7px 14px rgba(185, 28, 28, .22) !important;
+}
+
+@media (max-width: 760px) {
+    .container > .header { min-height: 0; padding: 20px 18px; }
+    body:has(.app-nav-link[href="index.html"].is-active) .container > .header {
+        min-height: 0;
+        padding: 23px 18px;
+    }
+    body:has(.app-nav-link[href="index.html"].is-active) .container > .header::after { right: -48px; }
+    .skate-card { min-height: 0; }
+}
+
+/* Skate roster modal: give the mobile controls room and keep standby tools tucked away. */
+#rosterModal .modal-content {
+    max-height: min(88vh, 900px);
+    padding: 26px;
+}
+#rosterModal .roster-skate-details {
+    margin-bottom: 18px;
+    padding: 15px 17px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    color: var(--text);
+    background: var(--ui-soft);
+}
+#rosterModal .roster-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px;
+    font-size: 13px;
+}
+#rosterModal .roster-details-grid strong { color: var(--text-muted); font-weight: 600; }
+#rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header { align-items: center; }
+#rosterModal .roster-header h3 { font-size: 17px; letter-spacing: -0.02em; }
+#rosterModal .roster-list {
+    padding: 10px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: var(--ui-soft);
+}
+#rosterModal .roster-item {
+    min-height: 48px;
+    padding: 8px 11px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--ui-surface);
+}
+#rosterModal .roster-item.goalie { background: #fef3c7; color: #713f12; }
+#rosterModal .roster-item.waitlist { background: var(--ui-surface); color: var(--text-muted); }
+#rosterModal .roster-item.unpaid { border-color: #fca5a5; background: #fff7f7; }
+#rosterModal .waitlist-disclosure {
+    padding: 0 14px;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: var(--ui-soft);
+}
+#rosterModal .waitlist-disclosure > summary { list-style: none; cursor: pointer; }
+#rosterModal .waitlist-disclosure > summary::-webkit-details-marker { display: none; }
+#rosterModal .waitlist-disclosure .roster-header {
+    min-height: 54px;
+    margin: 0;
+    gap: 10px;
+}
+#rosterModal .waitlist-caption { margin-left: auto; color: var(--text-muted); font-size: 12px; }
+#rosterModal .waitlist-chevron { color: var(--text-muted); font-size: 18px; transition: transform 150ms ease; }
+#rosterModal .waitlist-disclosure[open] .waitlist-chevron { transform: rotate(180deg); }
+#rosterModal .waitlist-content { padding-bottom: 12px; }
+
+@media (max-width: 600px) {
+    #rosterModal.modal { padding: 8px 0; }
+    #rosterModal .modal-content {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 16px);
+        padding: 16px;
+        margin: 0 auto;
+        border-radius: 18px;
+    }
+    #rosterModal .modal-header {
+        top: -16px;
+        min-height: 48px;
+        margin: -16px -16px 14px;
+        padding: 11px 16px;
+        font-size: 16px;
+    }
+    #rosterModal .roster-skate-details { padding: 12px; margin-bottom: 16px; }
+    #rosterModal .roster-details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        font-size: 12px;
+    }
+    #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    #rosterModal .roster-header h3 { font-size: 17px; }
+    #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr);
+        gap: 8px;
+        width: 100%;
+    }
+    #rosterModal #sortToggleBtn {
+        width: 86px;
+        min-height: 46px;
+        padding: 7px 5px !important;
+        white-space: nowrap;
+    }
+    #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 .button:last-child {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        padding: 8px 12px;
+        white-space: normal;
+    }
+    #rosterModal .add-player-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 96px;
+        gap: 8px;
+        width: 100%;
+        margin-bottom: 12px;
+    }
+    #rosterModal .add-player-form input {
+        width: 100%;
+        min-width: 0;
+        min-height: 52px;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    #rosterModal .add-player-form > .button {
+        width: 96px;
+        min-width: 96px;
+        min-height: 52px;
+        padding: 7px 8px;
+        line-height: 1.2;
+        white-space: normal;
+    }
+    #rosterModal .roster-list { padding: 7px; }
+    #rosterModal .roster-item { padding: 8px; gap: 8px; }
+    #rosterModal .roster-item-name { min-width: 0; overflow-wrap: anywhere; }
+    #rosterModal .waitlist-disclosure { padding: 0 11px; }
+    #rosterModal .waitlist-disclosure .roster-header { flex-direction: row; align-items: center; }
+    #rosterModal .waitlist-caption { font-size: 11px; }
+    #rosterModal .waitlist-content .add-player-form { grid-template-columns: minmax(0, 1fr) 112px; }
+    #rosterModal .waitlist-content .add-player-form > .button { width: 112px; min-width: 112px; }
+    #rosterModal .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #rosterModal .modal-buttons .button { min-height: 44px; padding: 9px 7px; font-size: 12px; }
+}
+
+/* Clear removal hierarchy: the usual action first, credit as an alternative. */
+#removePlayerModal .removal-dialog { width: min(500px, 94vw); padding: 28px; }
+#removePlayerModal .modal-header { margin-bottom: 14px; }
+#removePlayerModal .removal-prompt { margin: 0 0 22px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+#removePlayerModal .removal-choices { display: grid; gap: 10px; }
+#removePlayerModal .removal-choice { width: 100%; padding: 16px 18px; border-radius: 13px; text-align: left; cursor: pointer; transition: background .15s, box-shadow .15s; }
+#removePlayerModal .removal-choice-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 750; }
+#removePlayerModal .removal-choice-description { display: block; margin-top: 5px; font-size: 12px; line-height: 1.5; font-weight: 450; }
+#removePlayerModal .removal-primary { color: #fff; border: 1px solid var(--primary-dark); background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: 0 5px 14px rgba(var(--primary-rgb), .2); }
+#removePlayerModal .removal-primary:hover { background: var(--primary-dark); box-shadow: 0 7px 18px rgba(var(--primary-rgb), .3); }
+#removePlayerModal .removal-credit { color: var(--text); border: 1px solid rgba(var(--primary-rgb), .35); background: var(--ui-surface); }
+#removePlayerModal .removal-credit .removal-choice-description { color: var(--text-muted); }
+#removePlayerModal .removal-credit:hover { background: rgba(var(--primary-rgb), .08); border-color: var(--primary); }
+#removePlayerModal .removal-choice[hidden] { display: none; }
+#removePlayerModal .removal-footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+#removePlayerModal .removal-cancel { padding: 9px 16px; color: var(--text); border: 1px solid var(--card-border); border-radius: 10px; background: var(--ui-soft); font-size: 13px; font-weight: 650; cursor: pointer; }
+#removePlayerModal .removal-cancel:hover { background: rgba(var(--primary-rgb), .09); }
+@media (max-width: 600px) { #removePlayerModal .removal-dialog { padding: 22px; } }
+
+/* Match roster entry fields to the app's flat controls. */
+#rosterModal .add-player-form input {
+    appearance: none;
+    box-sizing: border-box;
+    min-width: 0;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    box-shadow: none;
+    outline: none;
+}
+#rosterModal .add-player-form input::placeholder { color: var(--text-muted); }
+#rosterModal .add-player-form input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+}
