@@ -550,3 +550,22 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
 #removePlayerModal .removal-cancel { padding: 9px 16px; color: var(--text); border: 1px solid var(--card-border); border-radius: 10px; background: var(--ui-soft); font-size: 13px; font-weight: 650; cursor: pointer; }
 #removePlayerModal .removal-cancel:hover { background: rgba(var(--primary-rgb), .09); }
 @media (max-width: 600px) { #removePlayerModal .removal-dialog { padding: 22px; } }
+
+/* Match roster entry fields to the app's flat controls. */
+#rosterModal .add-player-form input {
+    appearance: none;
+    box-sizing: border-box;
+    min-width: 0;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    box-shadow: none;
+    outline: none;
+}
+#rosterModal .add-player-form input::placeholder { color: var(--text-muted); }
+#rosterModal .add-player-form input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+}

@@ -133,7 +133,7 @@
                 <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">V2 runs alongside V1. Team balancing continues to use V1.</p>
                 <div id="simpleRubricContainer"></div><p id="v2RatingProgress" class="v2-progress" aria-live="polite"></p>
 
-                <button id="submitV2bBtn" onclick="submitV2bRating()" style="width:100%; margin-top:16px; padding:12px; background:#10b981; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Submit Rating</button>
+                <button id="saveV2DraftBtn" onclick="saveDraftV2b()" style="width:100%; margin-top:16px; padding:12px; background:var(--card-border); border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:var(--text);">Save Draft</button>
 
 <button id="submitV2NextBtn" class="v2-save-next" type="button" onclick="submitV2bRating(true)">Save & next player →</button>
 
@@ -147,7 +147,7 @@
             <!-- Buttons -->
             <div style="display:flex; gap:10px; margin-top:24px; position:sticky; bottom:0; background:var(--card-bg); padding-top:16px; border-top:1px solid var(--card-border);">
                 <button onclick="closePillarModal()" style="flex:1; padding:12px; background:var(--card-border); border:1px solid var(--card-border); border-radius:8px; cursor:pointer; font-size:14px; color:var(--text);">Close</button>
-                <button onclick="saveDraftV2b()" style="flex:1; padding:12px; background:var(--primary); border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Save Draft</button>
+                <button id="submitV2bBtn" onclick="submitV2bRating()" style="flex:1; padding:12px; background:var(--primary); border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Submit Rating</button>
             </div>
         </div>
     </div>
