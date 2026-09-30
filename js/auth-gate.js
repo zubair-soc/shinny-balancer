@@ -37,7 +37,7 @@
   gate.innerHTML = `
     <form class="sm-auth-card" id="sm-auth-form">
       <h1>Skate Manager</h1>
-      <p>Sign in with an account created for this staging project.</p>
+      <p>Sign in with your Skate Manager account.</p>
       <label for="sm-auth-email">Email</label>
       <input id="sm-auth-email" name="email" type="email" autocomplete="username" required>
       <label for="sm-auth-password">Password</label>
@@ -109,7 +109,7 @@
       addSignOut();
       return;
     }
-    status.textContent = 'Use your staging account to continue.';
+    status.textContent = 'Use your Skate Manager account to continue.';
   }).catch(() => {
     status.textContent = 'Could not connect. Check your internet and refresh.';
   });
