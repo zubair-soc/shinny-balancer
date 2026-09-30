@@ -20,7 +20,7 @@ values
   ('TEST PLAYER 02 - Bailey Two', 11, 58, 2.8),
   ('TEST PLAYER 03 - Casey Three', 14, 71, 3.5),
   ('TEST PLAYER 04 - Devon Four', 6, 35, 1.9),
-  ('TEST PLAYER 05 - Ellis Five', 10, 53, 2.5),
+  ('TEST PLAYER 05 - Ellis Five', 10, 53, 2.6),
   ('TEST PLAYER 06 - Frankie Six', 16, 82, 4.0),
   ('TEST PLAYER 07 - Gray Seven', 9, 47, 2.2),
   ('TEST PLAYER 08 - Harper Eight', 12, 64, 3.1),
@@ -33,7 +33,7 @@ values
   ('TEST PLAYER 15 - Oak Fifteen', 4, 25, 1.4),
   ('TEST PLAYER 16 - Parker Sixteen', 17, 88, 4.2),
   ('TEST PLAYER 17 - Quinn Seventeen', 8, 43, 2.2),
-  ('TEST PLAYER 18 - Riley Eighteen', 11, 57, 55)
+  ('TEST PLAYER 18 - Riley Eighteen', 11, 57, 2.8)
 on conflict (name) do nothing;
 
 -- Keep the test skates on useful relative dates if this script is rerun later.

@@ -102,7 +102,7 @@
                 <tr>
                     <td>${escapeHTML(player.name)} ${player.is_pillar ? '' : ''}</td>
                     <td class="rating-cell" style="color:var(--primary)">${player.rating ?? '—'}</td>
-                    <td class="rating-cell" style="color:#10b981">${player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—'}</td>
+                    <td class="rating-cell" style="color:#10b981">${formatV2Rating(player.rating_v2b)}</td>
                     <td class="actions">
                         <div style="display:flex; gap:4px; flex-wrap:wrap;">
                             <button class="icon-button" data-admin-only onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>

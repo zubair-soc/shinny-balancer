@@ -1,3 +1,10 @@
+        function formatV2Rating(value) {
+            if (value === null || value === undefined || value === '') return '—';
+            const raw = Number(value);
+            const score = raw > 5 && raw <= 100 ? Math.round(raw / 20 * 10) / 10 : raw;
+            return Number.isFinite(score) && score >= 1 && score <= 5 ? `${score} / 5` : '—';
+        }
+
         // ========== V2 RATING / PILLAR PROFILE ==========
         const SIMPLE_RUBRIC = {
             skating: { label: 'Skating', weight: 35, color: '#3b82f6',
@@ -107,7 +114,7 @@
             document.getElementById('profileV2Rating').value = player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '';
             document.getElementById('profileIsPillar').checked = player.is_pillar || false;
             document.getElementById('profileAnchored').textContent = '';
-            document.getElementById('profileV2bDisplay').textContent = player.rating_v2b !== null && player.rating_v2b !== undefined ? `${player.rating_v2b} / 5` : '—';
+            document.getElementById('profileV2bDisplay').textContent = formatV2Rating(player.rating_v2b);
 
             const pillarOptions = '<option value="">— None —</option>' + pillars.map(p =>
                 `<option value="${p.id}">${escapeHTML(p.name)} (${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '?'})</option>`
@@ -290,7 +297,7 @@
                     .from(window.isSkateAdmin?.() ? 'players' : 'skate_manager_players').select('rating_v2b').eq('id', id).single();
                 if (scoreError) throw scoreError;
                 const avg = savedPlayer.rating_v2b;
-                document.getElementById('profileV2bDisplay').textContent = avg != null ? `${avg} / 5` : '—';
+                document.getElementById('profileV2bDisplay').textContent = formatV2Rating(avg);
 
                 // Update local
                 const player = allPlayers.find(p => p.id === id);
