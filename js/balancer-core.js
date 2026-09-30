@@ -46,6 +46,8 @@
         let selectedPlayer = null; // For swapping
         let currentBalancerSkateId = null;
         let rosterAutoMode = false;
+        let balancerRatingMode = 'v2';
+        let v2TeamSnapshot = null;
 
         const FRIEND_GROUP_COLORS = {
             'A': '#ef4444', 'B': 'var(--primary-dark)', 'C': '#10b981', 'D': '#f59e0b',
@@ -67,7 +69,12 @@
                     throw error;
                 }
 
-                playerDatabase = data.map(p => ({ name: p.name, rating: getV2Score(p.rating_v2b), originalRating: p.rating }));
+                playerDatabase = data.map(p => {
+                    const v2Rating = getV2Score(p.rating_v2b);
+                    const originalValue = p.rating === null || p.rating === undefined ? null : Number(p.rating);
+                    const originalRating = Number.isFinite(originalValue) ? originalValue : null;
+                    return { name: p.name, rating: v2Rating, v2Rating, originalRating };
+                });
                 document.getElementById('playerCountPaste').textContent = playerDatabase.length;
                 document.getElementById('playerCount').textContent = playerDatabase.length;
                 const databaseStatus = document.getElementById('playerDatabaseStatus');
@@ -610,6 +617,8 @@
                     matchedPlayers.push({
                         name: nameToMatch,
                         rating: null,
+                        v2Rating: null,
+                        originalRating: null,
                         friendGroup,
                         isGoalie: isGoalie
                     });

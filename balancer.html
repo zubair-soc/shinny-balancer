@@ -123,6 +123,23 @@
         </div>
         </div>
 
+        <section id="ratingModelPanel" class="rating-model-panel" data-admin-only hidden aria-labelledby="ratingModelTitle">
+            <div>
+                <div class="rating-model-eyebrow">Admin comparison</div>
+                <h2 id="ratingModelTitle">Rating model</h2>
+                <p>V2 stays active for skate managers. Preview the original V1 system without changing saved teams.</p>
+            </div>
+            <div class="rating-model-actions">
+                <div class="rating-model-switcher" aria-label="Team balancing rating model">
+                    <button type="button" data-balancer-rating-mode="v2" aria-pressed="true" onclick="setBalancerRatingMode('v2')">V2 rating</button>
+                    <button type="button" data-balancer-rating-mode="v1" aria-pressed="false" onclick="setBalancerRatingMode('v1')">Original V1</button>
+                </div>
+                <button class="button button-secondary compare-models-button" type="button" onclick="compareRatingModels()">Compare teams</button>
+            </div>
+        </section>
+
+        <div id="ratingComparison" data-admin-only hidden></div>
+
         <!-- Teams Display -->
         <div id="teamsDisplay"></div>
         <div id="teamSaveStatus" role="status" aria-live="polite" style="min-height:20px; margin:8px 0 0; color:var(--text-muted); font-size:13px;"></div>

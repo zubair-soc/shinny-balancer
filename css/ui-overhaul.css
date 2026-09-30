@@ -431,6 +431,23 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
 #rosterModal .roster-item.goalie { background: #fef3c7; color: #713f12; }
 #rosterModal .roster-item.waitlist { background: var(--ui-surface); color: var(--text-muted); }
 #rosterModal .roster-item.unpaid { border-color: #fca5a5; background: #fff7f7; }
+#rosterModal .roster-rating-chip {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 7px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), .13);
+    color: var(--primary-dark);
+    font-size: 10px;
+    font-weight: 750;
+    cursor: pointer;
+}
+#rosterModal .roster-rating-chip-empty { background: rgba(100,116,139,.12); color: var(--text-muted); }
+.rating-model-switcher { display: inline-flex; padding: 3px; border: 1px solid var(--card-border); border-radius: 11px; background: var(--ui-soft); }
+.rating-model-switcher button { min-height: 34px; padding: 7px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.rating-model-switcher button[aria-pressed="true"] { background: var(--primary); color: #fff; box-shadow: 0 2px 7px rgba(var(--primary-rgb),.2); }
+.rating-model-switcher-compact button { min-height: 32px; padding: 6px 9px; }
 #rosterModal .waitlist-disclosure {
     padding: 0 14px;
     border: 1px solid var(--card-border);
@@ -481,12 +498,12 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
     #rosterModal .roster-header h3 { font-size: 17px; }
     #rosterModal .modal-content > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 {
         display: grid;
-        grid-template-columns: 86px minmax(0, 1fr);
+        grid-template-columns: auto 78px minmax(0, 1fr);
         gap: 8px;
         width: 100%;
     }
     #rosterModal #sortToggleBtn {
-        width: 86px;
+        width: 78px;
         min-height: 46px;
         padding: 7px 5px !important;
         white-space: nowrap;

@@ -158,6 +158,10 @@
                 <div class="roster-header">
                     <h3>Roster <span id="rosterCount">(0/24)</span></h3>
                     <div class="u-flex-gap-8">
+                        <div id="rosterRatingSwitcher" class="rating-model-switcher rating-model-switcher-compact" data-admin-only hidden aria-label="Roster rating display">
+                            <button type="button" data-roster-rating-mode="v2" aria-pressed="true" onclick="setRosterRatingMode('v2')">V2</button>
+                            <button type="button" data-roster-rating-mode="v1" aria-pressed="false" onclick="setRosterRatingMode('v1')">V1</button>
+                        </div>
                         <button id="sortToggleBtn" class="button button-secondary" onclick="toggleRosterSort()" style="font-size: 12px; padding: 6px 12px;">🔤 A–Z</button>
                         <button class="button" onclick="balanceSkate()">⚖️ Balance This Skate</button>
                     </div>

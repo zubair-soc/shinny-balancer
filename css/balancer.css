@@ -123,6 +123,44 @@
             border: 1px solid var(--card-border);
         }
 
+        .rating-model-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 24px;
+            padding: 20px 22px;
+            border: 1px solid rgba(var(--primary-rgb), .25);
+            border-radius: 14px;
+            background: var(--card-bg);
+        }
+        .rating-model-eyebrow, .comparison-heading > div > span { color: var(--primary-dark); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+        .rating-model-panel h2, .comparison-heading h2 { margin: 4px 0 3px; font-size: 18px; }
+        .rating-model-panel p, .comparison-heading p { margin: 0; color: var(--text-muted); font-size: 13px; }
+        .rating-model-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+        .rating-model-switcher { display: inline-flex; padding: 3px; border: 1px solid var(--card-border); border-radius: 11px; background: rgba(100,116,139,.08); }
+        .rating-model-switcher button { min-height: 36px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .rating-model-switcher button[aria-pressed="true"] { background: var(--primary); color: #fff; box-shadow: 0 2px 7px rgba(var(--primary-rgb),.2); }
+        .compare-models-button { min-height: 42px; padding: 9px 14px; font-size: 12px; }
+        #ratingComparison { scroll-margin-top: 18px; margin-bottom: 24px; padding: 22px; border: 1px solid var(--card-border); border-radius: 16px; background: var(--card-bg); }
+        .comparison-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .comparison-heading > button { border: 0; background: transparent; color: var(--text-muted); font-size: 25px; cursor: pointer; }
+        .rating-comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+        .comparison-model-card { min-width: 0; padding: 16px; border: 1px solid var(--card-border); border-radius: 13px; background: rgba(100,116,139,.035); }
+        .comparison-model-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .comparison-model-header > div { display: grid; gap: 3px; }
+        .comparison-model-header > div > span { font-size: 16px; font-weight: 800; }
+        .comparison-model-header > div > strong { color: var(--text-muted); font-size: 11px; }
+        .comparison-gap { padding: 5px 8px; border-radius: 999px; background: rgba(var(--primary-rgb),.12); color: var(--primary-dark); font-size: 11px; font-weight: 750; white-space: nowrap; }
+        .comparison-team-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+        .comparison-team-grid h4 { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 7px; padding-bottom: 7px; border-bottom: 1px solid var(--card-border); font-size: 13px; }
+        .comparison-team-grid h4 span { color: var(--text-muted); font-size: 11px; font-weight: 600; }
+        .comparison-player { display: flex; align-items: center; justify-content: space-between; gap: 7px; min-width: 0; margin-bottom: 5px; padding: 7px 8px; border-radius: 8px; background: var(--card-bg); font-size: 11px; }
+        .comparison-player span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .comparison-player strong { color: var(--primary-dark); }
+        .comparison-player-moved { box-shadow: inset 3px 0 #f59e0b; background: rgba(245,158,11,.08); }
+        .active-rating-model { display: inline-flex; margin-left: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(var(--primary-rgb),.12); color: var(--primary-dark); font-size: 11px; font-weight: 750; }
+
         .setup-section h2 {
             font-size: 18px;
             font-weight: 700;
@@ -377,6 +415,11 @@
             .teams-container {
                 grid-template-columns: 1fr;
             }
+
+            .rating-model-panel { align-items: stretch; flex-direction: column; gap: 14px; padding: 17px; }
+            .rating-model-actions { align-items: stretch; flex-direction: column; }
+            .rating-model-switcher { display: grid; grid-template-columns: 1fr 1fr; }
+            .rating-comparison-grid, .comparison-team-grid { grid-template-columns: 1fr; }
 
             .team {
                 padding: 16px;

@@ -635,6 +635,8 @@
                 </div>
             `;
 
+            window.rosterRatingMode = 'v2';
+            updateRosterRatingModeControls();
             await loadRoster(skateId, skate.capacity);
             const modal = document.getElementById('rosterModal');
             modal.dataset.skateId = skateId;
@@ -660,13 +662,17 @@
                 // Build rating map from cached allPlayers (no extra DB call)
                 const ratingMap = {};
                 allPlayers.forEach(p => {
-                    ratingMap[p.name.toLowerCase()] = getV2Score(p.rating_v2b);
+                    const originalValue = p.rating === null || p.rating === undefined ? null : Number(p.rating);
+                    ratingMap[p.name.toLowerCase()] = {
+                        v2: getV2Score(p.rating_v2b),
+                        v1: Number.isFinite(originalValue) ? originalValue : null
+                    };
                 });
 
                 // Add ratings to roster data
                 const dataWithRatings = data.map(player => ({
                     ...player,
-                    rating: ratingMap[player.player_name.toLowerCase()] || null
+                    rating: ratingMap[player.player_name.toLowerCase()]?.[window.rosterRatingMode || 'v2'] ?? null
                 }));
 
                 const roster = dataWithRatings.filter(p => !p.is_waitlist);
@@ -702,9 +708,14 @@
                         
                         // Show rating if available (hidden for goalies)
                         const rating = player.rating;
-                        const ratingDisplay = player.is_goalie ? '' : (rating ? 
-                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); openRosterRating(${player.id}, ${inlineJSString(player.player_name)})" title="Click to edit rating">${rating}</span>` :
-                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); openRosterRating(${player.id}, ${inlineJSString(player.player_name)})" title="Click to add rating">No rating</span>`);
+                        const modelLabel = (window.rosterRatingMode || 'v2').toUpperCase();
+                        const ratingClick = window.rosterRatingMode === 'v2'
+                            ? `onclick="event.stopPropagation(); openRosterRating(${player.id}, ${inlineJSString(player.player_name)})"`
+                            : 'onclick="event.stopPropagation()"';
+                        const ratingTitle = window.rosterRatingMode === 'v2' ? 'V2 rating · click to rate' : 'Original V1 rating';
+                        const ratingDisplay = player.is_goalie ? '' : (rating !== null ?
+                            `<span class="roster-rating-chip" ${ratingClick} title="${ratingTitle}">${modelLabel} ${rating}</span>` :
+                            `<span class="roster-rating-chip roster-rating-chip-empty" ${ratingClick} title="${ratingTitle}">${modelLabel} —</span>`);
                         
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
@@ -770,4 +781,20 @@
             } catch (error) {
                 console.error('Error loading roster:', error);
             }
+        }
+
+        window.rosterRatingMode = window.rosterRatingMode || 'v2';
+
+        function updateRosterRatingModeControls() {
+            document.querySelectorAll('[data-roster-rating-mode]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.rosterRatingMode === window.rosterRatingMode));
+            });
+        }
+
+        async function setRosterRatingMode(mode) {
+            if (!window.isSkateAdmin?.() || !['v1', 'v2'].includes(mode) || mode === window.rosterRatingMode) return;
+            window.rosterRatingMode = mode;
+            updateRosterRatingModeControls();
+            const skate = allSkates.find(item => item.id === currentSkateId);
+            if (currentSkateId && skate) await loadRoster(currentSkateId, skate.capacity);
         }

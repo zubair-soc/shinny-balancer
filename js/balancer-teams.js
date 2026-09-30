@@ -2,6 +2,10 @@
         let playerMenuListenerInstalled = false;
 
         async function saveTeams() {
+            if (balancerRatingMode !== 'v2') {
+                setTeamSaveStatus('Original V1 is a preview. Saved V2 teams were not changed.');
+                return false;
+            }
             if (!currentBalancerSkateId || !supabaseClient) {
                 setTeamSaveStatus('Teams are not linked to a skate yet.', false);
                 return false;
@@ -40,6 +44,126 @@
 
         function teamRatingTotal(team) {
             return team.reduce((total, player) => total + (!player.isGoalie && Number.isFinite(Number(player.rating)) ? Number(player.rating) : 0), 0);
+        }
+
+        function ratingForMode(player, mode) {
+            const value = mode === 'v1' ? player.originalRating : player.v2Rating;
+            const number = value === null || value === undefined || value === '' ? null : Number(value);
+            return Number.isFinite(number) ? number : null;
+        }
+
+        function playersForRatingMode(players, mode) {
+            return players.map(player => ({ ...player, rating: ratingForMode(player, mode) }));
+        }
+
+        function cloneTeams(teams) {
+            return teams.map(player => ({ ...player }));
+        }
+
+        function rememberV2Teams() {
+            if (balancerRatingMode !== 'v2') return;
+            v2TeamSnapshot = { dark: cloneTeams(darkTeam), light: cloneTeams(lightTeam) };
+        }
+
+        function calculateBalancedTeams(sourcePlayers, mode = balancerRatingMode) {
+            const players = playersForRatingMode(sourcePlayers, mode);
+            const totalPlayers = players.length;
+            const targetDark = Math.ceil(totalPlayers / 2);
+            const targetLight = Math.floor(totalPlayers / 2);
+            const goalies = players.filter(player => player.isGoalie);
+            const skaters = players.filter(player => !player.isGoalie);
+            const grouped = {};
+            const ungrouped = [];
+
+            skaters.forEach(player => {
+                if (player.friendGroup) {
+                    if (!grouped[player.friendGroup]) grouped[player.friendGroup] = [];
+                    grouped[player.friendGroup].push(player);
+                } else {
+                    ungrouped.push(player);
+                }
+            });
+
+            const nextDark = [];
+            const nextLight = [];
+            let darkTotal = 0;
+            let lightTotal = 0;
+
+            if (goalies.length >= 2) {
+                nextDark.push(goalies[0]);
+                nextLight.push(goalies[1]);
+                for (let index = 2; index < goalies.length; index++) {
+                    ungrouped.push({ ...goalies[index], isGoalie: false });
+                }
+            } else if (goalies.length === 1) {
+                nextDark.push(goalies[0]);
+            }
+
+            const groups = Object.entries(grouped).map(([letter, groupPlayers]) => {
+                const ratedPlayers = groupPlayers.filter(player => player.rating !== null);
+                const totalRating = ratedPlayers.reduce((sum, player) => sum + player.rating, 0);
+                return {
+                    letter,
+                    players: groupPlayers,
+                    size: groupPlayers.length,
+                    totalRating,
+                    avgRating: ratedPlayers.length ? totalRating / ratedPlayers.length : 0
+                };
+            }).sort((a, b) => b.avgRating - a.avgRating);
+
+            ungrouped.sort((a, b) => {
+                if (a.rating === null && b.rating === null) return 0;
+                if (a.rating === null) return 1;
+                if (b.rating === null) return -1;
+                return b.rating - a.rating;
+            });
+
+            groups.forEach(group => {
+                const darkWouldExceed = nextDark.length + group.size > targetDark;
+                const lightWouldExceed = nextLight.length + group.size > targetLight;
+                if (lightWouldExceed && !darkWouldExceed) {
+                    nextDark.push(...group.players);
+                    darkTotal += group.totalRating;
+                } else if (darkWouldExceed && !lightWouldExceed) {
+                    nextLight.push(...group.players);
+                    lightTotal += group.totalRating;
+                } else if (darkTotal <= lightTotal) {
+                    nextDark.push(...group.players);
+                    darkTotal += group.totalRating;
+                } else {
+                    nextLight.push(...group.players);
+                    lightTotal += group.totalRating;
+                }
+            });
+
+            ungrouped.forEach(player => {
+                const rating = player.rating ?? 0;
+                if (nextDark.length >= targetDark) {
+                    nextLight.push(player);
+                    if (player.rating !== null) lightTotal += rating;
+                } else if (nextLight.length >= targetLight) {
+                    nextDark.push(player);
+                    if (player.rating !== null) darkTotal += rating;
+                } else if (darkTotal <= lightTotal) {
+                    nextDark.push(player);
+                    if (player.rating !== null) darkTotal += rating;
+                } else {
+                    nextLight.push(player);
+                    if (player.rating !== null) lightTotal += rating;
+                }
+            });
+
+            const sortPlayers = (a, b) => {
+                if (a.isGoalie !== b.isGoalie) return a.isGoalie ? -1 : 1;
+                if (a.isGoalie && b.isGoalie) return 0;
+                if (a.rating !== null && b.rating !== null) return b.rating - a.rating;
+                if (a.rating !== null) return -1;
+                if (b.rating !== null) return 1;
+                return 0;
+            };
+            nextDark.sort(sortPlayers);
+            nextLight.sort(sortPlayers);
+            return { dark: nextDark, light: nextLight };
         }
 
         function teamWithRoomFor(player) {
@@ -91,6 +215,7 @@
                 });
 
                 renderTeams();
+                rememberV2Teams();
                 if (newPlayers.length || droppedCount) {
                     const addSummary = [
                         additions.dark ? `+${additions.dark} to Dark` : '',
@@ -119,140 +244,90 @@
                 return;
             }
 
-            console.log('Starting to balance teams...');
-            
-            const totalPlayers = matchedPlayers.length;
-            const targetDark = Math.ceil(totalPlayers / 2);
-            const targetLight = Math.floor(totalPlayers / 2);
-            
-            // Separate goalies from skaters
-            const goalies = matchedPlayers.filter(p => p.isGoalie);
-            const skaters = matchedPlayers.filter(p => !p.isGoalie);
-            
-            // Separate grouped and ungrouped skaters
-            const grouped = {};
-            const ungrouped = [];
-
-            skaters.forEach(player => {
-                if (player.friendGroup) {
-                    if (!grouped[player.friendGroup]) {
-                        grouped[player.friendGroup] = [];
-                    }
-                    grouped[player.friendGroup].push(player);
-                } else {
-                    ungrouped.push(player);
-                }
-            });
-
-            console.log('Goalies:', goalies);
-            console.log('Grouped skaters:', grouped);
-            console.log('Ungrouped skaters:', ungrouped);
-            console.log(`Target team sizes: Dark ${targetDark}, Light ${targetLight}`);
-
-            // Assign goalies - one per team (don't count their ratings in team totals)
-            darkTeam = [];
-            lightTeam = [];
-            let darkTotal = 0;
-            let lightTotal = 0;
-            
-            if (goalies.length >= 2) {
-                // Put first goalie on dark, second on light (ratings don't count)
-                darkTeam.push(goalies[0]);
-                lightTeam.push(goalies[1]);
-                
-                // If there are extra goalies (3+), add them as skaters
-                for (let i = 2; i < goalies.length; i++) {
-                    ungrouped.push({...goalies[i], isGoalie: false});
-                }
-            } else if (goalies.length === 1) {
-                // Only one goalie, put on dark team (rating doesn't count)
-                darkTeam.push(goalies[0]);
-            }
-
-            // Sort groups by average rating (descending) for better distribution
-            const groups = Object.entries(grouped).map(([letter, players]) => ({
-                letter,
-                players,
-                size: players.length,
-                // Only count players with actual ratings
-                totalRating: players.reduce((sum, p) => sum + (p.rating !== null ? p.rating : 0), 0),
-                avgRating: players.filter(p => p.rating !== null).length > 0 
-                    ? players.reduce((sum, p) => sum + (p.rating !== null ? p.rating : 0), 0) / players.filter(p => p.rating !== null).length
-                    : 0
-            }));
-
-            groups.sort((a, b) => b.avgRating - a.avgRating);
-            // Sort ungrouped by rating, but put unrated players at the end
-            ungrouped.sort((a, b) => {
-                if (a.rating === null && b.rating === null) return 0;
-                if (a.rating === null) return 1;
-                if (b.rating === null) return -1;
-                return b.rating - a.rating;
-            });
-
-            // Distribute friend groups - alternate between teams, prioritizing team size balance
-            groups.forEach(group => {
-                const darkSize = darkTeam.length;
-                const lightSize = lightTeam.length;
-                
-                // Check if adding this group would exceed target size
-                const darkWouldExceed = (darkSize + group.size) > targetDark;
-                const lightWouldExceed = (lightSize + group.size) > targetLight;
-                
-                if (lightWouldExceed && !darkWouldExceed) {
-                    darkTeam.push(...group.players);
-                    darkTotal += group.totalRating;
-                } else if (darkWouldExceed && !lightWouldExceed) {
-                    lightTeam.push(...group.players);
-                    lightTotal += group.totalRating;
-                } else {
-                    if (darkTotal <= lightTotal) {
-                        darkTeam.push(...group.players);
-                        darkTotal += group.totalRating;
-                    } else {
-                        lightTeam.push(...group.players);
-                        lightTotal += group.totalRating;
-                    }
-                }
-            });
-
-            // Distribute ungrouped players
-            ungrouped.forEach(player => {
-                const rating = player.rating !== null ? player.rating : 0; // Don't count null ratings in balance
-                const darkSize = darkTeam.length;
-                const lightSize = lightTeam.length;
-                
-                if (darkSize >= targetDark) {
-                    lightTeam.push(player);
-                    if (player.rating !== null) lightTotal += rating;
-                } else if (lightSize >= targetLight) {
-                    darkTeam.push(player);
-                    if (player.rating !== null) darkTotal += rating;
-                } else {
-                    if (darkTotal <= lightTotal) {
-                        darkTeam.push(player);
-                        if (player.rating !== null) darkTotal += rating;
-                    } else {
-                        lightTeam.push(player);
-                        if (player.rating !== null) lightTotal += rating;
-                    }
-                }
-            });
-
-            // Sort teams so goalies appear first
-            darkTeam.sort((a, b) => (b.isGoalie ? 1 : 0) - (a.isGoalie ? 1 : 0));
-            lightTeam.sort((a, b) => (b.isGoalie ? 1 : 0) - (a.isGoalie ? 1 : 0));
-
-            console.log('Dark team:', darkTeam);
-            console.log('Light team:', lightTeam);
-            console.log(`Final sizes: Dark ${darkTeam.length}, Light ${lightTeam.length}`);
-            console.log(`Final totals: Dark ${darkTotal}, Light ${lightTotal}`);
-
-            // Sort teams after balancing
-            sortTeams();
+            console.log('Starting to balance teams with', balancerRatingMode);
+            const balanced = calculateBalancedTeams(matchedPlayers, balancerRatingMode);
+            darkTeam = balanced.dark;
+            lightTeam = balanced.light;
+            if (balancerRatingMode === 'v2') rememberV2Teams();
             
             renderTeams();
-            saveTeams();
+            if (balancerRatingMode === 'v2') saveTeams();
+            else setTeamSaveStatus('Original V1 preview · saved V2 teams unchanged');
+        }
+
+        function updateRatingModeControls() {
+            document.querySelectorAll('[data-balancer-rating-mode]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.balancerRatingMode === balancerRatingMode));
+            });
+        }
+
+        function setBalancerRatingMode(mode) {
+            if (!window.isSkateAdmin?.() || !['v1', 'v2'].includes(mode) || mode === balancerRatingMode) return;
+            if (mode === 'v1') {
+                rememberV2Teams();
+                balancerRatingMode = 'v1';
+                const preview = calculateBalancedTeams(matchedPlayers, 'v1');
+                darkTeam = preview.dark;
+                lightTeam = preview.light;
+                setTeamSaveStatus('Original V1 preview · saved V2 teams unchanged');
+            } else {
+                balancerRatingMode = 'v2';
+                if (v2TeamSnapshot) {
+                    darkTeam = cloneTeams(v2TeamSnapshot.dark);
+                    lightTeam = cloneTeams(v2TeamSnapshot.light);
+                } else {
+                    const balanced = calculateBalancedTeams(matchedPlayers, 'v2');
+                    darkTeam = balanced.dark;
+                    lightTeam = balanced.light;
+                    rememberV2Teams();
+                }
+                setTeamSaveStatus('V2 active');
+            }
+            selectedPlayer = null;
+            openPlayerMenu = null;
+            updateRatingModeControls();
+            renderTeams();
+        }
+
+        function comparisonPlayerRow(player, otherTeamNames) {
+            const moved = otherTeamNames.has(normalizeBalancerPlayerName(player.name));
+            return `<div class="comparison-player${moved ? ' comparison-player-moved' : ''}"><span>${escapeHTML(player.name)}${player.isGoalie ? ' 🥅' : ''}</span><strong>${player.isGoalie ? '—' : (player.rating ?? '?')}</strong></div>`;
+        }
+
+        function comparisonModelCard(label, mode, teams, otherTeams) {
+            const darkStats = getTeamStats(teams.dark);
+            const lightStats = getTeamStats(teams.light);
+            const otherDarkNames = new Set(otherTeams.dark.map(player => normalizeBalancerPlayerName(player.name)));
+            const otherLightNames = new Set(otherTeams.light.map(player => normalizeBalancerPlayerName(player.name)));
+            const ratedCount = matchedPlayers.filter(player => !player.isGoalie && ratingForMode(player, mode) !== null).length;
+            const skaterCount = matchedPlayers.filter(player => !player.isGoalie).length;
+            return `<section class="comparison-model-card">
+                <div class="comparison-model-header"><div><span>${escapeHTML(label)}</span><strong>${ratedCount}/${skaterCount} skaters rated</strong></div><span class="comparison-gap">Avg gap ${Math.abs(Number(darkStats.avg) - Number(lightStats.avg)).toFixed(1)}</span></div>
+                <div class="comparison-team-grid">
+                    <div><h4>Dark <span>${darkStats.avg} avg</span></h4>${teams.dark.map(player => comparisonPlayerRow(player, otherLightNames)).join('')}</div>
+                    <div><h4>Light <span>${lightStats.avg} avg</span></h4>${teams.light.map(player => comparisonPlayerRow(player, otherDarkNames)).join('')}</div>
+                </div>
+            </section>`;
+        }
+
+        function compareRatingModels() {
+            if (!window.isSkateAdmin?.()) return;
+            if (!matchedPlayers.length) {
+                alert('Please match players first');
+                return;
+            }
+            const v2Teams = calculateBalancedTeams(matchedPlayers, 'v2');
+            const v1Teams = calculateBalancedTeams(matchedPlayers, 'v1');
+            const container = document.getElementById('ratingComparison');
+            container.hidden = false;
+            container.innerHTML = `<div class="comparison-heading"><div><span>Admin comparison</span><h2>V2 vs original V1</h2><p>Same roster, goalies and friend groups. Highlighted players change sides.</p></div><button type="button" aria-label="Close comparison" onclick="closeRatingComparison()">×</button></div><div class="rating-comparison-grid">${comparisonModelCard('V2 rating', 'v2', v2Teams, v1Teams)}${comparisonModelCard('Original V1', 'v1', v1Teams, v2Teams)}</div>`;
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function closeRatingComparison() {
+            const container = document.getElementById('ratingComparison');
+            container.hidden = true;
+            container.innerHTML = '';
         }
 
         // Render teams
@@ -269,7 +344,10 @@
             const darkStats = getTeamStats(darkTeam);
             const lightStats = getTeamStats(lightTeam);
 
-            let html = '<p class="team-interaction-hint">Select two players to swap them. Use ⋮ for one-player moves and other actions.</p><div class="teams-container">';
+            const modelNotice = window.isSkateAdmin?.()
+                ? `<span class="active-rating-model">${balancerRatingMode === 'v2' ? 'V2 active' : 'Original V1 preview'}</span>`
+                : '';
+            let html = `<p class="team-interaction-hint">Select two players to swap them. Use ⋮ for one-player moves and other actions. ${modelNotice}</p><div class="teams-container">`;
             
             // Dark team
             html += '<div class="team">';
