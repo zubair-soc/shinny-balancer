@@ -1,0 +1,24 @@
+#playerProfileModal .v2-skill { padding: 15px 0; border-bottom: 1px solid var(--card-border); }
+#playerProfileModal .v2-skill-heading { display:flex; align-items:center; gap:9px; margin-bottom:10px; font-size:14px; }
+#playerProfileModal .v2-skill-heading > span { color:var(--text-muted); font-size:12px; }
+#playerProfileModal .v2-skill-track { flex:1; height:5px; margin-left:12px; background:rgba(var(--primary-rgb),.07); border-radius:5px; overflow:hidden; }
+#playerProfileModal .v2-skill-track > div { height:100%; width:0; background:var(--skill-color); transition:width .15s; }
+#playerProfileModal .v2-score-options { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+#playerProfileModal .v2-score { min-height:44px; border:1px solid var(--card-border); border-radius:10px; background:var(--card-bg); color:var(--text); font:inherit; font-size:15px; font-weight:650; cursor:pointer; }
+#playerProfileModal .v2-score:hover { border-color:var(--primary); background:rgba(var(--primary-rgb),.07); }
+#playerProfileModal .v2-score[aria-pressed="true"] { background:var(--primary-dark); border-color:var(--primary-dark); color:#fff; }
+#playerProfileModal .v2-score-description { margin-top:10px; color:var(--text-muted); font-size:12px; line-height:1.6; }
+#playerProfileModal .v2-score-description strong { color:var(--text); }
+#playerProfileModal .v2-score-description ul, #playerProfileModal .v2-guide ul { margin:6px 0 0; padding-left:18px; }
+#playerProfileModal .v2-skill-tools { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-top:8px; }
+#playerProfileModal .v2-skill-tools details { flex:1; font-size:12px; color:var(--text-muted); }
+#playerProfileModal .v2-skill-tools summary { cursor:pointer; min-height:28px; }
+#playerProfileModal .v2-guide { display:grid; gap:10px; padding:10px 0; line-height:1.5; }
+#playerProfileModal .v2-skip { border:0; padding:0; min-height:28px; background:transparent; color:var(--text-muted); font:inherit; font-size:12px; cursor:pointer; }
+#playerProfileModal .v2-skip:hover { color:var(--primary-dark); text-decoration:underline; }
+#playerProfileModal .v2-progress { margin-top:15px; font-size:12px; color:var(--text-muted); }
+#playerProfileModal #submitV2bBtn:disabled { opacity:.5; cursor:default; }
+@media(prefers-reduced-motion:reduce) { #playerProfileModal .v2-skill-track > div { transition:none; } }
+
+#playerProfileModal .v2-save-next { width:100%; margin-top:8px; padding:12px; border:1px solid var(--primary); border-radius:10px; background:var(--card-bg); color:var(--primary-dark); font:inherit; font-size:14px; font-weight:650; cursor:pointer; }
+#playerProfileModal .v2-save-next:disabled { opacity:.5; cursor:default; }

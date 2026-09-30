@@ -197,38 +197,38 @@
             const container = document.getElementById('simpleRubricContainer');
             if (!container) return;
             container.innerHTML = Object.entries(SIMPLE_RUBRIC).map(([key, def]) => {
-                const val = skills ? (skills[key] !== null && skills[key] !== undefined ? skills[key] : '') : '';
-                const examplesHtml = Object.entries(def.examples).map(([level, items]) => `
-                    <div style="margin-bottom:8px;">
-                        <span style="color:${def.color}; font-weight:700; font-size:12px;">${level} — </span>
-                        <span style="color:var(--text-muted); font-size:12px;">${def.desc[parseInt(level)-1]}</span>
-                        <ul style="margin:4px 0 0 16px; padding:0;">
-                            ${items.map(i => `<li style="font-size:11px; color:var(--text-muted); margin-bottom:2px;">${i}</li>`).join('')}
-                        </ul>
-                    </div>`).join('');
-
-                return `
-                <div style="margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        <span style="font-size: 13px; font-weight: 700; color: ${def.color}; text-transform: uppercase; letter-spacing: 0.5px;">${def.label}</span>
-                        <span style="font-size: 11px; color: var(--text-muted);">${def.weight}%</span>
-                        <button onclick="toggleRubricInfo('info_${key}')" style="background:rgba(100,100,255,0.15); border:1px solid rgba(100,100,255,0.3); color:#6366f1; border-radius:50%; width:20px; height:20px; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">ℹ</button>
-                        <div style="flex: 1; height: 1px; background: var(--card-border);"></div>
-                    </div>
-                    <div id="info_${key}" style="display:none; background:rgba(0,0,0,0.15); border-radius:8px; padding:12px; margin-bottom:10px;">
-                        ${examplesHtml}
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <input type="number" id="simple_${key}" min="1" max="5" step="0.5" value="${val}" placeholder="—"
-                            oninput="updateSimpleComposite()"
-                            style="width: 70px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 14px; text-align: center;">
-                        <div style="flex: 1;">
-                            ${def.desc.map((d, i) => `<div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;"><span style="color: ${def.color}; font-weight: 600;">${i+1}</span> — ${d}</div>`).join('')}
-                        </div>
-                    </div>
-                </div>`;
+                const val = skills?.[key] ?? '';
+                return `<section class="v2-skill" style="--skill-color:${def.color}">
+                    <div class="v2-skill-heading"><strong>${def.label}</strong><span>${def.weight}%</span><div class="v2-skill-track"><div id="v2bar_${key}"></div></div></div>
+                    <input type="hidden" id="simple_${key}" value="${escapeHTML(val)}">
+                    <div class="v2-score-options" role="group" aria-label="${def.label} rating">${[1,2,3,4,5].map(n => `<button type="button" class="v2-score" aria-pressed="false" aria-label="${def.label}: ${n}, ${escapeHTML(def.desc[n-1])}" onclick="selectV2Score('${key}', ${n})">${n}</button>`).join('')}</div>
+                    <div id="v2description_${key}" class="v2-score-description" aria-live="polite"></div>
+                    <div class="v2-skill-tools"><details><summary>Examples & guide</summary><div class="v2-guide">${def.desc.map((d,i) => `<div><strong>${i+1} · ${escapeHTML(d)}</strong>${v2ExampleList(def, i+1)}</div>`).join('')}</div></details><button type="button" class="v2-skip" onclick="selectV2Score('${key}', '')">Not enough observation</button></div>
+                </section>`;
             }).join('');
+            Object.keys(SIMPLE_RUBRIC).forEach(refreshV2Score);
             updateSimpleComposite();
+        }
+
+        function v2ExampleList(def, score) {
+            return def.examples[score] ? `<ul>${def.examples[score].map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : '';
+        }
+
+        function selectV2Score(key, score) {
+            document.getElementById(`simple_${key}`).value = score;
+            refreshV2Score(key);
+            updateSimpleComposite();
+        }
+
+        function refreshV2Score(key) {
+            const input = document.getElementById(`simple_${key}`);
+            const def = SIMPLE_RUBRIC[key];
+            const score = input.value === '' ? null : Number(input.value);
+            const section = input.closest('.v2-skill');
+            section.querySelectorAll('.v2-score').forEach((button, index) => button.setAttribute('aria-pressed', String(score === index+1)));
+            document.getElementById(`v2bar_${key}`).style.width = score === null ? '0%' : `${score*20}%`;
+            document.getElementById(`v2description_${key}`).innerHTML = score === null ? 'Choose a score, or leave pending observation.'
+                : `<strong>${score} · ${escapeHTML(def.desc[Math.floor(score)-1])}</strong>${v2ExampleList(def, score)}`;
         }
 
         function toggleRubricInfo(id) {
@@ -248,8 +248,9 @@
 
             try {
                 // Save to player_skills_simple as draft
-                await supabaseClient.from('player_skills_simple')
+                const { error } = await supabaseClient.from('player_skills_simple')
                     .upsert({ player_id: id, ...skills, updated_at: new Date().toISOString() }, { onConflict: 'player_id' });
+                if (error) throw error;
 
                 const btn = document.querySelector('#playerProfileModal button[onclick="saveDraftV2b()"]');
                 if (btn) {
@@ -264,7 +265,8 @@
             }
         }
 
-        async function submitV2bRating() {
+        async function submitV2bRating(nextPlayer = false) {
+            if (window.v2RatingSaving) return;
             const id = parseInt(document.getElementById('playerProfileModal').dataset.playerId);
             const rater = document.getElementById('v2bRater').value;
             if (!rater) { alert('Please select a rater'); return; }
@@ -275,35 +277,40 @@
                 skills[key] = el && el.value !== '' ? Math.min(5, Math.max(1, parseFloat(el.value))) : null;
             }
             const composite = calcCompositeSimple(skills);
-            if (!composite) { alert('Please fill in at least one category'); return; }
+            if (Object.values(skills).some(value => value === null)) { alert('Rate all five categories before submitting. Use Save Draft for pending observations.'); return; }
 
             const btn = document.getElementById('submitV2bBtn');
+            window.v2RatingSaving = true;
             btn.textContent = 'Saving...';
             btn.disabled = true;
 
             try {
                 // Insert new rating entry
-                await supabaseClient.from('v2b_ratings').insert({
+                const { error: insertError } = await supabaseClient.from('v2b_ratings').insert({
                     player_id: id,
                     rater,
                     ...skills,
                     composite
                 });
 
+                if (insertError) throw insertError;
+
                 // Recalculate average from 3 most recent
-                const { data: recent } = await supabaseClient
+                const { data: recent, error: historyError } = await supabaseClient
                     .from('v2b_ratings')
                     .select('composite')
                     .eq('player_id', id)
                     .order('created_at', { ascending: false })
                     .limit(3);
 
+                if (historyError) throw historyError;
                 const avg = recent && recent.length > 0
                     ? Math.round((recent.reduce((s, r) => s + r.composite, 0) / recent.length) * 10) / 10
                     : composite;
 
                 // Update player's rating_v2b
-                await supabaseClient.from('players').update({ rating_v2b: avg }).eq('id', id);
+                const { error: updateError } = await supabaseClient.from('players').update({ rating_v2b: avg }).eq('id', id);
+                if (updateError) throw updateError;
 
                 // Update local
                 const player = allPlayers.find(p => p.id === id);
@@ -319,6 +326,16 @@
                 renderV2bHistory(v2bHistory || []);
                 filterPlayers(document.getElementById('searchBox').value);
 
+                if (nextPlayer) {
+                    const term = document.getElementById('searchBox').value.trim().toLowerCase();
+                    const queue = allPlayers.filter(item => item.name.toLowerCase().includes(term));
+                    const next = queue[queue.findIndex(item => item.id === id) + 1];
+                    btn.textContent = 'Submit Rating';
+                    btn.disabled = false;
+                    if (next) await openPlayerProfile(next.id);
+                    else closePillarModal();
+                    return;
+                }
                 btn.textContent = '✓ Submitted';
                 btn.style.background = '#22c55e';
                 setTimeout(() => {
@@ -332,6 +349,8 @@
                 alert('Failed to submit: ' + (err.message || err));
                 btn.textContent = 'Submit Rating';
                 btn.disabled = false;
+            } finally {
+                window.v2RatingSaving = false;
             }
         }
 
@@ -373,11 +392,18 @@
                 const el = document.getElementById(`simple_${key}`);
                 skills[key] = el && el.value !== '' ? parseFloat(el.value) : null;
             }
-            const composite = calcCompositeSimple(skills);
+            const rated = Object.values(skills).filter(value => value !== null).length;
+            const progress = document.getElementById('v2RatingProgress');
+            if (progress) progress.textContent = `${rated} of 5 categories rated`;
+            const submit = document.getElementById('submitV2bBtn');
+            if (submit && submit.textContent !== 'Saving...') submit.disabled = rated !== 5;
+            const next = document.getElementById('submitV2NextBtn');
+            if (next) next.disabled = rated !== 5;
+            const composite = rated === 5 ? calcCompositeSimple(skills) : null;
             const el = document.getElementById('profileV2bComposite');
             if (el && composite !== null) {
                 const outOf100 = Math.round((composite / 5) * 100);
-                el.textContent = `→ V2B: ${composite} (${outOf100})`;
+                el.textContent = `V2: ${composite} (${outOf100})`;
             } else if (el) {
                 el.textContent = '';
             }

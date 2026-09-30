@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/manager-components.css">
     <link rel="stylesheet" href="css/database.css">
     <link rel="stylesheet" href="css/ui-overhaul.css">
+    <link rel="stylesheet" href="css/player-ratings.css">
 </head>
 <body>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
@@ -54,7 +55,7 @@
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
                         <th onclick="sortTable('rating')" class="u-clickable">V1 ↕</th>
-                        <th onclick="sortTable('rating_v2b')" class="u-clickable">V2B ↕</th>
+                        <th onclick="sortTable('rating_v2b')" class="u-clickable">V2 ↕</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -105,9 +106,9 @@
             <div style="margin-bottom:20px; padding:12px 16px; background:rgba(var(--primary-rgb),0.1); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <strong id="profileName" style="color:var(--primary); font-size:16px;"></strong>
                 <div style="display:flex; gap:16px; font-size:12px; color:var(--text-muted);">
-                    <span>v1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
+                    <span>V1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
                     <span id="profileAnchored" style="display:none;"></span>
-                    <span>v2b: <strong id="profileV2bDisplay" style="color:#10b981;">—</strong></span>
+                    <span>V2: <strong id="profileV2bDisplay" style="color:#10b981;">—</strong></span>
                 </div>
             </div>
 
@@ -125,7 +126,7 @@
             <!-- Simple Rubric Section -->
             <div style="border-top:1px solid var(--card-border); margin: 24px 0 20px; padding-top:20px;">
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-                    <p style="font-size:13px; font-weight:700; color:var(--text); margin:0;">V2B Rating</p>
+                    <p style="font-size:13px; font-weight:700; color:var(--text); margin:0;">V2 Rating</p>
                     <span id="profileV2bComposite" style="font-size:12px; color:#10b981; font-weight:600;"></span>
                     <div style="margin-left:auto;">
                         <select id="v2bRater" style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 10px; color:var(--text); font-size:13px;">
@@ -136,10 +137,12 @@
                         </select>
                     </div>
                 </div>
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Rate each category 1–5 using the descriptions as a guide.</p>
-                <div id="simpleRubricContainer"></div>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">V2 runs alongside V1. Team balancing continues to use V1.</p>
+                <div id="simpleRubricContainer"></div><p id="v2RatingProgress" class="v2-progress" aria-live="polite"></p>
 
                 <button id="submitV2bBtn" onclick="submitV2bRating()" style="width:100%; margin-top:16px; padding:12px; background:#10b981; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:white;">Submit Rating</button>
+
+<button id="submitV2NextBtn" class="v2-save-next" type="button" onclick="submitV2bRating(true)">Save & next player →</button>
 
                 <!-- Rating history -->
                 <div style="margin-top:20px;">
