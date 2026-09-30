@@ -156,14 +156,7 @@
                 .maybeSingle();
             renderSimpleRubricForm(draft);
 
-            // Load v2b ratings history
-            const { data: v2bHistory } = await supabaseClient
-                .from('v2b_ratings')
-                .select('*')
-                .eq('player_id', id)
-                .order('created_at', { ascending: false })
-                .limit(10);
-            renderV2bHistory(v2bHistory || []);
+            await loadV2RatingHistory(id);
 
             document.getElementById('playerProfileModal').dataset.playerId = id;
             document.getElementById('playerProfileModal').classList.add('active');
@@ -268,8 +261,6 @@
         async function submitV2bRating(nextPlayer = false) {
             if (window.v2RatingSaving) return;
             const id = parseInt(document.getElementById('playerProfileModal').dataset.playerId);
-            const rater = document.getElementById('v2bRater').value;
-            if (!rater) { alert('Please select a rater'); return; }
 
             const skills = {};
             for (const key of Object.keys(SIMPLE_RUBRIC)) {
@@ -288,42 +279,24 @@
                 // Insert new rating entry
                 const { error: insertError } = await supabaseClient.from('v2b_ratings').insert({
                     player_id: id,
-                    rater,
                     ...skills,
                     composite
                 });
 
                 if (insertError) throw insertError;
 
-                // Recalculate average from 3 most recent
-                const { data: recent, error: historyError } = await supabaseClient
-                    .from('v2b_ratings')
-                    .select('composite')
-                    .eq('player_id', id)
-                    .order('created_at', { ascending: false })
-                    .limit(3);
-
-                if (historyError) throw historyError;
-                const avg = recent && recent.length > 0
-                    ? Math.round((recent.reduce((s, r) => s + r.composite, 0) / recent.length) * 10) / 10
-                    : composite;
-
-                // Update player's rating_v2b
-                const { error: updateError } = await supabaseClient.from('players').update({ rating_v2b: avg }).eq('id', id);
-                if (updateError) throw updateError;
+                // The database attributes the account and updates the average atomically.
+                const { data: savedPlayer, error: scoreError } = await supabaseClient
+                    .from(window.isSkateAdmin?.() ? 'players' : 'skate_manager_players').select('rating_v2b').eq('id', id).single();
+                if (scoreError) throw scoreError;
+                const avg = savedPlayer.rating_v2b;
+                document.getElementById('profileV2bDisplay').textContent = avg ?? '—';
 
                 // Update local
                 const player = allPlayers.find(p => p.id === id);
                 if (player) player.rating_v2b = avg;
 
-                // Reload history
-                const { data: v2bHistory } = await supabaseClient
-                    .from('v2b_ratings')
-                    .select('*')
-                    .eq('player_id', id)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-                renderV2bHistory(v2bHistory || []);
+                await loadV2RatingHistory(id);
                 filterPlayers(document.getElementById('searchBox').value);
 
                 if (nextPlayer) {
@@ -354,9 +327,24 @@
             }
         }
 
+        async function loadV2RatingHistory(id) {
+            const isAdmin = window.isSkateAdmin?.() === true;
+            document.getElementById('v2RatingHistorySection').hidden = !isAdmin;
+            document.getElementById('v2bHistory').innerHTML = '';
+            if (!isAdmin) return;
+            const { data, error } = await supabaseClient.from('v2b_ratings')
+                .select('*').eq('player_id', id).order('created_at', { ascending: false }).limit(10);
+            if (error) {
+                document.getElementById('v2bHistory').textContent = 'Unable to load rating history.';
+                return;
+            }
+            renderV2bHistory(data || []);
+        }
+
         function renderV2bHistory(history) {
             const container = document.getElementById('v2bHistory');
             if (!container) return;
+            if (window.isSkateAdmin?.() !== true) { container.innerHTML = ''; return; }
             if (!history.length) {
                 container.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No ratings yet.</p>';
                 return;
@@ -402,8 +390,7 @@
             const composite = rated === 5 ? calcCompositeSimple(skills) : null;
             const el = document.getElementById('profileV2bComposite');
             if (el && composite !== null) {
-                const outOf100 = Math.round((composite / 5) * 100);
-                el.textContent = `V2: ${composite} (${outOf100})`;
+                el.textContent = `V2: ${composite} / 5`;
             } else if (el) {
                 el.textContent = '';
             }

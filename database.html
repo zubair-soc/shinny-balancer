@@ -128,14 +128,7 @@
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
                     <p style="font-size:13px; font-weight:700; color:var(--text); margin:0;">V2 Rating</p>
                     <span id="profileV2bComposite" style="font-size:12px; color:#10b981; font-weight:600;"></span>
-                    <div style="margin-left:auto;">
-                        <select id="v2bRater" style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 10px; color:var(--text); font-size:13px;">
-                            <option value="">— Select Rater —</option>
-                            <option value="Zubair">Zubair</option>
-                            <option value="Sam">Sam</option>
-                            <option value="Cherish">Cherish</option>
-                        </select>
-                    </div>
+
                 </div>
                 <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">V2 runs alongside V1. Team balancing continues to use V1.</p>
                 <div id="simpleRubricContainer"></div><p id="v2RatingProgress" class="v2-progress" aria-live="polite"></p>
@@ -145,7 +138,7 @@
 <button id="submitV2NextBtn" class="v2-save-next" type="button" onclick="submitV2bRating(true)">Save & next player →</button>
 
                 <!-- Rating history -->
-                <div style="margin-top:20px;">
+                <div id="v2RatingHistorySection" data-admin-only hidden style="margin-top:20px;">
                     <p style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Rating History</p>
                     <div id="v2bHistory"></div>
                 </div>
