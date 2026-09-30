@@ -57,7 +57,7 @@
             try {
                 const { data, error } = await supabaseClient
                     .from('skate_manager_players')
-                    .select('name, rating')
+                    .select('name, rating, rating_v2b')
                     .order('name');
 
                 if (error) {
@@ -67,7 +67,7 @@
                     throw error;
                 }
 
-                playerDatabase = data.map(p => ({ name: p.name, rating: p.rating }));
+                playerDatabase = data.map(p => ({ name: p.name, rating: getV2Score(p.rating_v2b), originalRating: p.rating }));
                 document.getElementById('playerCountPaste').textContent = playerDatabase.length;
                 document.getElementById('playerCount').textContent = playerDatabase.length;
                 const databaseStatus = document.getElementById('playerDatabaseStatus');

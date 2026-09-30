@@ -36,7 +36,7 @@
             try {
                 const { data, error } = await supabaseClient
                     .from('skate_manager_players')
-                    .select('id, name, rating')
+                    .select('id, name, rating, rating_v2b')
                     .order('name');
                 if (!error && data) allPlayers = data;
             } catch (e) {
@@ -660,7 +660,7 @@
                 // Build rating map from cached allPlayers (no extra DB call)
                 const ratingMap = {};
                 allPlayers.forEach(p => {
-                    ratingMap[p.name.toLowerCase()] = p.rating;
+                    ratingMap[p.name.toLowerCase()] = getV2Score(p.rating_v2b);
                 });
 
                 // Add ratings to roster data
@@ -703,8 +703,8 @@
                         // Show rating if available (hidden for goalies)
                         const rating = player.rating;
                         const ratingDisplay = player.is_goalie ? '' : (rating ? 
-                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, ${inlineJSString(player.player_name)}, ${rating})" title="Click to edit rating">${rating}</span>` :
-                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); editRating(${player.id}, ${inlineJSString(player.player_name)}, 0)" title="Click to add rating">No rating</span>`);
+                            `<span style="display: inline-block; background: rgba(var(--primary-rgb), 0.15); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); openRosterRating(${player.id}, ${inlineJSString(player.player_name)})" title="Click to edit rating">${rating}</span>` :
+                            `<span style="display: inline-block; background: rgba(107, 114, 128, 0.15); color: #6b7280; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="event.stopPropagation(); openRosterRating(${player.id}, ${inlineJSString(player.player_name)})" title="Click to add rating">No rating</span>`);
                         
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
@@ -724,7 +724,7 @@
                                         <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${escapeHTML(player.friend_group)}]` : ''} ›</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="openRosterRating(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">📊 Rate Player</div>
-                                        <div class="menu-item" onclick="window.open('database.html?player=${encodeURIComponent(player.player_name)}', '_blank'); closeMenu(${player.id})">📊 View in Database</div>
+                                        <div class="menu-item" data-admin-only onclick="window.open('database.html?player=${encodeURIComponent(player.player_name)}', '_blank'); closeMenu(${player.id})">📊 View in Database</div>
                                         ${player.is_paid ? 
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, false); closeMenu(${player.id})">❌ Mark Unpaid</div>` : 
                                             `<div class="menu-item" onclick="togglePaid(${player.id}, true); closeMenu(${player.id})">💵 Mark Paid</div>`

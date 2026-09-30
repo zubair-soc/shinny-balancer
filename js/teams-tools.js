@@ -46,9 +46,7 @@
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:6px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:13px;">
                     <a href="balancer.html?player=${encodeURIComponent(p.name)}" style="color:var(--text); text-decoration:none; flex:1;" title="View profile">${escapeHTML(p.name)}</a>
                     <div style="display:flex; gap:4px; align-items:center;">
-                        <span style="color:var(--text-muted); font-size:11px; margin-right:4px;">${p.rating_v2 !== undefined && p.rating_v2 !== null ? p.rating_v2 : (p.rating || '—')}</span>
-                        <button onclick="nudgePlayer(${inlineJSString(p.name)}, ${skateId}, 'up')" style="background:rgba(34,197,94,0.2); border:1px solid rgba(34,197,94,0.4); color:#22c55e; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▲</button>
-                        <button onclick="nudgePlayer(${inlineJSString(p.name)}, ${skateId}, 'down')" style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#ef4444; border-radius:6px; padding:2px 8px; cursor:pointer; font-size:14px;">▼</button>
+                        <span style="color:var(--text-muted); font-size:11px; margin-right:4px;">${getV2Score(allPlayers.find(player => player.name.toLowerCase() === p.name.toLowerCase())?.rating_v2b) ?? '—'}</span>
                     </div>
                 </div>
             `).join('');

@@ -54,7 +54,7 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
-                        <th onclick="sortTable('rating')" class="u-clickable">V1 ↕</th>
+                        <th hidden onclick="sortTable('rating')" class="u-clickable">V1 ↕</th>
                         <th onclick="sortTable('rating_v2b')" class="u-clickable">V2 ↕</th>
                         <th>Actions</th>
                     </tr>
@@ -76,8 +76,8 @@
                 <label>Player Name</label>
                 <input type="text" id="newPlayerName" placeholder="Enter player name">
             </div>
-            <div class="form-group">
-                <label>Rating (0-20)</label>
+            <div class="form-group" hidden>
+                <label>Original V1 rating</label>
                 <input type="number" id="newPlayerRating" placeholder="Enter rating" min="0" max="20">
             </div>
             <div class="modal-buttons">
@@ -106,7 +106,7 @@
             <div style="margin-bottom:20px; padding:12px 16px; background:rgba(var(--primary-rgb),0.1); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 <strong id="profileName" style="color:var(--primary); font-size:16px;"></strong>
                 <div style="display:flex; gap:16px; font-size:12px; color:var(--text-muted);">
-                    <span>V1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
+                    <span hidden>V1: <strong id="profileV1Rating" style="color:var(--text);"></strong></span>
                     <span id="profileAnchored" style="display:none;"></span>
                     <span>V2: <strong id="profileV2bDisplay" style="color:#10b981;">—</strong></span>
                 </div>
@@ -130,7 +130,7 @@
                     <span id="profileV2bComposite" style="font-size:12px; color:#10b981; font-weight:600;"></span>
 
                 </div>
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">V2 runs alongside V1. Team balancing continues to use V1.</p>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">V2 is the active rating used for team balancing.</p>
                 <div id="simpleRubricContainer"></div><p id="v2RatingProgress" class="v2-progress" aria-live="polite"></p>
 
                 <button id="saveV2DraftBtn" onclick="saveDraftV2b()" style="width:100%; margin-top:16px; padding:12px; background:#d1fae5; border:1px solid #6ee7b7; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; color:#065f46;">Save Draft</button>

@@ -305,6 +305,7 @@
 
                 await loadV2RatingHistory(id);
                 if (typeof filterPlayers === 'function') filterPlayers(document.getElementById('searchBox').value);
+                else if (typeof loadRoster === 'function' && currentSkateId) await loadRoster(currentSkateId, allSkates.find(skate => skate.id === currentSkateId)?.capacity || 24);
 
                 if (nextPlayer) {
                     const term = document.getElementById('searchBox').value.trim().toLowerCase();
@@ -509,6 +510,7 @@
                 player.rating_v2_anchored = rating_v2_anchored;
 
                 if (typeof filterPlayers === 'function') filterPlayers(document.getElementById('searchBox').value);
+                else if (typeof loadRoster === 'function' && currentSkateId) await loadRoster(currentSkateId, allSkates.find(skate => skate.id === currentSkateId)?.capacity || 24);
                 // Show saved confirmation without closing
                 const saveBtn = document.querySelector('#playerProfileModal button[onclick="savePlayerProfile()"]');
                 if (saveBtn) {

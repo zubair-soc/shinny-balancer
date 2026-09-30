@@ -101,12 +101,11 @@
                 return `
                 <tr>
                     <td>${escapeHTML(player.name)} ${player.is_pillar ? '' : ''}</td>
-                    <td class="rating-cell" style="color:var(--primary)">${player.rating ?? '—'}</td>
+                    <td hidden class="rating-cell">${player.rating ?? '—'}</td>
                     <td class="rating-cell" style="color:#10b981">${formatV2Rating(player.rating_v2b)}</td>
                     <td class="actions">
                         <div style="display:flex; gap:4px; flex-wrap:wrap;">
                             <button class="icon-button" data-admin-only onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>
-                            <button class="icon-button" onclick="editRating(${player.id}, ${safeName}, ${player.rating})" title="Edit rating">✏️</button>
                             <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="Rate Player" style="color:#10b981;">📊</button>
                             <button class="icon-button delete" data-admin-only onclick="confirmDelete(${player.id}, ${safeName})" title="Delete">🗑️</button>
                         </div>
@@ -168,22 +167,17 @@
         async function addPlayer() {
             if (!window.isSkateAdmin?.()) return;
             const name = document.getElementById('newPlayerName').value.trim();
-            const rating = parseFloat(document.getElementById('newPlayerRating').value);
+
 
             if (!name) {
                 alert('Please enter a player name');
                 return;
             }
 
-            if (isNaN(rating) || rating < 0 || rating > 20) {
-                alert('Please enter a valid rating between 0 and 20');
-                return;
-            }
-
             try {
                 const { data, error } = await supabaseClient
                     .from('players')
-                    .insert([{ name, rating }])
+                    .insert([{ name }])
                     .select();
 
                 if (error) throw error;
@@ -192,7 +186,7 @@
                 allPlayers.sort((a, b) => a.name.localeCompare(b.name));
                 filterPlayers(document.getElementById('searchBox').value);
                 closeAddModal();
-                alert(`✓ Added ${name}`);
+                await openPlayerProfile(data[0].id);
             } catch (error) {
                 console.error('Error adding player:', error);
                 if (error.code === '23505') {
@@ -306,9 +300,9 @@
 
         // Export CSV
         function exportCSV() {
-            const csv = ['Name,Rating'];
+            const csv = ['Name,V2 Rating'];
             allPlayers.forEach(p => {
-                csv.push(`"${p.name}",${p.rating}`);
+                csv.push(`"${p.name}",${getV2Score(p.rating_v2b) ?? ''}`);
             });
 
             const blob = new Blob([csv.join('\n')], { type: 'text/csv' });

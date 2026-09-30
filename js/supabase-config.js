@@ -33,3 +33,11 @@ window.escapeHTML = function (value) {
 window.inlineJSString = function (value) {
   return window.escapeHTML(JSON.stringify(String(value ?? '')));
 };
+
+// V2 is the active score. Legacy test values used a 100-point scale.
+window.getV2Score = function(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const raw = Number(value);
+  const score = raw > 5 && raw <= 100 ? Math.round(raw / 20 * 10) / 10 : raw;
+  return Number.isFinite(score) && score >= 1 && score <= 5 ? score : null;
+};

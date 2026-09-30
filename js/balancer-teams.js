@@ -73,6 +73,7 @@
                     // Keep saved player edits and team placement, while syncing
                     // goalie and friend-group details from the current roster.
                     return [{ ...currentPlayer, ...savedPlayer, name: currentPlayer.name,
+                        rating: currentPlayer.rating,
                         isGoalie: currentPlayer.isGoalie,
                         friendGroup: currentPlayer.friendGroup || savedPlayer.friendGroup || null }];
                 });
@@ -347,7 +348,7 @@
             if (isMenuOpen) {
                 html += '<div class="player-actions-menu" role="menu">';
                 if (!player.isGoalie && !isEditing) {
-                    html += `<button type="button" role="menuitem" onclick="startEditRating(event, '${team}', ${index})">✏️ <span>${player.rating === null ? 'Set rating' : 'Edit rating'}</span></button>`;
+                    html += `<button type="button" role="menuitem" onclick="startEditRating(event, '${team}', ${index})">✏️ <span>Rate Player</span></button>`;
                 }
                 html += `<button type="button" role="menuitem" onclick="toggleGoalieFromMenu(event, '${team}', ${index})">${player.isGoalie ? '👤' : '🥅'} <span>${player.isGoalie ? 'Mark as skater' : 'Mark as goalie'}</span></button>`;
                 html += `<button type="button" role="menuitem" onclick="movePlayerToTeam(event, '${team}', ${index}, '${destination}')">→ <span>Move to ${destinationLabel}</span></button>`;
@@ -389,50 +390,14 @@
         function startEditRating(event, team, index) {
             event.stopPropagation();
             openPlayerMenu = null;
-            selectedPlayer = { team, index, editing: true };
-            renderTeams();
-            
-            // Focus the input after render
-            setTimeout(() => {
-                const input = document.getElementById(`rating-input-${team}-${index}`);
-                if (input) {
-                    input.focus();
-                    input.select();
-                }
-            }, 0);
+            const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
+            window.open('database.html?player=' + encodeURIComponent(player.name), '_blank');
+
         }
 
         async function handleRatingKeypress(event, team, index) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const input = document.getElementById(`rating-input-${team}-${index}`);
-                const newRating = parseFloat(input.value);
-                
-                if (!isNaN(newRating) && newRating >= 0 && newRating <= 20) {
-                    const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
-                    const oldRating = player.rating;
-                    player.rating = newRating;
-                    selectedPlayer = null;
-                    
-                    // Save to Supabase
-                    const playerInDb = playerDatabase.find(p => p.name === player.name);
-                    if (playerInDb) {
-                        // Player exists, update rating
-                        await updatePlayerInSupabase(player.name, newRating);
-                    } else {
-                        // New player, insert
-                        await savePlayerToSupabase(player.name, newRating);
-                    }
-                    
-                    // Re-sort teams after rating change
-                    sortTeams();
-                    renderTeams();
-                } else {
-                    alert('Please enter a valid rating between 0 and 20');
-                }
-            } else if (event.key === 'Escape') {
-                cancelRatingEdit();
-            }
+            if (event.key === 'Enter') startEditRating(event, team, index);
+            else if (event.key === 'Escape') cancelRatingEdit();
         }
 
         function sortTeams() {
@@ -472,23 +437,8 @@
         }
 
         function editRating(team, index) {
-            console.log('editRating called', team, index);
             const player = team === 'dark' ? darkTeam[index] : lightTeam[index];
-            console.log('Editing player:', player);
-            const currentRating = player.rating || '';
-            const newRating = prompt(`Enter rating for ${player.name}:`, currentRating);
-            
-            if (newRating !== null && newRating.trim() !== '') {
-                const rating = parseFloat(newRating);
-                if (!isNaN(rating) && rating >= 0 && rating <= 20) {
-                    player.rating = rating;
-                    console.log('Rating updated to:', rating);
-                    renderTeams();
-                    saveTeams();
-                } else {
-                    alert('Please enter a valid rating between 0 and 20');
-                }
-            }
+            window.open('database.html?player=' + encodeURIComponent(player.name), '_blank');
         }
 
         function toggleGoalie(team, index) {
