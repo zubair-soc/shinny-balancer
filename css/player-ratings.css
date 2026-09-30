@@ -22,3 +22,6 @@
 
 #playerProfileModal .v2-save-next { width:100%; margin-top:8px; padding:12px; border:1px solid var(--primary); border-radius:10px; background:var(--card-bg); color:var(--primary-dark); font:inherit; font-size:14px; font-weight:650; cursor:pointer; }
 #playerProfileModal .v2-save-next:disabled { opacity:.5; cursor:default; }
+
+/* Keep roster ratings focused on the selected player. */
+#playerProfileModal[data-roster-rating] #submitV2NextBtn { display: none; }

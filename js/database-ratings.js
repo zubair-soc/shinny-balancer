@@ -297,7 +297,7 @@
                 if (player) player.rating_v2b = avg;
 
                 await loadV2RatingHistory(id);
-                filterPlayers(document.getElementById('searchBox').value);
+                if (typeof filterPlayers === 'function') filterPlayers(document.getElementById('searchBox').value);
 
                 if (nextPlayer) {
                     const term = document.getElementById('searchBox').value.trim().toLowerCase();
@@ -501,7 +501,7 @@
                 player.upper_pillar_id = upper_pillar_id;
                 player.rating_v2_anchored = rating_v2_anchored;
 
-                filterPlayers(document.getElementById('searchBox').value);
+                if (typeof filterPlayers === 'function') filterPlayers(document.getElementById('searchBox').value);
                 // Show saved confirmation without closing
                 const saveBtn = document.querySelector('#playerProfileModal button[onclick="savePlayerProfile()"]');
                 if (saveBtn) {
