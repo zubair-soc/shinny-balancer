@@ -107,7 +107,7 @@
             document.getElementById('profileV2Rating').value = player.rating_v2 !== null && player.rating_v2 !== undefined ? player.rating_v2 : '';
             document.getElementById('profileIsPillar').checked = player.is_pillar || false;
             document.getElementById('profileAnchored').textContent = '';
-            document.getElementById('profileV2bDisplay').textContent = player.rating_v2b !== null && player.rating_v2b !== undefined ? player.rating_v2b : '—';
+            document.getElementById('profileV2bDisplay').textContent = player.rating_v2b !== null && player.rating_v2b !== undefined ? `${player.rating_v2b} / 5` : '—';
 
             const pillarOptions = '<option value="">— None —</option>' + pillars.map(p =>
                 `<option value="${p.id}">${escapeHTML(p.name)} (${p.rating_v2 !== null && p.rating_v2 !== undefined ? p.rating_v2 : '?'})</option>`
@@ -290,7 +290,7 @@
                     .from(window.isSkateAdmin?.() ? 'players' : 'skate_manager_players').select('rating_v2b').eq('id', id).single();
                 if (scoreError) throw scoreError;
                 const avg = savedPlayer.rating_v2b;
-                document.getElementById('profileV2bDisplay').textContent = avg ?? '—';
+                document.getElementById('profileV2bDisplay').textContent = avg != null ? `${avg} / 5` : '—';
 
                 // Update local
                 const player = allPlayers.find(p => p.id === id);

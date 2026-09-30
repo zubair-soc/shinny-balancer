@@ -716,11 +716,11 @@
                                 <div class="player-menu" onclick="event.stopPropagation()">
                                     <button class="menu-button" onclick="toggleMenu(${player.id}, event)">⋮</button>
                                     <div id="menu-${player.id}" class="menu-dropdown">
+                                        <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔁 Replace Player</div>
                                         ${!player.is_goalie ? 
                                             `<div class="menu-item" onclick="toggleGoalie(${player.id}, true); closeMenu(${player.id})">🥅 Mark as Goalie</div>` : 
                                             `<div class="menu-item" onclick="toggleGoalie(${player.id}, false); closeMenu(${player.id})">👤 Remove Goalie</div>`
                                         }
-                                        <div class="menu-item" onclick="showReplacePlayerModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔁 Replace Player</div>
                                         <div class="menu-item" onclick="showFriendGroupMenu(${player.id}, event)">🤝 Friend Group ${player.friend_group ? `[${escapeHTML(player.friend_group)}]` : ''} ›</div>
                                         <div class="menu-item" onclick="showMoveToSkateModal(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">🔄 Move to Another Skate</div>
                                         <div class="menu-item" onclick="openRosterRating(${player.id}, ${inlineJSString(player.player_name)}); closeMenu(${player.id})">📊 Rate Player</div>
