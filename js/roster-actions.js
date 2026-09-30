@@ -287,19 +287,25 @@
             try {
                 const { data: registration, error } = await supabaseClient
                     .from('skate_registrations')
-                    .select('id, player_id, player_name, is_paid, is_waitlist')
+                    .select('id, skate_id, player_id, player_name, is_paid, is_waitlist')
                     .eq('id', registrationId)
                     .single();
                 if (error) throw error;
 
-                const skate = allSkates.find(item => item.id === currentSkateId);
+                const { data: skate, error: skateError } = await supabaseClient
+                    .from('skate_manager_skates').select('id,title,cost,capacity')
+                    .eq('id', registration.skate_id).single();
+                if (skateError) throw skateError;
                 const creditAmount = Number(String(skate?.cost ?? '').replace(/[^0-9.]/g, ''));
                 const canOfferCredit = registration.is_paid && !registration.is_waitlist && Number.isFinite(creditAmount) && creditAmount > 0;
                 const creditLabel = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(creditAmount || 0);
+                const creditReason = !registration.is_paid ? 'This player has not paid, so no credit can be issued.'
+                    : registration.is_waitlist ? 'Waitlisted spots are not eligible for credit.'
+                    : 'Set a positive skate fee to enable credit.';
                 pendingRosterRemoval = { registration, skate };
                 document.getElementById('removePlayerPrompt').textContent = canOfferCredit
                     ? `Remove ${registration.player_name} from ${skate?.title || 'this skate'}? Choose whether to issue their skate fee as credit.`
-                    : `Remove ${registration.player_name} from this skate? Credit is unavailable for unpaid or waitlisted spots, or skates without a positive fee.`;
+                    : `Remove ${registration.player_name} from ${skate.title}? ${creditReason}`;
                 const creditButton = document.querySelector('#removePlayerModal button[onclick="confirmRemovePlayer(true)"]');
                 creditButton.hidden = !canOfferCredit;
                 creditButton.querySelector('.removal-choice-title').textContent = `Remove + issue ${creditLabel} credit`;
