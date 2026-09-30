@@ -1,14 +1,13 @@
         // Make modal display flex when active
         const profileModal = document.getElementById('playerProfileModal');
         const origClassList = profileModal.classList;
-        Object.defineProperty(profileModal, 'classList', {
-            get() { return origClassList; }
-        });
+        const addClass = origClassList.add.bind(origClassList);
+        const removeClass = origClassList.remove.bind(origClassList);
         profileModal.classList.add = function(cls) {
             if (cls === 'active') { profileModal.style.display = 'flex'; }
-            origClassList.add(cls);
+            addClass(cls);
         };
         profileModal.classList.remove = function(cls) {
             if (cls === 'active') { profileModal.style.display = 'none'; }
-            origClassList.remove(cls);
+            removeClass(cls);
         };
