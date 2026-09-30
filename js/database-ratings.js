@@ -2,7 +2,7 @@
             if (value === null || value === undefined || value === '') return '—';
             const raw = Number(value);
             const score = raw > 5 && raw <= 100 ? Math.round(raw / 20 * 10) / 10 : raw;
-            return Number.isFinite(score) && score >= 1 && score <= 5 ? `${score} / 5` : '—';
+            return Number.isFinite(score) && score >= 1 && score <= 5 ? String(score) : '—';
         }
 
         // ========== V2 RATING / PILLAR PROFILE ==========
@@ -397,7 +397,7 @@
             const composite = rated === 5 ? calcCompositeSimple(skills) : null;
             const el = document.getElementById('profileV2bComposite');
             if (el && composite !== null) {
-                el.textContent = `V2: ${composite} / 5`;
+                el.textContent = `V2: ${composite}`;
             } else if (el) {
                 el.textContent = '';
             }
