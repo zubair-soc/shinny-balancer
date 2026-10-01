@@ -91,11 +91,12 @@
         function renderTable() {
             const tbody = document.getElementById('playerTableBody');
             if (!tbody) return;
+            openDbMenuId = null;
             const ratingHeader = document.getElementById('databaseRatingHeader');
             if (ratingHeader) ratingHeader.textContent = databaseRatingMode === 'v1' ? 'Original V1 ↕' : 'V2 ↕';
 
             if (filteredPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
                 return;
             }
 
@@ -105,14 +106,18 @@
                     ? (player.rating ?? '—')
                     : formatV2Rating(player.rating_v2b);
                 return `
-                <tr>
-                    <td>${escapeHTML(player.name)} ${player.is_pillar ? '' : ''}</td>
+                <tr class="database-player-row">
+                    <td><button type="button" class="database-player-link" onclick="openPlayerProfile(${player.id})">${escapeHTML(player.name)}</button></td>
                     <td class="rating-cell${databaseRatingMode === 'v1' ? ' rating-cell-v1' : ''}">${ratingDisplay}</td>
                     <td class="actions">
-                        <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                            <button class="icon-button" data-admin-only onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>
-                            <button class="icon-button" onclick="openPlayerProfile(${player.id})" title="Rate Player" style="color:#10b981;">📊</button>
-                            <button class="icon-button delete" data-admin-only onclick="confirmDelete(${player.id}, ${safeName})" title="Delete">🗑️</button>
+                        <div class="database-row-actions">
+                            <button type="button" class="db-menu-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="dbmenu-${player.id}" onclick="toggleDbMenu(event, ${player.id})" title="Player actions">•••</button>
+                            <div id="dbmenu-${player.id}" class="db-action-menu" role="menu" hidden>
+                                <button type="button" role="menuitem" onclick="closeDbMenu(${player.id}); openPlayerProfile(${player.id})">Rate player</button>
+                                <button type="button" role="menuitem" data-admin-only onclick="closeDbMenu(${player.id}); editName(${player.id}, ${safeName})">Edit name</button>
+                                <div class="db-action-divider" data-admin-only></div>
+                                <button type="button" role="menuitem" class="db-action-delete" data-admin-only onclick="closeDbMenu(${player.id}); confirmDelete(${player.id}, ${safeName})">Delete player</button>
+                            </div>
                         </div>
                     </td>
                 </tr>`;
@@ -359,16 +364,19 @@
         let openDbMenuId = null;
 
         function toggleDbMenu(event, id) {
+            event.stopPropagation();
             if (openDbMenuId && openDbMenuId !== id) closeDbMenu(openDbMenuId);
             const menu = document.getElementById(`dbmenu-${id}`);
             if (!menu) return;
-            const isOpen = menu.style.display === 'block';
+            const isOpen = !menu.hidden;
             if (isOpen) { closeDbMenu(id); return; }
 
             const btn = event.currentTarget;
             const rect = btn.getBoundingClientRect();
-            const menuWidth = 160;
-            const menuHeight = 160; // approximate
+            menu.hidden = false;
+            menu.style.visibility = 'hidden';
+            const menuWidth = menu.offsetWidth || 190;
+            const menuHeight = menu.offsetHeight || 150;
 
             // Horizontal: align to right of button, clamp to viewport
             const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
@@ -379,23 +387,36 @@
                 ? Math.max(8, rect.top - menuHeight - 4)
                 : rect.bottom + 4;
 
-            menu.style.display = 'block';
             menu.style.top = top + 'px';
             menu.style.left = left + 'px';
+            menu.style.visibility = '';
+            btn.setAttribute('aria-expanded', 'true');
             openDbMenuId = id;
         }
 
         function closeDbMenu(id) {
             const menu = document.getElementById(`dbmenu-${id}`);
-            if (menu) menu.style.display = 'none';
+            if (menu) menu.hidden = true;
+            const trigger = document.querySelector(`.db-menu-trigger[aria-controls="dbmenu-${id}"]`);
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
             openDbMenuId = null;
         }
 
         document.addEventListener('click', (e) => {
-            if (openDbMenuId && !e.target.closest(`#dbmenu-${openDbMenuId}`) && !e.target.closest('.icon-button')) {
+            if (openDbMenuId && !e.target.closest(`#dbmenu-${openDbMenuId}`) && !e.target.closest('.db-menu-trigger')) {
                 closeDbMenu(openDbMenuId);
             }
+            document.querySelectorAll('.database-toolbar-menu[open]').forEach(menu => {
+                if (!menu.contains(e.target)) menu.removeAttribute('open');
+            });
         });
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            if (openDbMenuId) closeDbMenu(openDbMenuId);
+            document.querySelectorAll('.database-toolbar-menu[open]').forEach(menu => menu.removeAttribute('open'));
+        });
+        window.addEventListener('resize', () => { if (openDbMenuId) closeDbMenu(openDbMenuId); });
+        window.addEventListener('scroll', () => { if (openDbMenuId) closeDbMenu(openDbMenuId); }, true);
 
         // ========== PILLAR FILTER ==========
         let pillarFilterActive = false;

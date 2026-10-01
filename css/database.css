@@ -138,6 +138,64 @@
             font-size: 14px;
         }
 
+        .database-toolbar-actions {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .database-toolbar-menu {
+            position: relative;
+        }
+
+        .database-toolbar-menu > summary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            min-height: 42px;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-muted);
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .database-toolbar-menu > summary::-webkit-details-marker { display: none; }
+        .database-toolbar-menu[open] > summary { border-color: var(--primary); color: var(--primary-dark); background: rgba(var(--primary-rgb), .08); }
+
+        .database-toolbar-menu-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            z-index: 60;
+            min-width: 170px;
+            padding: 6px;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            background: var(--card-bg);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, .18);
+        }
+
+        .database-toolbar-menu-panel button {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .database-toolbar-menu-panel button:hover { background: rgba(var(--primary-rgb), .09); }
+
         .table-container {
             background: var(--card-bg);
             border-radius: 12px;
@@ -204,9 +262,84 @@
         }
 
         .actions {
-            display: flex;
-            gap: 8px;
+            width: 58px;
+            padding-left: 6px;
+            padding-right: 10px;
+            text-align: right;
         }
+
+        .database-actions-heading { width: 58px; }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .database-player-row:hover { background: rgba(var(--primary-rgb), .035); }
+        .database-player-link {
+            max-width: 100%;
+            padding: 5px 0;
+            border: 0;
+            background: transparent;
+            color: var(--text);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        .database-player-link:hover { color: var(--primary-dark); text-decoration: underline; }
+        .database-row-actions { position: relative; display: inline-flex; }
+        .db-menu-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-muted);
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .db-menu-trigger:hover, .db-menu-trigger[aria-expanded="true"] { border-color: rgba(var(--primary-rgb), .4); background: rgba(var(--primary-rgb), .09); color: var(--primary-dark); }
+        .db-action-menu {
+            position: fixed;
+            z-index: 1200;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            width: 190px;
+            padding: 6px;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            background: var(--card-bg);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .22);
+        }
+        .db-action-menu[hidden] { display: none; }
+        .db-action-menu button {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+        }
+        .db-action-menu button:hover { background: rgba(var(--primary-rgb), .09); }
+        .db-action-divider { height: 1px; margin: 3px 4px; background: var(--card-border); }
+        .db-action-menu .db-action-delete { color: #dc2626; }
+        .db-action-menu .db-action-delete:hover { background: rgba(239, 68, 68, .1); }
 
         .icon-button {
             background: var(--card-border);
@@ -331,9 +464,9 @@
                 width: 100%;
             }
 
-            .toolbar .button {
-                width: 100%;
-            }
+            .database-toolbar-actions { width: 100%; }
+            .database-toolbar-actions > .button { flex: 1; width: auto; }
+            .database-toolbar-menu { margin-left: auto; }
 
             .stats {
                 margin-left: 0;
@@ -346,11 +479,8 @@
                 font-size: 13px;
             }
 
-            /* Make action buttons smaller on mobile */
-            .icon-button {
-                padding: 6px 8px;
-                font-size: 14px;
-            }
+            .database-actions-heading, .actions { width: 50px; }
+            .db-menu-trigger { width: 36px; height: 36px; }
 
             /* Modal */
             .modal-content {

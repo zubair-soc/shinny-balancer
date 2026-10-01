@@ -45,8 +45,15 @@
                 <button type="button" data-database-rating-mode="v1" aria-pressed="false" onclick="setDatabaseRatingMode('v1')">Original V1</button>
             </div>
             <button id="pillarFilterBtn" onclick="togglePillarFilter()" style="display:none; padding:8px 14px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#f59e0b; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;">⭐ Pillars</button>
-            <button class="button" data-admin-only hidden onclick="showAddModal()">+ Add Player</button>
-            <button class="button button-secondary" onclick="exportCSV()">Export CSV</button>
+            <div class="database-toolbar-actions">
+                <button class="button" data-admin-only hidden onclick="showAddModal()">+ Add Player</button>
+                <details class="database-toolbar-menu">
+                    <summary aria-label="More player database actions" title="More actions">•••</summary>
+                    <div class="database-toolbar-menu-panel">
+                        <button type="button" onclick="exportCSV(); this.closest('details').removeAttribute('open')">Export CSV</button>
+                    </div>
+                </details>
+            </div>
             <div class="stats">
                 <span id="playerCount">0 players</span>
                 <span id="filteredCount"></span>
@@ -54,12 +61,12 @@
         </div>
 
         <div class="table-container">
-            <div class="table-container"><table>
+            <table>
                 <thead>
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
                         <th id="databaseRatingHeader" onclick="sortActiveDatabaseRating()" class="u-clickable">V2 ↕</th>
-                        <th>Actions</th>
+                        <th class="database-actions-heading"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody id="playerTableBody">
@@ -67,7 +74,7 @@
                         <td colspan="3" class="loading">Loading players...</td>
                     </tr>
                 </tbody>
-            </table></div>
+            </table>
         </div>
     </div>
 
