@@ -6,7 +6,7 @@
         }
 
         function generateExport(parkingCodeOverride) {
-            const skateTitle = document.getElementById('skateTitle').value;
+            const skateTitle = document.getElementById('skateTitle').value.replace(/^\s*🏒\s*/, '');
             const dateTime = document.getElementById('dateTime').value;
             const cost = document.getElementById('cost').value;
             const email = document.getElementById('email').value;

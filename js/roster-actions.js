@@ -625,7 +625,8 @@
                 const date = new Date(skate.date + 'T00:00:00');
                 const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-                let message = `🏒 ${skate.title}\n`;
+                const messageTitle = String(skate.title || '').replace(/^\s*🏒\s*/, '');
+                let message = `${messageTitle}\n`;
                 message += `Date & Time: ${dateStr} · ${formatTime(skate.time_start)}–${formatTime(skate.time_end)}\n`;
                 message += `Cost: ${skate.cost} — payments@shinnyofchampions.com\n`;
                 message += `Location: ${skate.location}\n`;
