@@ -40,6 +40,10 @@
 
         <div class="toolbar">
             <input type="text" id="searchBox" class="search-box" placeholder="Search players...">
+            <div class="rating-model-switcher" data-admin-only hidden aria-label="Player database rating display">
+                <button type="button" data-database-rating-mode="v2" aria-pressed="true" onclick="setDatabaseRatingMode('v2')">V2</button>
+                <button type="button" data-database-rating-mode="v1" aria-pressed="false" onclick="setDatabaseRatingMode('v1')">Original V1</button>
+            </div>
             <button id="pillarFilterBtn" onclick="togglePillarFilter()" style="display:none; padding:8px 14px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#f59e0b; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;">⭐ Pillars</button>
             <button class="button" data-admin-only hidden onclick="showAddModal()">+ Add Player</button>
             <button class="button button-secondary" onclick="exportCSV()">Export CSV</button>
@@ -54,8 +58,7 @@
                 <thead>
                     <tr>
                         <th onclick="sortTable('name')">Name ↕</th>
-                        <th hidden onclick="sortTable('rating')" class="u-clickable">V1 ↕</th>
-                        <th onclick="sortTable('rating_v2b')" class="u-clickable">V2 ↕</th>
+                        <th id="databaseRatingHeader" onclick="sortActiveDatabaseRating()" class="u-clickable">V2 ↕</th>
                         <th>Actions</th>
                     </tr>
                 </thead>

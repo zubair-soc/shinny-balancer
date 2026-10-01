@@ -4,6 +4,7 @@
         let filteredPlayers = [];
         let sortColumn = 'name';
         let sortDirection = 'asc';
+        let databaseRatingMode = 'v2';
 
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
@@ -90,6 +91,8 @@
         function renderTable() {
             const tbody = document.getElementById('playerTableBody');
             if (!tbody) return;
+            const ratingHeader = document.getElementById('databaseRatingHeader');
+            if (ratingHeader) ratingHeader.textContent = databaseRatingMode === 'v1' ? 'Original V1 ↕' : 'V2 ↕';
 
             if (filteredPlayers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><h3>No players found</h3><p>Try a different search or add a new player</p></td></tr>';
@@ -98,11 +101,13 @@
 
             tbody.innerHTML = filteredPlayers.map(player => {
                 const safeName = inlineJSString(player.name);
+                const ratingDisplay = databaseRatingMode === 'v1'
+                    ? (player.rating ?? '—')
+                    : formatV2Rating(player.rating_v2b);
                 return `
                 <tr>
                     <td>${escapeHTML(player.name)} ${player.is_pillar ? '' : ''}</td>
-                    <td hidden class="rating-cell">${player.rating ?? '—'}</td>
-                    <td class="rating-cell" style="color:#10b981">${formatV2Rating(player.rating_v2b)}</td>
+                    <td class="rating-cell${databaseRatingMode === 'v1' ? ' rating-cell-v1' : ''}">${ratingDisplay}</td>
                     <td class="actions">
                         <div style="display:flex; gap:4px; flex-wrap:wrap;">
                             <button class="icon-button" data-admin-only onclick="editName(${player.id}, ${safeName})" title="Edit name">🖊️</button>
@@ -112,6 +117,25 @@
                     </td>
                 </tr>`;
             }).join('');
+        }
+
+        function sortActiveDatabaseRating() {
+            sortTable(databaseRatingMode === 'v1' ? 'rating' : 'rating_v2b');
+        }
+
+        function updateDatabaseRatingModeControls() {
+            document.querySelectorAll('[data-database-rating-mode]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.databaseRatingMode === databaseRatingMode));
+            });
+        }
+
+        function setDatabaseRatingMode(mode) {
+            if (!window.isSkateAdmin?.() || !['v1', 'v2'].includes(mode) || mode === databaseRatingMode) return;
+            databaseRatingMode = mode;
+            sortColumn = mode === 'v1' ? 'rating' : 'rating_v2b';
+            sortDirection = 'desc';
+            updateDatabaseRatingModeControls();
+            filterPlayers(document.getElementById('searchBox').value);
         }
 
                 function sortTable(column) {
@@ -383,4 +407,3 @@
             btn.textContent = pillarFilterActive ? '⭐ Pillars ×' : '⭐ Pillars';
             filterPlayers(document.getElementById('searchBox').value);
         }
-

@@ -191,6 +191,8 @@
             font-size: 16px;
         }
 
+        .rating-cell-v1 { color: var(--text); }
+
         .rating-input {
             width: 60px;
             background: rgba(0, 0, 0, 0.4);
