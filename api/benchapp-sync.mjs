@@ -158,8 +158,10 @@ async function runBenchAppSync(request, setStage) {
   const signedInUser = await authResponse.json();
   const appMetadata = signedInUser?.app_metadata || {};
   const roles = Array.isArray(appMetadata.roles) ? appMetadata.roles : [];
-  if (appMetadata.role !== 'admin' && !roles.includes('admin')) {
-    return json({ error: 'Admin access is required to sync the BenchApp calendar.' }, 403);
+  const isAdmin = appMetadata.role === 'admin' || roles.includes('admin');
+  const isBenchAppOwner = String(signedInUser?.email || '').trim().toLowerCase() === 'zubair@shinnyofchampions.com';
+  if (!isAdmin || !isBenchAppOwner) {
+    return json({ error: 'This account is not authorized to sync the BenchApp calendar.' }, 403);
   }
 
   setStage('reading the sync request');

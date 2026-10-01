@@ -22,7 +22,7 @@
   `;
   style.textContent += `
     html:not([data-skate-role='admin']) [data-admin-only],
-    html:not([data-skate-role='admin']) #benchAppSyncCard,
+    html:not([data-benchapp-owner='true']) [data-benchapp-owner-only],
     html:not([data-skate-role='admin']) #createSkateButton,
     html:not([data-skate-role='admin']) #editSkateButton,
     html:not([data-skate-role='admin']) #deleteSkateButton { display: none !important; }
@@ -58,11 +58,16 @@
     const roles = Array.isArray(appMetadata.roles) ? appMetadata.roles : [];
     const isAdmin = appMetadata.role === 'admin' || roles.includes('admin');
     const isSkateManager = appMetadata.role === 'skate_manager' || roles.includes('skate_manager');
+    const isBenchAppOwner = isAdmin && String(user?.email || '').trim().toLowerCase() === 'zubair@shinnyofchampions.com';
     const role = isAdmin ? 'admin' : isSkateManager ? 'skate_manager' : null;
     window.SKATE_MANAGER_ROLE = role;
+    window.SKATE_MANAGER_EMAIL = String(user?.email || '').trim().toLowerCase();
+    window.SKATE_MANAGER_CAN_MANAGE_BENCHAPP = isBenchAppOwner;
     document.documentElement.dataset.skateRole = role || 'unassigned';
+    document.documentElement.dataset.benchappOwner = String(isBenchAppOwner);
     document.querySelectorAll('[data-admin-only]').forEach((element) => { element.hidden = !isAdmin; });
     document.querySelectorAll('[data-skate-manager-only]').forEach((element) => { element.hidden = !isSkateManager; });
+    document.querySelectorAll('[data-benchapp-owner-only]').forEach((element) => { element.hidden = !isBenchAppOwner; });
     if (!role) {
       gate.hidden = false;
       status.textContent = 'Your account is signed in, but an Admin or Skate Manager role has not been assigned yet.';
@@ -82,6 +87,7 @@
 
   window.isSkateAdmin = () => window.SKATE_MANAGER_ROLE === 'admin';
   window.isSkateManager = () => window.SKATE_MANAGER_ROLE === 'skate_manager';
+  window.canManageBenchApp = () => window.SKATE_MANAGER_CAN_MANAGE_BENCHAPP === true;
 
   function addSignOut() {
     if (document.getElementById('sm-sign-out')) return;
