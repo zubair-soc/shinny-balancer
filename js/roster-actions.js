@@ -637,8 +637,6 @@
                     message += `${num}. ${player.player_name}${emoji}\n`;
                 });
 
-                message += `\nAll players must sign the waiver before playing: shinnyofchampions.com/waiver\n`;
-
                 let copied = false;
 
                 // Method 1: Modern clipboard API
