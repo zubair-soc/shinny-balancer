@@ -97,8 +97,24 @@
     button.textContent = 'Sign out';
     button.addEventListener('click', async () => {
       button.disabled = true;
-      await authClient.auth.signOut();
-      location.reload();
+      button.textContent = 'Signing out…';
+      try {
+        const { error } = await authClient.auth.signOut({ scope: 'local' });
+        if (error) throw error;
+
+        const { data, error: sessionError } = await authClient.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (data.session) throw new Error('The local session is still active.');
+
+        window.SKATE_MANAGER_ROLE = null;
+        window.SKATE_MANAGER_EMAIL = '';
+        window.SKATE_MANAGER_CAN_MANAGE_BENCHAPP = false;
+        location.replace('index.html');
+      } catch (error) {
+        console.error('Sign-out failed:', error);
+        button.disabled = false;
+        button.textContent = 'Sign out failed — retry';
+      }
     });
     const appNav = document.querySelector('.app-nav');
     (appNav || document.body).appendChild(button);
