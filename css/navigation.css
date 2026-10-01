@@ -138,3 +138,112 @@
 }
 
 .app-nav-admin[hidden] { display: none !important; }
+
+/* Account owns appearance and sign-out controls. */
+body > .theme-toggle { display: none !important; }
+
+.app-bottom-nav { display: none; }
+.app-bottom-icon svg {
+    width: 23px;
+    height: 23px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.account-page {
+    width: min(760px, calc(100vw - 40px));
+    margin: 0 auto 48px;
+}
+.account-heading { margin-bottom: 20px; }
+.account-heading span { color: var(--primary-dark); font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.account-heading h1 { margin: 6px 0; color: var(--text); font-size: clamp(27px, 5vw, 38px); letter-spacing: -.035em; }
+.account-heading p { margin: 0; color: var(--text-muted); }
+.account-card {
+    margin-bottom: 16px;
+    padding: 20px;
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    background: var(--card-bg);
+    box-shadow: 0 8px 24px rgba(15,23,42,.06);
+}
+.account-profile { display: flex; align-items: center; gap: 14px; }
+.account-avatar {
+    width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 auto;
+    border-radius: 15px; color: var(--primary-dark); background: rgba(var(--primary-rgb),.13);
+    font-size: 21px; font-weight: 800;
+}
+.account-profile strong, .account-profile span { display: block; }
+.account-profile strong { color: var(--text); font-size: 16px; overflow-wrap: anywhere; }
+.account-profile span { margin-top: 4px; color: var(--text-muted); font-size: 13px; }
+.account-section-title { margin: 0 0 13px; color: var(--text); font-size: 15px; }
+.account-setting, .account-tool {
+    min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 12px 0; color: var(--text); text-decoration: none;
+    border-bottom: 1px solid var(--card-border);
+}
+.account-setting:last-child, .account-tool:last-child { border-bottom: 0; }
+.account-setting-copy strong, .account-setting-copy span { display: block; }
+.account-setting-copy strong { font-size: 14px; }
+.account-setting-copy span { margin-top: 3px; color: var(--text-muted); font-size: 12px; }
+.account-theme-button {
+    min-width: 96px; padding: 9px 12px; border: 1px solid rgba(var(--primary-rgb),.3); border-radius: 10px;
+    color: var(--primary-dark); background: rgba(var(--primary-rgb),.09); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
+}
+.account-tool { font-size: 14px; font-weight: 650; }
+.account-tool span:last-child { color: var(--text-muted); font-size: 20px; }
+#accountSignOutSlot #sm-sign-out {
+    width: 100%; min-height: 48px; margin: 0; border-color: #fecaca; color: #b91c1c; background: #fff7f7;
+    font-size: 14px; font-weight: 750;
+}
+
+@media (max-width: 700px) {
+    body.has-bottom-nav { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+    .app-nav {
+        min-height: 60px;
+        padding: 9px 11px;
+        align-items: center;
+        flex-direction: row;
+        border-radius: 15px;
+    }
+    .app-nav-brand { padding: 0; }
+    .app-nav-links { display: none; }
+    .app-bottom-nav {
+        position: fixed;
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
+        z-index: 1200;
+        min-height: 67px;
+        padding: 6px max(5px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(5px, env(safe-area-inset-left));
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 3px;
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+        box-shadow: 0 14px 38px rgba(15,23,42,.2);
+        backdrop-filter: blur(18px);
+    }
+    .app-bottom-link {
+        min-width: 0;
+        padding: 7px 3px 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 3px;
+        border-radius: 14px;
+        color: var(--text-muted);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        text-decoration: none;
+    }
+    .app-bottom-link.is-active { color: var(--primary-dark); background: rgba(var(--primary-rgb),.12); }
+    .account-page { width: 100%; margin-bottom: 20px; }
+    .account-card { padding: 17px; border-radius: 16px; }
+}

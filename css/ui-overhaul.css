@@ -281,6 +281,7 @@ body:has(.app-nav) > .main { padding-top: 8px; }
     font-weight: 800;
     letter-spacing: 0.16em;
 }
+.container > .header h1 { text-align: left; }
 body:has(.app-nav-link[href="index.html"].is-active) .container > .header {
     display: flex;
     min-height: 154px;

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Account — Skate Manager</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Skate Manager">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icons/skate-manager-192.png">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/ui-overhaul.css">
+</head>
+<body data-manager-page="true">
+    <nav class="app-nav" aria-label="Primary">
+        <a class="app-nav-brand" href="index.html"><span class="app-nav-mark">🏒</span><span><strong>Skate Manager</strong><small>Shinny of Champions</small></span></a>
+        <div class="app-nav-links"></div>
+    </nav>
+
+    <main class="account-page">
+        <header class="account-heading">
+            <span>YOUR APP</span>
+            <h1>Account</h1>
+            <p>Manage your Skate Manager preferences and access.</p>
+        </header>
+
+        <section class="account-card account-profile" aria-label="Signed-in account">
+            <div class="account-avatar" aria-hidden="true">SM</div>
+            <div><strong id="accountEmail">Loading account…</strong><span id="accountRole"></span></div>
+        </section>
+
+        <section class="account-card">
+            <h2 class="account-section-title">Appearance</h2>
+            <div class="account-setting">
+                <div class="account-setting-copy"><strong>Dark mode</strong><span>Change the appearance across the app</span></div>
+                <button id="accountThemeButton" class="account-theme-button" type="button" onclick="toggleAccountTheme()">Use dark</button>
+            </div>
+        </section>
+
+        <section class="account-card" data-admin-only hidden>
+            <h2 class="account-section-title">Admin tools</h2>
+            <a class="account-tool" href="credits.html"><span>Credit management</span><span aria-hidden="true">›</span></a>
+            <a class="account-tool" href="financials.html"><span>Financials</span><span aria-hidden="true">›</span></a>
+            <a class="account-tool" href="admin-settings.html"><span>Locations, tiers and settings</span><span aria-hidden="true">›</span></a>
+            <a class="account-tool" data-benchapp-owner-only hidden href="index.html#benchAppSyncCard"><span>BenchApp Sync</span><span aria-hidden="true">›</span></a>
+        </section>
+
+        <section class="account-card">
+            <h2 class="account-section-title">Session</h2>
+            <div id="accountSignOutSlot"></div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/account.js"></script>
+    <script src="js/auth-gate.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>

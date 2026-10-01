@@ -5,6 +5,10 @@
   }
 
   const authClient = window.SKATE_MANAGER_CLIENT;
+  const storedTheme = localStorage.getItem('theme') || 'light';
+  document.body.classList.toggle('dark-mode', storedTheme === 'dark');
+  if (storedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  else document.documentElement.removeAttribute('data-theme');
   const style = document.createElement('style');
   style.textContent = `
     #sm-auth-gate { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 20px; background: #0f172a; color: #f8fafc; font: 16px system-ui, sans-serif; }
@@ -89,8 +93,63 @@
   window.isSkateManager = () => window.SKATE_MANAGER_ROLE === 'skate_manager';
   window.canManageBenchApp = () => window.SKATE_MANAGER_CAN_MANAGE_BENCHAPP === true;
 
+  function navigationIcon(name) {
+    const icons = {
+      home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg>',
+      players: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-4A4.5 4.5 0 0 0 3 18.5V20M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM16 11a3 3 0 0 0 0-6M17 14a4 4 0 0 1 4 4v2"/></svg>',
+      credits: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg>',
+      account: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>'
+    };
+    return icons[name] || '';
+  }
+
+  function setupNavigation(user) {
+    const page = location.pathname.split('/').pop() || 'index.html';
+    const isAdmin = window.isSkateAdmin();
+    const creditsHref = isAdmin ? 'credits.html' : 'manager-credits.html';
+    const activeSection = ['index.html', 'balancer.html', ''].includes(page)
+      ? 'home'
+      : page === 'database.html'
+        ? 'players'
+        : ['credits.html', 'manager-credits.html'].includes(page)
+          ? 'credits'
+          : 'account';
+    const items = [
+      { key: 'home', label: 'Home', href: 'index.html' },
+      { key: 'players', label: 'Players', href: 'database.html' },
+      { key: 'credits', label: 'Credits', href: creditsHref },
+      { key: 'account', label: 'Account', href: 'account.html' }
+    ];
+    const linkMarkup = (item, bottom = false) => {
+      const active = item.key === activeSection;
+      const className = bottom ? 'app-bottom-link' : 'app-nav-link';
+      return `<a class="${className}${active ? ' is-active' : ''}" href="${item.href}"${active ? ' aria-current="page"' : ''}>${bottom ? `<span class="app-bottom-icon">${navigationIcon(item.key)}</span>` : ''}<span>${item.label}</span></a>`;
+    };
+
+    document.querySelectorAll('.app-nav-links').forEach((links) => {
+      links.innerHTML = items.map((item) => linkMarkup(item)).join('');
+    });
+
+    let bottomNav = document.querySelector('.app-bottom-nav');
+    if (!bottomNav) {
+      bottomNav = document.createElement('nav');
+      bottomNav.className = 'app-bottom-nav';
+      bottomNav.setAttribute('aria-label', 'App');
+      document.body.appendChild(bottomNav);
+    }
+    bottomNav.innerHTML = items.map((item) => linkMarkup(item, true)).join('');
+    document.body.classList.add('has-bottom-nav');
+
+    const email = document.getElementById('accountEmail');
+    const role = document.getElementById('accountRole');
+    if (email) email.textContent = String(user?.email || '');
+    if (role) role.textContent = isAdmin ? 'Admin' : 'Skate Manager';
+  }
+
   function addSignOut() {
     if (document.getElementById('sm-sign-out')) return;
+    const slot = document.getElementById('accountSignOutSlot');
+    if (!slot) return;
     const button = document.createElement('button');
     button.id = 'sm-sign-out';
     button.type = 'button';
@@ -116,8 +175,7 @@
         button.textContent = 'Sign out failed — retry';
       }
     });
-    const appNav = document.querySelector('.app-nav');
-    (appNav || document.body).appendChild(button);
+    slot.appendChild(button);
   }
 
   authClient.auth.getSession().then(({ data, error }) => {
@@ -127,6 +185,7 @@
     }
     if (data.session) {
       if (!applyAdminVisibility(data.session.user)) return;
+      setupNavigation(data.session.user);
       gate.hidden = true;
       addSignOut();
       return;
