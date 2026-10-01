@@ -708,14 +708,13 @@
                         
                         // Show rating if available (hidden for goalies)
                         const rating = player.rating;
-                        const modelLabel = (window.rosterRatingMode || 'v2').toUpperCase();
                         const ratingClick = window.rosterRatingMode === 'v2'
                             ? `onclick="event.stopPropagation(); openRosterRating(${player.id}, ${inlineJSString(player.player_name)})"`
                             : 'onclick="event.stopPropagation()"';
                         const ratingTitle = window.rosterRatingMode === 'v2' ? 'V2 rating · click to rate' : 'Original V1 rating';
                         const ratingDisplay = player.is_goalie ? '' : (rating !== null ?
-                            `<span class="roster-rating-chip" ${ratingClick} title="${ratingTitle}">${modelLabel} ${rating}</span>` :
-                            `<span class="roster-rating-chip roster-rating-chip-empty" ${ratingClick} title="${ratingTitle}">${modelLabel} —</span>`);
+                            `<span class="roster-rating-chip" ${ratingClick} title="${ratingTitle}">${rating}</span>` :
+                            `<span class="roster-rating-chip roster-rating-chip-empty" ${ratingClick} title="${ratingTitle}">No rating</span>`);
                         
                         // Show friend group tag if set
                         const friendTag = player.friend_group ? 
