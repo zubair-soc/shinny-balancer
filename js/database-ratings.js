@@ -201,11 +201,8 @@
                 return `<section class="v2-skill" style="--skill-color:${def.color}">
                     <div class="v2-skill-heading"><strong>${def.label}</strong><span>${def.weight}%</span><div class="v2-skill-track"><div id="v2bar_${key}"></div></div></div>
                     <input type="hidden" id="simple_${key}" value="${escapeHTML(val)}">
-                    <div class="v2-score-options" role="group" aria-label="${def.label} rating">${[1,2,3,4,5].map(n => `<button type="button" class="v2-score" data-score="${n}" data-whole-score aria-pressed="false" aria-label="${def.label}: ${n}, ${escapeHTML(def.desc[n-1])}" onclick="handleV2ScoreClick(event, '${key}', ${n})">${n}</button>`).join('')}</div>
-                    <button type="button" class="v2-half-toggle" aria-expanded="false" aria-controls="v2halves_${key}" onclick="toggleV2HalfScores('${key}')">Hold a number for half ratings</button>
-                    <div id="v2halves_${key}" class="v2-half-options" role="group" aria-label="${def.label} half ratings" hidden>
-                        ${[1.5,2.5,3.5,4.5].map(n => `<button type="button" class="v2-score v2-half-score" data-score="${n}" aria-pressed="false" aria-label="${def.label}: ${n}, between ${escapeHTML(def.desc[Math.floor(n)-1])} and ${escapeHTML(def.desc[Math.ceil(n)-1])}" onclick="selectV2Score('${key}', ${n})">${n}</button>`).join('')}
-                    </div>
+                    <div class="v2-score-options" role="group" aria-label="${def.label} rating">${[1,2,3,4,5].map(n => `<span class="v2-score-slot"><button type="button" class="v2-score" data-score="${n}" data-whole-score aria-pressed="false" aria-label="${def.label}: ${n}, ${escapeHTML(def.desc[n-1])}${n < 5 ? `. Hold and slide up for ${n + 0.5}` : ''}" ${n < 5 ? 'aria-keyshortcuts="ArrowUp"' : ''} onclick="handleV2ScoreClick(event, '${key}', ${n})"><span class="v2-score-label">${n}</span></button>${n < 5 ? `<button type="button" class="v2-half-popover" data-score="${n + 0.5}" tabindex="-1" aria-hidden="true" hidden>${n + 0.5}</button>` : ''}</span>`).join('')}</div>
+                    <div class="v2-half-hint">Hold 1–4 and slide up for half ratings</div>
                     <div id="v2description_${key}" class="v2-score-description" aria-live="polite"></div>
                     <div class="v2-skill-tools"><details><summary>Examples & guide</summary><div class="v2-guide">${def.desc.map((d,i) => `<div><strong>${i+1} · ${escapeHTML(d)}</strong>${v2ExampleList(def, i+1)}</div>`).join('')}</div></details><button type="button" class="v2-skip" onclick="selectV2Score('${key}', '')">Not enough observation</button></div>
                 </section>`;
@@ -221,7 +218,6 @@
 
         function selectV2Score(key, score) {
             document.getElementById(`simple_${key}`).value = score;
-            if (score !== '') setV2HalfScoresOpen(key, false);
             refreshV2Score(key);
             updateSimpleComposite();
         }
@@ -236,59 +232,95 @@
             selectV2Score(key, score);
         }
 
-        function setV2HalfScoresOpen(key, open) {
-            const row = document.getElementById(`v2halves_${key}`);
-            const toggle = row?.closest('.v2-skill')?.querySelector('.v2-half-toggle');
-            if (!row || !toggle) return;
-            row.hidden = !open;
-            toggle.setAttribute('aria-expanded', String(open));
-            toggle.textContent = open ? 'Hide half ratings' : 'Hold a number for half ratings';
-        }
-
-        function toggleV2HalfScores(key) {
-            const row = document.getElementById(`v2halves_${key}`);
-            if (row) setV2HalfScoresOpen(key, row.hidden);
-        }
-
         function bindV2LongPresses(container) {
             container.querySelectorAll('.v2-score[data-whole-score]').forEach(button => {
+                const slot = button.closest('.v2-score-slot');
+                const popover = slot.querySelector('.v2-half-popover');
+                const halfScore = popover ? Number(popover.dataset.score) : null;
                 let timer = null;
                 let startX = 0;
                 let startY = 0;
+                let longPressActive = false;
+                let halfTargeted = false;
+                let pointerId = null;
 
-                const cancel = () => {
+                const cancelTimer = () => {
                     if (timer) clearTimeout(timer);
                     timer = null;
                     button.classList.remove('is-holding');
                 };
 
+                const closePopover = () => {
+                    if (popover) {
+                        popover.hidden = true;
+                        popover.setAttribute('aria-hidden', 'true');
+                        popover.classList.remove('is-targeted');
+                    }
+                    slot.classList.remove('is-long-pressing');
+                    longPressActive = false;
+                    halfTargeted = false;
+                };
+
+                const updateHalfTarget = event => {
+                    if (!popover || !longPressActive) return;
+                    const target = document.elementFromPoint(event.clientX, event.clientY);
+                    halfTargeted = target === popover || popover.contains(target);
+                    popover.classList.toggle('is-targeted', halfTargeted);
+                };
+
                 button.addEventListener('pointerdown', event => {
                     if (event.pointerType === 'mouse' && event.button !== 0) return;
+                    if (!popover) return;
+                    pointerId = event.pointerId;
                     startX = event.clientX;
                     startY = event.clientY;
                     button.classList.add('is-holding');
                     timer = setTimeout(() => {
                         timer = null;
+                        longPressActive = true;
                         button.classList.remove('is-holding');
                         button.dataset.suppressClick = 'true';
-                        const key = button.closest('.v2-skill').querySelector('input[type="hidden"]').id.replace('simple_', '');
-                        setV2HalfScoresOpen(key, true);
+                        slot.classList.add('is-long-pressing');
+                        popover.hidden = false;
+                        popover.setAttribute('aria-hidden', 'false');
+                        try { button.setPointerCapture(pointerId); } catch (_) {}
                         if (navigator.vibrate) navigator.vibrate(12);
                     }, 450);
                 });
                 button.addEventListener('pointermove', event => {
-                    if (Math.hypot(event.clientX - startX, event.clientY - startY) > 10) cancel();
+                    if (longPressActive) updateHalfTarget(event);
+                    else if (Math.hypot(event.clientX - startX, event.clientY - startY) > 10) cancelTimer();
                 });
-                button.addEventListener('pointerup', () => {
-                    cancel();
-                    if (button.dataset.suppressClick === 'true') {
+                button.addEventListener('pointerup', event => {
+                    const wasLongPress = longPressActive;
+                    if (wasLongPress) updateHalfTarget(event);
+                    cancelTimer();
+                    if (wasLongPress && halfTargeted) {
+                        const key = button.closest('.v2-skill').querySelector('input[type="hidden"]').id.replace('simple_', '');
+                        selectV2Score(key, halfScore);
+                    }
+                    closePopover();
+                    if (wasLongPress) {
+                        event.preventDefault();
                         setTimeout(() => delete button.dataset.suppressClick, 800);
                     }
                 });
-                button.addEventListener('pointercancel', cancel);
-                button.addEventListener('pointerleave', cancel);
+                button.addEventListener('pointercancel', () => {
+                    cancelTimer();
+                    closePopover();
+                    delete button.dataset.suppressClick;
+                });
+                button.addEventListener('pointerleave', () => {
+                    if (!longPressActive) cancelTimer();
+                });
                 button.addEventListener('contextmenu', event => {
-                    if (button.dataset.suppressClick === 'true') event.preventDefault();
+                    if (longPressActive || button.dataset.suppressClick === 'true') event.preventDefault();
+                });
+                button.addEventListener('keydown', event => {
+                    if (event.key !== 'ArrowUp' || halfScore === null) return;
+                    event.preventDefault();
+                    const key = button.closest('.v2-skill').querySelector('input[type="hidden"]').id.replace('simple_', '');
+                    selectV2Score(key, halfScore);
                 });
             });
         }
@@ -298,7 +330,12 @@
             const def = SIMPLE_RUBRIC[key];
             const score = input.value === '' ? null : Number(input.value);
             const section = input.closest('.v2-skill');
-            section.querySelectorAll('.v2-score[data-score]').forEach(button => button.setAttribute('aria-pressed', String(score === Number(button.dataset.score))));
+            section.querySelectorAll('.v2-score[data-whole-score]').forEach(button => {
+                const wholeScore = Number(button.dataset.score);
+                const halfSelected = score === wholeScore + 0.5;
+                button.setAttribute('aria-pressed', String(score === wholeScore || halfSelected));
+                button.querySelector('.v2-score-label').textContent = halfSelected ? String(score) : String(wholeScore);
+            });
             document.getElementById(`v2bar_${key}`).style.width = score === null ? '0%' : `${score*20}%`;
             const isHalf = score !== null && !Number.isInteger(score);
             const scoreDescription = isHalf

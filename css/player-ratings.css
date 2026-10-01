@@ -4,16 +4,16 @@
 #playerProfileModal .v2-skill-track { flex:1; height:5px; margin-left:12px; background:rgba(var(--primary-rgb),.07); border-radius:5px; overflow:hidden; }
 #playerProfileModal .v2-skill-track > div { height:100%; width:0; background:var(--skill-color); transition:width .15s; }
 #playerProfileModal .v2-score-options { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
-#playerProfileModal .v2-score { min-height:44px; border:1px solid var(--card-border); border-radius:10px; background:var(--card-bg); color:var(--text); font:inherit; font-size:15px; font-weight:650; cursor:pointer; }
+#playerProfileModal .v2-score-slot { position:relative; min-width:0; }
+#playerProfileModal .v2-score { width:100%; min-height:44px; border:1px solid var(--card-border); border-radius:10px; background:var(--card-bg); color:var(--text); font:inherit; font-size:15px; font-weight:650; cursor:pointer; }
 #playerProfileModal .v2-score:hover { border-color:var(--primary); background:rgba(var(--primary-rgb),.07); }
 #playerProfileModal .v2-score[aria-pressed="true"] { background:var(--primary-dark); border-color:var(--primary-dark); color:#fff; }
 #playerProfileModal .v2-score[data-whole-score] { touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
 #playerProfileModal .v2-score.is-holding { border-color:var(--primary); background:rgba(var(--primary-rgb),.12); transform:scale(.97); }
-#playerProfileModal .v2-half-toggle { display:block; margin:7px auto 0; padding:3px 8px; border:0; background:transparent; color:var(--text-muted); font:inherit; font-size:11px; cursor:pointer; }
-#playerProfileModal .v2-half-toggle:hover { color:var(--primary-dark); }
-#playerProfileModal .v2-half-options { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:8px; padding:9px; border:1px solid rgba(var(--primary-rgb),.16); border-radius:12px; background:rgba(var(--primary-rgb),.045); }
-#playerProfileModal .v2-half-options[hidden] { display:none; }
-#playerProfileModal .v2-half-score { min-height:38px; font-size:13px; }
+#playerProfileModal .v2-half-popover { position:absolute; z-index:4; left:50%; bottom:calc(100% + 8px); width:54px; min-height:42px; transform:translateX(-50%); border:0; border-radius:11px; background:var(--primary-dark); box-shadow:0 8px 24px rgba(0,0,0,.24); color:#fff; font:inherit; font-size:14px; font-weight:750; pointer-events:auto; }
+#playerProfileModal .v2-half-popover[hidden] { display:none; }
+#playerProfileModal .v2-half-popover.is-targeted { transform:translateX(-50%) scale(1.12); background:var(--primary); }
+#playerProfileModal .v2-half-hint { margin-top:7px; color:var(--text-muted); font-size:11px; text-align:center; }
 #playerProfileModal .v2-score-description { margin-top:10px; color:var(--text-muted); font-size:12px; line-height:1.6; }
 #playerProfileModal .v2-score-description strong { color:var(--text); }
 #playerProfileModal .v2-score-description ul, #playerProfileModal .v2-guide ul { margin:6px 0 0; padding-left:18px; }
@@ -25,7 +25,7 @@
 #playerProfileModal .v2-skip:hover { color:var(--primary-dark); text-decoration:underline; }
 #playerProfileModal .v2-progress { margin-top:15px; font-size:12px; color:var(--text-muted); }
 #playerProfileModal #submitV2bBtn:disabled { opacity:.5; cursor:default; }
-@media(prefers-reduced-motion:reduce) { #playerProfileModal .v2-skill-track > div { transition:none; } #playerProfileModal .v2-score.is-holding { transform:none; } }
+@media(prefers-reduced-motion:reduce) { #playerProfileModal .v2-skill-track > div { transition:none; } #playerProfileModal .v2-score.is-holding { transform:none; } #playerProfileModal .v2-half-popover.is-targeted { transform:translateX(-50%); } }
 
 #playerProfileModal .v2-save-next { width:100%; margin-top:8px; padding:12px; border:1px solid var(--primary); border-radius:10px; background:var(--card-bg); color:var(--primary-dark); font:inherit; font-size:14px; font-weight:650; cursor:pointer; }
 #playerProfileModal .v2-save-next:disabled { opacity:.5; cursor:default; }
