@@ -143,6 +143,12 @@
 body > .theme-toggle { display: none !important; }
 
 .app-bottom-nav { display: none; }
+body:has(.modal.active) { overflow: hidden; }
+body:has(.modal.active) .app-bottom-nav {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
 .app-bottom-icon svg {
     width: 23px;
     height: 23px;
