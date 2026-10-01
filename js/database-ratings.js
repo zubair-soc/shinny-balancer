@@ -431,13 +431,10 @@
                     else closePillarModal();
                     return;
                 }
-                btn.textContent = '✓ Submitted';
-                btn.style.background = '#22c55e';
-                setTimeout(() => {
-                    btn.textContent = 'Submit Rating';
-                    btn.style.background = '';
-                    btn.disabled = false;
-                }, 2000);
+                btn.textContent = 'Submit Rating';
+                btn.style.background = '';
+                btn.disabled = false;
+                closePillarModal();
 
             } catch (err) {
                 console.error('Submit failed:', err);
