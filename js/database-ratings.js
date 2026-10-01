@@ -473,10 +473,12 @@
             container.innerHTML = history.map((entry, i) => {
                 const date = new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const isActive = i < 3;
+                const weight = Number(entry.rater_weight) || 1;
                 return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:8px; margin-bottom:6px; background:${isActive ? 'rgba(16,185,129,0.08)' : 'rgba(128,128,128,0.05)'}; border:1px solid ${isActive ? 'rgba(16,185,129,0.2)' : 'rgba(128,128,128,0.1)'}; opacity:${isActive ? '1' : '0.5'};">
                     <div>
                         <span style="font-size:13px; font-weight:600; color:var(--text);">${escapeHTML(entry.rater)}</span>
                         <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">${date}</span>
+                        ${weight !== 1 ? `<span style="font-size:10px; color:#047857; background:#d1fae5; border-radius:999px; padding:2px 6px; margin-left:6px; font-weight:700;">${weight}× weight</span>` : ''}
                         ${i === 0 ? '<span style="font-size:10px; color:#10b981; margin-left:6px;">latest</span>' : ''}
                         ${i >= 3 ? '<span style="font-size:10px; color:var(--text-muted); margin-left:6px;">not counted</span>' : ''}
                     </div>
@@ -486,9 +488,10 @@
 
             // Show average
             const active = history.slice(0, 3);
-            const avg = Math.round((active.reduce((s, r) => s + r.composite, 0) / active.length) * 10) / 10;
+            const weightTotal = active.reduce((sum, rating) => sum + (Number(rating.rater_weight) || 1), 0);
+            const avg = Math.round((active.reduce((sum, rating) => sum + (Number(rating.composite) * (Number(rating.rater_weight) || 1)), 0) / weightTotal) * 10) / 10;
             container.innerHTML += `<div style="margin-top:10px; padding:8px 12px; border-radius:8px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:12px; font-weight:700; color:#10b981;">Average (${active.length} rating${active.length !== 1 ? 's' : ''})</span>
+                <span style="font-size:12px; font-weight:700; color:#10b981;">Weighted average (${active.length} rating${active.length !== 1 ? 's' : ''})</span>
                 <span style="font-size:16px; font-weight:800; color:#10b981;">${avg}</span>
             </div>`;
         }
