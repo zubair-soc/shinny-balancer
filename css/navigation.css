@@ -202,15 +202,7 @@ body > .theme-toggle { display: none !important; }
 
 @media (max-width: 700px) {
     body.has-bottom-nav { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
-    .app-nav {
-        min-height: 60px;
-        padding: 9px 11px;
-        align-items: center;
-        flex-direction: row;
-        border-radius: 15px;
-    }
-    .app-nav-brand { padding: 0; }
-    .app-nav-links { display: none; }
+    .app-nav { display: none; }
     .app-bottom-nav {
         position: fixed;
         right: 10px;
