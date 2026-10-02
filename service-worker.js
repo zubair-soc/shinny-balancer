@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skate-manager-shell-v30';
+const CACHE_NAME = 'skate-manager-shell-v31';
 const APP_FILES = [
   './',
   './index.html',
@@ -47,9 +47,10 @@ const APP_FILES = [
   './js/supabase-config.js',
   './js/auth-gate.js',
   './js/pwa.js',
-  './icons/skate-manager-192.png',
-  './icons/skate-manager-512.png',
-  './icons/skate-manager-maskable-512.png'
+  './icons/skate-manager-soc-180.png',
+  './icons/skate-manager-soc-192.png',
+  './icons/skate-manager-soc-512.png',
+  './icons/skate-manager-soc-maskable-512.png'
 ];
 
 self.addEventListener('install', (event) => {
