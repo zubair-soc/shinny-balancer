@@ -344,10 +344,7 @@
             const darkStats = getTeamStats(darkTeam);
             const lightStats = getTeamStats(lightTeam);
 
-            const modelNotice = window.isSkateAdmin?.()
-                ? `<span class="active-rating-model">${balancerRatingMode === 'v2' ? 'V2 active' : 'Original V1 preview'}</span>`
-                : '';
-            let html = `<p class="team-interaction-hint">Select two players to swap them. Use ⋮ for one-player moves and other actions. ${modelNotice}</p><div class="teams-container">`;
+            let html = '<p class="team-interaction-hint">Select two players to swap them. Use ⋮ for one-player moves and other actions.</p><div class="teams-container">';
             
             // Dark team
             html += '<div class="team">';

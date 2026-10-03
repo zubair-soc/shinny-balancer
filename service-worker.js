@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skate-manager-shell-v32';
+const CACHE_NAME = 'skate-manager-shell-v33';
 const APP_FILES = [
   './',
   './index.html',

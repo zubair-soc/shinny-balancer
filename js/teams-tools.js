@@ -1,175 +1,19 @@
-        let currentSkateVote = null;
-
-        function toggleTeamsSection() {
-            const content = document.getElementById('teamsContent');
-            const toggle = document.getElementById('teamsSectionToggle');
-            const isHidden = content.style.display === 'none';
-            content.style.display = isHidden ? 'block' : 'none';
-            toggle.textContent = isHidden ? '▲ Hide' : '▼ Show';
-        }
-
         async function loadTeamsForSkate(skateId) {
             const section = document.getElementById('teamsSection');
             try {
                 const { data: teams } = await supabaseClient
                     .from('skate_teams')
-                    .select('dark_team, light_team')
+                    .select('skate_id')
                     .eq('skate_id', skateId)
                     .maybeSingle();
 
                 if (!teams) { section.style.display = 'none'; return; }
 
                 section.style.display = 'block';
-                renderTeamsList('teamsModalDark', teams.dark_team || [], skateId);
-                renderTeamsList('teamsModalLight', teams.light_team || [], skateId);
-
-                // Load vote
-                const { data: vote } = await supabaseClient
-                    .from('skate_votes')
-                    .select('dark_votes, light_votes')
-                    .eq('skate_id', skateId)
-                    .maybeSingle();
-
-                currentSkateVote = vote;
-                updateTugBar(vote);
-
             } catch (err) {
                 console.error('Error loading teams:', err);
                 section.style.display = 'none';
             }
-        }
-
-        function renderTeamsList(containerId, players, skateId) {
-            const container = document.getElementById(containerId);
-            if (!players.length) { container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No players</p>'; return; }
-            container.innerHTML = players.filter(p => !p.isGoalie).map(p => `
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:6px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:13px;">
-                    <a href="balancer.html?player=${encodeURIComponent(p.name)}" style="color:var(--text); text-decoration:none; flex:1;" title="View profile">${escapeHTML(p.name)}</a>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <span style="color:var(--text-muted); font-size:11px; margin-right:4px;">${getV2Score(allPlayers.find(player => player.name.toLowerCase() === p.name.toLowerCase())?.rating_v2b) ?? '—'}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        const NUDGE_SKILLS = [
-            'skating_balance','skating_strides','skating_direction_change','skating_pivots','skating_zone_entry',
-            'skating_off_wall','skating_corners','skating_punch_turns','skating_mohawks','skating_backwards_basic','skating_backwards_crossovers',
-            'puck_shooting','puck_passing','puck_stickhandling','puck_receiving','puck_protection',
-            'iq_positioning','iq_reads_anticipation','iq_defensive_awareness','iq_offensive_awareness','iq_transition',
-            'compete_level','compete_battle_wins','compete_effort','compete_resilience',
-            'readiness_conditioning','readiness_consistency'
-        ];
-
-        async function nudgePlayer(playerName, skateId, direction) {
-            try {
-                const { data: player } = await supabaseClient
-                    .from('skate_manager_players')
-                    .select('id, rating_v2')
-                    .ilike('name', playerName)
-                    .maybeSingle();
-
-                if (!player) { showToast('Player not found in database'); return; }
-
-                const nudgeAmount = direction === 'up' ? 1 : -1;
-                const newRating = Math.min(100, Math.max(0, (player.rating_v2 || 50) + nudgeAmount));
-
-                // Log nudge
-                await supabaseClient.from('rating_nudges').insert({
-                    player_id: player.id,
-                    skate_id: skateId,
-                    direction,
-                    source: 'manual',
-                    nudge_amount: 1
-                });
-
-                // Update composite rating
-                await supabaseClient.from('players').update({ rating_v2: newRating }).eq('id', player.id);
-
-                // Distribute nudge equally across all skills
-                const { data: skills } = await supabaseClient
-                    .from('player_skills').select('*').eq('player_id', player.id).maybeSingle();
-
-                if (skills) {
-                    // Skills are 0-10, composite is 0-100
-                    // 1 composite point = 0.1 skill points spread across all skills
-                    const skillNudge = Math.round(((nudgeAmount * 0.1) / NUDGE_SKILLS.length) * 1000) / 1000;
-                    const updates = {};
-                    for (const key of NUDGE_SKILLS) {
-                        const current = skills[key] !== null && skills[key] !== undefined ? skills[key] : 5;
-                        updates[key] = Math.min(10, Math.max(0, Math.round((current + skillNudge) * 1000) / 1000));
-                    }
-                    updates.updated_at = new Date().toISOString();
-                    await supabaseClient.from('player_skills').update(updates).eq('player_id', player.id);
-                }
-
-                showToast(`${playerName} ${direction === 'up' ? '▲' : '▼'} → ${newRating}`);
-                await loadTeamsForSkate(skateId);
-
-            } catch (err) {
-                console.error('Nudge failed:', err);
-                showToast('Nudge failed');
-            }
-        }
-
-        async function castVote(team) {
-            const skateId = parseInt(document.getElementById('rosterModal').dataset.skateId);
-            if (!skateId) return;
-
-            // strength is 0-100, starts at 50 (even), each tap shifts by 10
-            const current = currentSkateVote ? (currentSkateVote.dark_strength ?? 50) : 50;
-            const newStrength = team === 'dark'
-                ? Math.min(100, current + 10)
-                : Math.max(0, current - 10);
-
-            try {
-                if (currentSkateVote) {
-                    await supabaseClient.from('skate_votes')
-                        .update({ dark_strength: newStrength, last_updated: new Date().toISOString() })
-                        .eq('skate_id', skateId);
-                } else {
-                    await supabaseClient.from('skate_votes').insert({
-                        skate_id: skateId,
-                        dark_strength: newStrength
-                    });
-                }
-                await loadTeamsForSkate(skateId);
-            } catch (err) {
-                console.error('Vote failed:', err);
-            }
-        }
-
-        async function resetTugOfWar() {
-            const skateId = parseInt(document.getElementById('rosterModal').dataset.skateId);
-            if (!skateId) return;
-            try {
-                if (currentSkateVote) {
-                    await supabaseClient.from('skate_votes')
-                        .update({ dark_strength: 50, last_updated: new Date().toISOString() })
-                        .eq('skate_id', skateId);
-                } else {
-                    await supabaseClient.from('skate_votes').insert({ skate_id: skateId, dark_strength: 50 });
-                }
-                await loadTeamsForSkate(skateId);
-            } catch (err) {
-                console.error('Reset failed:', err);
-            }
-        }
-
-        function updateTugBar(vote) {
-            const bar = document.getElementById('tugBar');
-            const label = document.getElementById('tugLabel');
-            const count = document.getElementById('tugVoteCount');
-            if (!bar || !label) return;
-
-            const pct = vote && vote.dark_strength !== null && vote.dark_strength !== undefined
-                ? vote.dark_strength
-                : 50;
-            const isEven = pct === 50;
-
-            bar.style.width = pct + '%';
-            label.textContent = isEven ? '—' : `${pct}% / ${100 - pct}%`;
-            count.textContent = isEven ? 'Even' : (pct > 50 ? '⬛ Dark stronger' : '⬜ Light stronger');
         }
 
         // ========== ICE COST CALCULATOR ==========
@@ -436,4 +280,3 @@
             // Restore body scroll
             document.body.style.overflow = '';
         }
-

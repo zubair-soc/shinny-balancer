@@ -199,41 +199,14 @@
 
             <!-- Teams Section -->
             <div class="roster-section" id="teamsSection" style="display:none;">
-                <div class="roster-header" onclick="toggleTeamsSection()" style="cursor: pointer; user-select: none;">
-                    <h3>⚔️ Teams</h3>
-                    <span id="teamsSectionToggle" style="color: var(--text-muted); font-size: 13px;">▼ Show</span>
-                </div>
-                <div id="teamsContent" style="display:none;">
-                    <!-- Tug of war bar -->
-                    <div class="u-mb-20">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 600;">
-                            <span style="color: #1a1a2e;">⬛ Dark</span>
-                            <span style="color: var(--text-muted);" id="tugVoteCount">No votes yet</span>
-                            <span style="color: #888;">⬜ Light</span>
-                        </div>
-                        <div style="height: 28px; background: #ddd; border-radius: 14px; overflow: hidden; position: relative;">
-                            <div id="tugBar" style="height: 100%; background: #1a1a2e; width: 50%; transition: width 0.4s ease; border-radius: 14px;"></div>
-                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 11px; font-weight: 700; color: white; text-shadow: 0 0 4px rgba(0,0,0,0.8); pointer-events: none;" id="tugLabel">50 / 50</div>
-                        </div>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <button onclick="castVote('dark')" style="flex:1; padding: 10px; background: #1a1a2e; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">⬛ Dark Stronger</button>
-                            <button onclick="resetTugOfWar()" style="padding: 10px 14px; background: rgba(100,100,100,0.2); border: 1px solid rgba(100,100,100,0.3); color: var(--text-muted); border-radius: 8px; font-size: 13px; cursor: pointer;" title="Reset to even">↺</button>
-                            <button onclick="castVote('light')" style="flex:1; padding: 10px; background: #f0f0f0; color: #333; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">⬜ Light Stronger</button>
-                        </div>
-                    </div>
-
-                    <!-- Team lists with nudge buttons -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <h4 class="u-section-caption">⬛ Dark</h4>
-                            <div id="teamsModalDark"></div>
-                        </div>
-                        <div>
-                            <h4 class="u-section-caption">⬜ Light</h4>
-                            <div id="teamsModalLight"></div>
-                        </div>
-                    </div>
-                </div>
+                <button class="open-team-balancer" type="button" onclick="balanceSkate()">
+                    <span class="open-team-balancer-icon" aria-hidden="true">⚖️</span>
+                    <span class="open-team-balancer-copy">
+                        <strong>Open Team Balancer</strong>
+                        <small>View, swap and update the saved teams</small>
+                    </span>
+                    <span class="open-team-balancer-arrow" aria-hidden="true">›</span>
+                </button>
             </div>
             </div>
 
