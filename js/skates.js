@@ -645,7 +645,6 @@
             const sortBtn = document.getElementById('sortToggleBtn');
             if (sortBtn) { sortBtn.textContent = '🔤 A–Z'; sortBtn.style.background = ''; sortBtn.style.color = ''; }
             modal.classList.add('active');
-            loadTeamsForSkate(skateId);
         }
 
         async function loadRoster(skateId, capacity) {

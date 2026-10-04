@@ -915,52 +915,6 @@
             font: inherit;
         }
         .skate-archived-label { color: #b45309 !important; font-weight: 600; }
-        .open-team-balancer {
-            width: 100%;
-            min-height: 74px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            border: 1px solid rgba(var(--primary-rgb), .24);
-            border-radius: 14px;
-            background: rgba(var(--primary-rgb), .08);
-            color: var(--text);
-            text-align: left;
-            cursor: pointer;
-            font: inherit;
-        }
-        .open-team-balancer:hover,
-        .open-team-balancer:focus-visible {
-            border-color: var(--primary);
-            background: rgba(var(--primary-rgb), .13);
-            outline: none;
-        }
-        .open-team-balancer-icon {
-            width: 42px;
-            height: 42px;
-            flex: 0 0 42px;
-            display: grid;
-            place-items: center;
-            border-radius: 12px;
-            background: var(--primary);
-            color: white;
-            font-size: 20px;
-        }
-        .open-team-balancer-copy { min-width: 0; flex: 1; }
-        .open-team-balancer-copy strong,
-        .open-team-balancer-copy small { display: block; }
-        .open-team-balancer-copy strong { font-size: 15px; }
-        .open-team-balancer-copy small {
-            margin-top: 3px;
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-        .open-team-balancer-arrow {
-            color: var(--primary-dark);
-            font-size: 28px;
-            line-height: 1;
-        }
         @media (max-width: 640px) {
             .benchapp-sync-toolbar { align-items: flex-start; flex-direction: column; }
             .benchapp-sync-toolbar > div:first-child { align-items: flex-start; flex-direction: column; gap: 4px; }

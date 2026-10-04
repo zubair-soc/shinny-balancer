@@ -443,7 +443,7 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
     font-size: 13px;
 }
 #rosterModal .roster-details-grid strong { color: var(--text-muted); font-weight: 600; }
-#rosterModal .roster-modal-scroll > .roster-section:not(#teamsSection) > .roster-header { align-items: center; }
+#rosterModal .roster-modal-scroll > .roster-section > .roster-header { align-items: center; }
 #rosterModal .roster-header h3 { font-size: 17px; letter-spacing: -0.02em; }
 #rosterModal .roster-list {
     padding: 10px;
@@ -519,7 +519,7 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
         gap: 10px 12px;
         font-size: 12px;
     }
-    #rosterModal .roster-modal-scroll > .roster-section:not(#teamsSection) > .roster-header {
+    #rosterModal .roster-modal-scroll > .roster-section > .roster-header {
         display: flex;
         flex-direction: column;
         align-items: stretch;
@@ -527,7 +527,7 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
         margin-bottom: 12px;
     }
     #rosterModal .roster-header h3 { font-size: 17px; }
-    #rosterModal .roster-modal-scroll > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 {
+    #rosterModal .roster-modal-scroll > .roster-section > .roster-header .u-flex-gap-8 {
         display: grid;
         grid-template-columns: auto 78px minmax(0, 1fr);
         gap: 8px;
@@ -539,7 +539,7 @@ body:has(.app-nav-link[href="balancer.html"].is-active) .container > .header p {
         padding: 7px 5px !important;
         white-space: nowrap;
     }
-    #rosterModal .roster-modal-scroll > .roster-section:not(#teamsSection) > .roster-header .u-flex-gap-8 .button:last-child {
+    #rosterModal .roster-modal-scroll > .roster-section > .roster-header .u-flex-gap-8 .button:last-child {
         width: 100%;
         min-width: 0;
         min-height: 46px;

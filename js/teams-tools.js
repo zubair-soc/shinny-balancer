@@ -1,21 +1,3 @@
-        async function loadTeamsForSkate(skateId) {
-            const section = document.getElementById('teamsSection');
-            try {
-                const { data: teams } = await supabaseClient
-                    .from('skate_teams')
-                    .select('skate_id')
-                    .eq('skate_id', skateId)
-                    .maybeSingle();
-
-                if (!teams) { section.style.display = 'none'; return; }
-
-                section.style.display = 'block';
-            } catch (err) {
-                console.error('Error loading teams:', err);
-                section.style.display = 'none';
-            }
-        }
-
         // ========== ICE COST CALCULATOR ==========
         const COE_RINKS = [
             'bill hunter','callingwood','castle downs','clareview','confederation',
