@@ -255,6 +255,25 @@
             else setTeamSaveStatus('Original V1 preview · saved V2 teams unchanged');
         }
 
+        function openRebalanceConfirmation() {
+            const dialog = document.getElementById('rebalanceConfirmDialog');
+            if (dialog && !dialog.open) dialog.showModal();
+        }
+
+        function closeRebalanceConfirmation() {
+            const dialog = document.getElementById('rebalanceConfirmDialog');
+            if (dialog?.open) dialog.close();
+        }
+
+        function confirmRebalanceTeams() {
+            closeRebalanceConfirmation();
+            balancerRatingMode = 'v2';
+            selectedPlayer = null;
+            openPlayerMenu = null;
+            updateRatingModeControls();
+            balanceTeams();
+        }
+
         function updateRatingModeControls() {
             document.querySelectorAll('[data-balancer-rating-mode]').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.balancerRatingMode === balancerRatingMode));
@@ -374,6 +393,8 @@
             html += '</div>';
 
             document.getElementById('teamsDisplay').innerHTML = html;
+            const actions = document.getElementById('teamActions');
+            if (actions) actions.hidden = false;
             renderExport();
         }
 

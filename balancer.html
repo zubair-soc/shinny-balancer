@@ -141,12 +141,25 @@
         <div id="ratingComparison" data-admin-only hidden></div>
 
         <!-- Teams Display -->
+        <div id="teamActions" class="team-actions" hidden>
+            <button class="button button-secondary rebalance-teams-button" type="button" onclick="openRebalanceConfirmation()">Rebalance Teams</button>
+        </div>
         <div id="teamsDisplay"></div>
         <div id="teamSaveStatus" role="status" aria-live="polite" style="min-height:20px; margin:8px 0 0; color:var(--text-muted); font-size:13px;"></div>
 
         <!-- Export Section -->
         <div id="exportSection"></div>
     </div>
+
+    <dialog id="rebalanceConfirmDialog" class="rebalance-confirm-dialog" aria-labelledby="rebalanceConfirmTitle" aria-describedby="rebalanceConfirmDescription">
+        <div class="rebalance-confirm-icon" aria-hidden="true">↻</div>
+        <h2 id="rebalanceConfirmTitle">Rebalance teams?</h2>
+        <p id="rebalanceConfirmDescription">This will replace the current team assignments using the latest roster, ratings, goalies and friend groups.</p>
+        <div class="rebalance-confirm-actions">
+            <button class="button button-secondary" type="button" onclick="closeRebalanceConfirmation()">Cancel</button>
+            <button class="button" type="button" onclick="confirmRebalanceTeams()">Rebalance Teams</button>
+        </div>
+    </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config.js"></script>

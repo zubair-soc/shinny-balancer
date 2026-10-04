@@ -161,6 +161,64 @@
         .comparison-player-moved { box-shadow: inset 3px 0 #f59e0b; background: rgba(245,158,11,.08); }
         .active-rating-model { display: inline-flex; margin-left: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(var(--primary-rgb),.12); color: var(--primary-dark); font-size: 11px; font-weight: 750; }
 
+        .team-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin: 0 0 14px;
+        }
+        .team-actions[hidden] { display: none; }
+        .rebalance-teams-button {
+            min-height: 42px;
+            padding: 9px 15px;
+            border: 1px solid rgba(var(--primary-rgb), .35);
+            background: var(--card-bg);
+            color: var(--primary-dark);
+        }
+        .rebalance-confirm-dialog {
+            width: min(440px, calc(100vw - 32px));
+            margin: auto;
+            padding: 26px;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            background: var(--card-bg);
+            color: var(--text);
+            box-shadow: 0 28px 80px rgba(0, 0, 0, .3);
+        }
+        .rebalance-confirm-dialog::backdrop {
+            background: rgba(10, 22, 18, .62);
+            backdrop-filter: blur(5px);
+        }
+        .rebalance-confirm-icon {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 16px;
+            border-radius: 14px;
+            background: rgba(var(--primary-rgb), .12);
+            color: var(--primary-dark);
+            font-size: 25px;
+            font-weight: 800;
+        }
+        .rebalance-confirm-dialog h2 {
+            margin: 0 0 8px;
+            font-size: 22px;
+            letter-spacing: -.025em;
+        }
+        .rebalance-confirm-dialog p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+        .rebalance-confirm-actions {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr;
+            gap: 10px;
+            margin-top: 22px;
+        }
+        .rebalance-confirm-actions .button { width: 100%; }
+
         .setup-section h2 {
             font-size: 18px;
             font-weight: 700;
@@ -420,6 +478,10 @@
             .rating-model-actions { align-items: stretch; flex-direction: column; }
             .rating-model-switcher { display: grid; grid-template-columns: 1fr 1fr; }
             .rating-comparison-grid, .comparison-team-grid { grid-template-columns: 1fr; }
+
+            .team-actions { justify-content: stretch; }
+            .rebalance-teams-button { width: 100%; }
+            .rebalance-confirm-dialog { padding: 22px; }
 
             .team {
                 padding: 16px;
